@@ -21,7 +21,7 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: #f5f2ec;
+  background: var(--paper);
   color: var(--ink);
   font-family: SimSun, "Microsoft YaHei", system-ui, sans-serif;
 }
@@ -88,16 +88,16 @@ button:disabled {
 }
 
 .shell {
-  width: min(100vw, 360px);
-  height: min(100vh, 620px);
-  min-height: 500px;
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
   display: grid;
   grid-template-rows: 50px 34px 1fr auto;
   background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 14px 36px rgba(44, 35, 26, 0.16);
+  box-shadow: none;
 }
 
 .topbar {
@@ -200,7 +200,7 @@ button:disabled {
 }
 
 .content {
-  padding: 16px 18px 8px;
+  padding: 14px 16px 8px;
   overflow: auto;
   line-height: 1.55;
   font-size: 14px;

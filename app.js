@@ -9,7 +9,7 @@
     supabase: null,
     user: null,
     data: null,
-    view: localStorage.getItem(VIEW_KEY) || "todos",
+    view: "todos",
     historyDate: localStorage.getItem(HISTORY_DATE_KEY) || todayKey(),
     showCompleted: true,
     statusTimer: null,
