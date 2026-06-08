@@ -137,7 +137,15 @@
       notesLockedTitle: "便签已锁定",
       notesLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
-      wrongPin: "密码不对 (｡•́︿•̀｡)"
+      wrongPin: "密码不对 (｡•́︿•̀｡)",
+      timerNone: "完成提醒：不需要",
+      timer1h: "1 小时完成",
+      timer2h: "2 小时完成",
+      timer4h: "4 小时完成",
+      timer8h: "8 小时完成",
+      halfway: "中段",
+      timerAlarmPrefix: "完成提醒",
+      timerSet: "已添加待办，并设置中段提醒 (｡･ω･｡)ﾉ"
     },
     ja: {
       appTitle: "ToDoリマインダー 頑張って！",
@@ -248,7 +256,15 @@
       notesLockedTitle: "メモはロックされています",
       notesLockedHint: "4桁のパスコードを入力してください。",
       unlock: "解除",
-      wrongPin: "パスコードが違います (｡•́︿•̀｡)"
+      wrongPin: "パスコードが違います (｡•́︿•̀｡)",
+      timerNone: "完了通知：なし",
+      timer1h: "1時間で完了",
+      timer2h: "2時間で完了",
+      timer4h: "4時間で完了",
+      timer8h: "8時間で完了",
+      halfway: "中間",
+      timerAlarmPrefix: "完了通知",
+      timerSet: "ToDoを追加し、中間通知を設定しました (｡･ω･｡)ﾉ"
     },
     en: {
       appTitle: "Todo Reminder",
@@ -359,7 +375,15 @@
       notesLockedTitle: "Notes locked",
       notesLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
-      wrongPin: "Wrong PIN (｡•́︿•̀｡)"
+      wrongPin: "Wrong PIN (｡•́︿•̀｡)",
+      timerNone: "Completion reminder: none",
+      timer1h: "Finish in 1h",
+      timer2h: "Finish in 2h",
+      timer4h: "Finish in 4h",
+      timer8h: "Finish in 8h",
+      halfway: "Midpoint",
+      timerAlarmPrefix: "Completion reminder",
+      timerSet: "Todo added with midpoint reminder (｡･ω･｡)ﾉ"
     }
   };
 
@@ -396,6 +420,7 @@
   const noteInput = $("#noteInput");
   const commandBar = $("#commandBar");
   const commandInput = $("#commandInput");
+  const commandTimerSelect = $("#commandTimerSelect");
   const statusEl = $("#status");
   const dateLabel = $("#dateLabel");
   const exportButton = $("#exportButton");
@@ -454,6 +479,11 @@
       current.inProgress = uniqueStrings(current.inProgress);
       current.completed = uniqueStrings(current.completed);
       current.hidden = uniqueStrings(current.hidden);
+      current.timers = current.timers && typeof current.timers === "object" ? current.timers : {};
+      Object.keys(current.timers).forEach((text) => {
+        const timer = current.timers[text];
+        if (!timer || typeof timer !== "object" || !timer.remindAt) delete current.timers[text];
+      });
       data.days[dateKey] = current;
     });
     dedupeReminders(data);
@@ -551,6 +581,12 @@
     return `${toDateKey(now)} ${normalizeTime(now.getHours(), now.getMinutes())}`;
   }
 
+  function clockFromIso(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return normalizeTime(date.getHours(), date.getMinutes());
+  }
+
   function logUpdate(action, text) {
     state.data.versionLog ||= [];
     state.data.versionLog.unshift({
@@ -572,12 +608,13 @@
 
   function day(dateKey = todayKey()) {
     state.data.days ||= {};
-    state.data.days[dateKey] ||= { pending: [], inProgress: [], completed: [], hidden: [] };
+    state.data.days[dateKey] ||= { pending: [], inProgress: [], completed: [], hidden: [], timers: {} };
     const current = state.data.days[dateKey];
     current.pending ||= [];
     current.inProgress ||= [];
     current.completed ||= [];
     current.hidden ||= [];
+    current.timers ||= {};
     return current;
   }
 
@@ -658,10 +695,11 @@
     merged.settings = { ...DEFAULT_SETTINGS, ...extra.settings, ...merged.settings };
 
     Object.keys(extra.days).forEach((dateKey) => {
-      merged.days[dateKey] ||= { pending: [], inProgress: [], completed: [], hidden: [] };
+      merged.days[dateKey] ||= { pending: [], inProgress: [], completed: [], hidden: [], timers: {} };
       ["pending", "inProgress", "completed", "hidden"].forEach((field) => {
         merged.days[dateKey][field] = uniqueStrings([...(merged.days[dateKey][field] || []), ...(extra.days[dateKey][field] || [])]);
       });
+      merged.days[dateKey].timers = { ...(extra.days[dateKey].timers || {}), ...(merged.days[dateKey].timers || {}) };
     });
     return normalizeData(merged);
   }
@@ -763,8 +801,8 @@
   }
 
   function dueAlarmRows() {
-    return [...dailyReminderRows(false), ...oneTimeTodayRows()]
-      .filter((row) => row.time && row.sortTime <= nowMinutes())
+    return [...dailyReminderRows(false), ...oneTimeTodayRows(), ...taskTimerRows()]
+      .filter((row) => row.group === "timer" || (row.time && row.sortTime <= nowMinutes()))
       .filter((row) => !day().completed.includes(`今日已完成：${row.time}  ${row.text}`));
   }
 
@@ -772,6 +810,7 @@
     state.activeAlarm = row;
     alarmText.textContent = `${row.time}  ${row.text}`;
     alarmModal.classList.remove("hidden");
+    if (row.group === "timer") markTaskTimerFired(row.key);
     sendSystemNotification(row);
   }
 
@@ -835,6 +874,23 @@
     });
     userLabel.textContent = state.user?.email ? `${tx("synced")}：${state.user.email}` : tx("localMode");
     signOutButton.textContent = state.user ? tx("signOut") : tx("sync");
+    updateTimerSelectLabels();
+  }
+
+  function updateTimerSelectLabels() {
+    if (!commandTimerSelect) return;
+    const labels = [
+      ["0", tx("timerNone")],
+      ["60", tx("timer1h")],
+      ["120", tx("timer2h")],
+      ["240", tx("timer4h")],
+      ["480", tx("timer8h")]
+    ];
+    labels.forEach(([value, label], index) => {
+      if (!commandTimerSelect.options[index]) return;
+      commandTimerSelect.options[index].value = value;
+      commandTimerSelect.options[index].textContent = label;
+    });
   }
 
   function notesLocked() {
@@ -974,6 +1030,43 @@
     return rows.sort((a, b) => a.sortTime - b.sortTime);
   }
 
+  function taskTimerRows() {
+    const rows = [];
+    const now = Date.now();
+    Object.keys(state.data.days || {}).forEach((dateKey) => {
+      const current = day(dateKey);
+      Object.entries(current.timers || {}).forEach(([text, timer]) => {
+        const active = current.pending.includes(text) || current.inProgress.includes(text);
+        if (!active) {
+          delete current.timers[text];
+          return;
+        }
+        const dueAt = Date.parse(timer.remindAt || "");
+        if (timer.fired || Number.isNaN(dueAt) || dueAt > now) return;
+        const time = clockFromIso(timer.remindAt);
+        rows.push({
+          group: "timer",
+          dateKey,
+          taskText: text,
+          time,
+          text: `${tx("timerAlarmPrefix")}：${text}`,
+          key: `timer|${dateKey}|${text}`,
+          sortTime: timeMinutes(time)
+        });
+      });
+    });
+    return rows.sort((a, b) => a.sortTime - b.sortTime);
+  }
+
+  function markTaskTimerFired(key) {
+    const [, dateKey, ...parts] = String(key || "").split("|");
+    const text = parts.join("|");
+    const timer = state.data.days?.[dateKey]?.timers?.[text];
+    if (!timer) return;
+    timer.fired = true;
+    scheduleSave();
+  }
+
   function todoRows() {
     const rows = [];
     const overdue = overdueRows();
@@ -986,10 +1079,16 @@
     dueRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
 
     const current = day();
-    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, text, key: text, editable: true, editGroup: "inProgress", editKey: text, action: "complete", label: tx("complete") }));
-    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, text, key: text, editable: true, editGroup: "pending", editKey: text, action: "complete", label: tx("complete") }));
+    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, time: taskTimerLabel(text), text, key: text, editable: true, editGroup: "inProgress", editKey: text, action: "complete", label: tx("complete") }));
+    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, time: taskTimerLabel(text), text, key: text, editable: true, editGroup: "pending", editKey: text, action: "complete", label: tx("complete") }));
     laterRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
     return rows;
+  }
+
+  function taskTimerLabel(text, dateKey = todayKey()) {
+    const timer = state.data.days?.[dateKey]?.timers?.[text];
+    if (!timer || !timer.remindAt || timer.fired) return "";
+    return `${tx("halfway")} ${clockFromIso(timer.remindAt)}`;
   }
 
   function renderTodos() {
@@ -1428,6 +1527,7 @@
     notePanel.classList.toggle("hidden", state.view !== "notes" || lockedNotes);
     content.classList.toggle("hidden", state.view === "notes" && !lockedNotes);
     commandBar.classList.toggle("hidden", !["todos", "reminders"].includes(state.view));
+    commandTimerSelect.classList.toggle("hidden", state.view !== "todos");
     commandInput.placeholder = state.view === "reminders" ? tx("reminderInputPlaceholder") : tx("placeholder");
     localStorage.setItem(VIEW_KEY, state.view);
     if (state.view === "todos") renderTodos();
@@ -1438,7 +1538,7 @@
     if (state.view === "settings") renderSettings();
   }
 
-  function addToday(text) {
+  function addToday(text, durationMinutes = 0) {
     text = text.trim();
     if (!text) return;
     const current = day();
@@ -1447,8 +1547,23 @@
       return;
     }
     current.pending.push(text);
+    if (durationMinutes > 0) scheduleTaskTimer(text, durationMinutes);
     scheduleSave();
-    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus(durationMinutes > 0 ? tx("timerSet") : "已成功记录 (๑•̀ㅂ•́)و✧");
+  }
+
+  function scheduleTaskTimer(text, durationMinutes) {
+    const minutes = Number(durationMinutes);
+    if (!minutes || minutes <= 0) return;
+    const current = day();
+    const start = new Date();
+    const remind = new Date(start.getTime() + (minutes * 60 * 1000) / 2);
+    current.timers[text] = {
+      durationMinutes: minutes,
+      startedAt: start.toISOString(),
+      remindAt: remind.toISOString(),
+      fired: false
+    };
   }
 
   function addDatedTodo(offset, text) {
@@ -1567,15 +1682,23 @@
       const old = day(dateKey);
       old.pending = old.pending.filter((item) => item !== text);
       old.hidden.push(text);
+      delete old.timers[text];
       current.completed.push(`补完成：${text}（原 ${dateKey}）`);
     } else if (row.group === "overdueSingle" || row.group === "single") {
       removeSingleReminder(row);
       current.completed.push(`${row.time ? `${row.time}  ` : ""}${row.text}`.trim());
     } else if (row.group === "reminder") {
       current.completed.push(`今日已完成：${row.time ? `${row.time}  ` : ""}${row.text}`);
+    } else if (row.group === "timer") {
+      const source = day(row.dateKey);
+      source.pending = source.pending.filter((item) => item !== row.taskText);
+      source.inProgress = source.inProgress.filter((item) => item !== row.taskText);
+      delete source.timers[row.taskText];
+      current.completed.push(row.dateKey === todayKey() ? row.taskText : `补完成：${row.taskText}（原 ${row.dateKey}）`);
     } else {
       current.pending = current.pending.filter((item) => item !== row.key);
       current.inProgress = current.inProgress.filter((item) => item !== row.key);
+      delete current.timers[row.key];
       current.completed.push(row.key);
     }
     scheduleSave();
@@ -1623,6 +1746,7 @@
       const old = day(dateKey);
       old.pending = old.pending.filter((item) => item !== oldText);
       old.hidden.push(oldText);
+      delete old.timers[oldText];
       text = oldText;
     } else if (target.group === "overdueSingle" || target.group === "single") {
       removeSingleReminder(target);
@@ -1694,6 +1818,10 @@
       return;
     }
     current[listName][index] = nextText;
+    if (current.timers[oldText]) {
+      current.timers[nextText] = current.timers[oldText];
+      delete current.timers[oldText];
+    }
     logUpdate("修改", `${oldText} -> ${nextText}`);
     scheduleSave();
     setStatus(tx("editDone"));
@@ -1718,6 +1846,7 @@
           current[field].forEach((item) => {
             if (item.includes(query)) {
               removed += 1;
+              delete current.timers[item];
               if (dateKey !== currentDate) logUpdate("删除", `${shortDate(dateKey)} ${item}`);
             } else {
               kept.push(item);
@@ -1752,6 +1881,7 @@
       const before = old.pending.length;
       old.pending = old.pending.filter((item) => item !== text);
       old.hidden.push(text);
+      delete old.timers[text];
       return before - old.pending.length;
     }
     if (row.group === "overdueSingle" || row.group === "single") {
@@ -1764,6 +1894,7 @@
     const before = current.pending.length + current.inProgress.length;
     current.pending = current.pending.filter((item) => item !== row.key);
     current.inProgress = current.inProgress.filter((item) => item !== row.key);
+    delete current.timers[row.key];
     return before - current.pending.length - current.inProgress.length;
   }
 
@@ -1801,7 +1932,7 @@
     return before - state.data[field].length;
   }
 
-  function parseCommand(raw) {
+  function parseCommand(raw, durationMinutes = 0) {
     const text = raw.trim();
     if (!text) return;
     let match = text.match(/^删除\s*(.+)$/) || text.match(/^(.+?)\s*删除$/);
@@ -1834,9 +1965,9 @@
     match = text.match(/^(明天|后天|大后天)\s*(.+)$/);
     if (match) return addDatedTodo({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]], match[2].trim());
     match = text.match(/^加入\s*(.+)$/);
-    if (match) return addToday(match[1].trim());
+    if (match) return addToday(match[1].trim(), durationMinutes);
     if (state.view === "reminders") return addDailyImportant(text);
-    return addToday(text);
+    return addToday(text, durationMinutes);
   }
 
   async function signIn() {
@@ -2068,8 +2199,10 @@
   commandInput.addEventListener("keydown", (event) => {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    parseCommand(commandInput.value);
+    const duration = state.view === "todos" ? Number(commandTimerSelect.value || 0) : 0;
+    parseCommand(commandInput.value, duration);
     commandInput.value = "";
+    commandTimerSelect.value = "0";
     render();
   });
 
