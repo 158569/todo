@@ -73,6 +73,10 @@ body {
   gap: 10px;
 }
 
+.auth-actions #localUseButton {
+  grid-column: 1 / -1;
+}
+
 button:disabled {
   opacity: 0.55;
   cursor: wait;
@@ -170,6 +174,12 @@ button:disabled {
   align-items: center;
   gap: 5px;
   min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .mini-button {
@@ -312,6 +322,136 @@ button:disabled {
   font: 14px SimSun, "Microsoft YaHei", sans-serif;
 }
 
+.settings-panel,
+.ledger-form,
+.ledger-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.setting-row,
+.ledger-form {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.setting-row-text {
+  grid-template-columns: 92px 1fr;
+}
+
+.setting-row input[type="text"],
+.setting-row input[type="color"],
+.ledger-form input,
+.ledger-form select,
+.ledger-form button,
+.setting-button {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffdf8;
+  padding: 0 9px;
+  color: var(--ink);
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.setting-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  justify-self: start;
+}
+
+.setting-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ledger-form {
+  grid-template-columns: 72px 1fr;
+}
+
+.ledger-form input[data-ledger="note"],
+.ledger-form button {
+  grid-column: 1 / -1;
+}
+
+.ledger-summary {
+  grid-template-columns: repeat(3, 1fr);
+  margin: 8px 0;
+}
+
+.ledger-summary span {
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(32, 40, 50, 0.28);
+}
+
+.modal-card {
+  width: min(100%, 360px);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 18px 46px rgba(32, 40, 50, 0.2);
+}
+
+.modal-card h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.modal-card p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.alarm-card {
+  border-color: var(--accent);
+}
+
+.alarm-badge {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.modal-actions button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  font: 14px SimSun, "Microsoft YaHei", sans-serif;
+  cursor: pointer;
+}
+
 .status {
   position: fixed;
   left: 50%;
@@ -342,6 +482,10 @@ button:disabled {
 }
 
 .hidden {
+  display: none;
+}
+
+.modal.hidden {
   display: none;
 }
 

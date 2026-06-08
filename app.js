@@ -1,17 +1,33 @@
 (function () {
   const CONFIG = window.TODO_SUPABASE_CONFIG || {};
   const VIEW_KEY = "todoCloudView";
+  const LOCAL_DATA_KEY = "todoCloudLocalData";
   const LAST_EMAIL_KEY = "todoCloudLastEmail";
   const HISTORY_DATE_KEY = "todoCloudHistoryDate";
+  const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
   const PLACEHOLDER = "写点什么吧 (｡･ω･｡)ﾉ";
+  const DEFAULT_SETTINGS = {
+    bgColor: "#fffefa",
+    topColor: "#fff7ef",
+    accentColor: "#62a68e",
+    markColor: "#fff1c6",
+    welcomeEnabled: true,
+    welcomeTitle: "待办提醒 顽张って！",
+    welcomeText: "今天也从待办开始。",
+    notificationsEnabled: false
+  };
 
   const state = {
     supabase: null,
     user: null,
     data: null,
+    localReady: false,
     view: "todos",
     historyDate: localStorage.getItem(HISTORY_DATE_KEY) || todayKey(),
     showCompleted: true,
+    alarmTimer: null,
+    activeAlarm: null,
+    firedAlarmKeys: new Set(),
     statusTimer: null,
     noteTimer: null,
     saveTimer: null
@@ -24,6 +40,7 @@
   const passwordInput = $("#passwordInput");
   const signInButton = $("#signInButton");
   const signUpButton = $("#signUpButton");
+  const localUseButton = $("#localUseButton");
   const signOutButton = $("#signOutButton");
   const userLabel = $("#userLabel");
   const content = $("#content");
@@ -35,6 +52,14 @@
   const dateLabel = $("#dateLabel");
   const exportButton = $("#exportButton");
   const importInput = $("#importInput");
+  const welcomeModal = $("#welcomeModal");
+  const welcomeTitle = $("#welcomeTitle");
+  const welcomeText = $("#welcomeText");
+  const welcomeCloseButton = $("#welcomeCloseButton");
+  const alarmModal = $("#alarmModal");
+  const alarmText = $("#alarmText");
+  const alarmDoneButton = $("#alarmDoneButton");
+  const alarmCloseButton = $("#alarmCloseButton");
 
   function emptyData() {
     return {
@@ -46,7 +71,9 @@
       dateImportantReminders: [],
       days: {},
       noteText: "",
-      versionLog: []
+      versionLog: [],
+      ledger: [],
+      settings: { ...DEFAULT_SETTINGS }
     };
   }
 
@@ -61,6 +88,8 @@
     data.dateImportantReminders = asArray(data.dateImportantReminders);
     data.noteText = typeof data.noteText === "string" ? data.noteText : "";
     data.versionLog = asArray(data.versionLog).filter(Boolean);
+    data.ledger = asArray(data.ledger).filter((item) => item && typeof item === "object");
+    data.settings = { ...DEFAULT_SETTINGS, ...(data.settings && typeof data.settings === "object" ? data.settings : {}) };
     Object.keys(data.days).forEach((dateKey) => {
       const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
       current.pending = uniqueStrings(current.pending);
@@ -217,15 +246,9 @@
 
   function initClient() {
     if (!requireConfig()) {
-      authPanel.innerHTML = [
-        '<div class="setup-box">',
-        "<h2>需要配置 Supabase</h2>",
-        "<p>复制 <code>config.example.js</code> 为 <code>config.js</code>，填入 Supabase URL 和 anon key。</p>",
-        "<p>再执行 <code>supabase-schema.sql</code> 里的建表和权限 SQL。</p>",
-        "</div>"
-      ].join("");
-      appPanel.classList.add("hidden");
-      authPanel.classList.remove("hidden");
+      loadLocalData();
+      showApp();
+      setStatus("当前是本地模式。配置 Supabase 后可同步。");
       return false;
     }
     state.supabase = window.supabase.createClient(CONFIG.url, CONFIG.anonKey, {
@@ -238,12 +261,58 @@
     return true;
   }
 
+  function localData() {
+    try {
+      return normalizeData(JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || "null"));
+    } catch {
+      return emptyData();
+    }
+  }
+
+  function loadLocalData() {
+    state.data = localData();
+    state.localReady = true;
+    return state.data;
+  }
+
+  function saveLocalData() {
+    if (!state.data) return;
+    localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(state.data));
+  }
+
+  function mergeData(primary, secondary) {
+    const merged = normalizeData(structuredCloneSafe(primary));
+    const extra = normalizeData(structuredCloneSafe(secondary));
+    merged.dailyImportantReminders = dedupeBy([...merged.dailyImportantReminders, ...extra.dailyImportantReminders], (item) => item.text && `important|${item.startDate || ""}|${item.text}`);
+    merged.dailyReminders = dedupeBy([...merged.dailyReminders, ...extra.dailyReminders], (item) => item.text && `${reminderTimes(item).join(",")}|${item.text}`);
+    merged.weeklyReminders = dedupeBy([...merged.weeklyReminders, ...extra.weeklyReminders], (item) => item.text && `${asArray(item.days).join(",")}|${item.time}|${item.text}`);
+    merged.monthlyReminders = dedupeBy([...merged.monthlyReminders, ...extra.monthlyReminders], (item) => item.text && `${item.day}|${item.text}`);
+    merged.oneTimeReminders = dedupeBy([...merged.oneTimeReminders, ...extra.oneTimeReminders], (item) => item.text && `${item.at}|${item.text}`);
+    merged.dateImportantReminders = dedupeBy([...merged.dateImportantReminders, ...extra.dateImportantReminders], (item) => item.text && `${item.date}|${item.text}`);
+    merged.versionLog = dedupeBy([...merged.versionLog, ...extra.versionLog], (item) => `${item.at || ""}|${item.action || ""}|${item.text || item}`);
+    merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
+    merged.noteText = merged.noteText || extra.noteText;
+    merged.settings = { ...DEFAULT_SETTINGS, ...extra.settings, ...merged.settings };
+
+    Object.keys(extra.days).forEach((dateKey) => {
+      merged.days[dateKey] ||= { pending: [], inProgress: [], completed: [], hidden: [] };
+      ["pending", "inProgress", "completed", "hidden"].forEach((field) => {
+        merged.days[dateKey][field] = uniqueStrings([...(merged.days[dateKey][field] || []), ...(extra.days[dateKey][field] || [])]);
+      });
+    });
+    return normalizeData(merged);
+  }
+
+  function structuredCloneSafe(value) {
+    return JSON.parse(JSON.stringify(value || emptyData()));
+  }
+
   async function loadUser() {
     const { data, error } = await state.supabase.auth.getUser();
     if (error || !data.user) {
       state.user = null;
-      state.data = null;
-      showAuth();
+      loadLocalData();
+      showApp();
       return;
     }
     state.user = data.user;
@@ -252,6 +321,7 @@
   }
 
   async function loadCloudData() {
+    const local = localData();
     const { data, error } = await state.supabase
       .from("todo_documents")
       .select("data")
@@ -259,8 +329,9 @@
       .maybeSingle();
 
     if (error) throw error;
-    state.data = normalizeData(data ? data.data : emptyData());
-    if (!data) await saveNow();
+    state.data = mergeData(data ? data.data : emptyData(), local);
+    state.localReady = true;
+    await saveNow();
   }
 
   function scheduleSave() {
@@ -269,7 +340,9 @@
   }
 
   async function saveNow() {
-    if (!state.user || !state.data) return;
+    if (!state.data) return;
+    saveLocalData();
+    if (!state.user) return;
     const { error } = await state.supabase
       .from("todo_documents")
       .upsert({
@@ -291,9 +364,108 @@
   function showApp() {
     authPanel.classList.add("hidden");
     appPanel.classList.remove("hidden");
-    userLabel.textContent = state.user.email || "";
-    if (state.user.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
+    applySettings();
+    userLabel.textContent = state.user?.email ? `已同步：${state.user.email}` : "本地模式：未登录";
+    signOutButton.textContent = state.user ? "退出" : "同步";
+    if (state.user?.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
     render();
+    showWelcomeIfNeeded();
+    startAlarmLoop();
+  }
+
+  function showWelcomeIfNeeded() {
+    const current = settings();
+    if (!current.welcomeEnabled) return;
+    if (localStorage.getItem(WELCOME_DATE_KEY) === todayKey()) return;
+    welcomeTitle.textContent = current.welcomeTitle || DEFAULT_SETTINGS.welcomeTitle;
+    welcomeText.textContent = current.welcomeText || DEFAULT_SETTINGS.welcomeText;
+    welcomeModal.classList.remove("hidden");
+    localStorage.setItem(WELCOME_DATE_KEY, todayKey());
+  }
+
+  function startAlarmLoop() {
+    clearInterval(state.alarmTimer);
+    checkAlarms();
+    state.alarmTimer = setInterval(checkAlarms, 30000);
+  }
+
+  function checkAlarms() {
+    if (!state.data) return;
+    dueAlarmRows().forEach((row) => {
+      const key = `${todayKey()}|${row.key}`;
+      if (state.firedAlarmKeys.has(key)) return;
+      state.firedAlarmKeys.add(key);
+      showAlarm(row);
+    });
+  }
+
+  function dueAlarmRows() {
+    return [...dailyReminderRows(false), ...oneTimeTodayRows()]
+      .filter((row) => row.time && row.sortTime <= nowMinutes())
+      .filter((row) => !day().completed.includes(`今日已完成：${row.time}  ${row.text}`));
+  }
+
+  function showAlarm(row) {
+    state.activeAlarm = row;
+    alarmText.textContent = `${row.time}  ${row.text}`;
+    alarmModal.classList.remove("hidden");
+    sendSystemNotification(row);
+  }
+
+  function closeAlarm() {
+    alarmModal.classList.add("hidden");
+    state.activeAlarm = null;
+  }
+
+  function sendSystemNotification(row) {
+    if (!settings().notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+    try {
+      new Notification("待办提醒", {
+        body: `${row.time}  ${row.text}`,
+        tag: row.key || `${row.time}-${row.text}`
+      });
+    } catch {
+      // Browser notification support varies by platform.
+    }
+  }
+
+  async function enableNotifications() {
+    if (!("Notification" in window)) {
+      setStatus("当前浏览器不支持系统通知。", false);
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    settings().notificationsEnabled = permission === "granted";
+    scheduleSave();
+    setStatus(permission === "granted" ? "系统通知已开启。" : "系统通知未开启。", permission === "granted");
+    render();
+  }
+
+  function settings() {
+    state.data.settings ||= { ...DEFAULT_SETTINGS };
+    state.data.settings = { ...DEFAULT_SETTINGS, ...state.data.settings };
+    return state.data.settings;
+  }
+
+  function applySettings() {
+    if (!state.data) return;
+    const current = settings();
+    document.documentElement.style.setProperty("--paper", current.bgColor);
+    document.documentElement.style.setProperty("--bg", current.topColor);
+    document.documentElement.style.setProperty("--accent", current.accentColor);
+    document.documentElement.style.setProperty("--mark", current.markColor);
+    document.documentElement.style.setProperty("--accent-soft", mixSoft(current.accentColor));
+    const theme = document.querySelector('meta[name="theme-color"]');
+    if (theme) theme.setAttribute("content", current.topColor);
+  }
+
+  function mixSoft(color) {
+    const hex = String(color || "").replace("#", "");
+    if (!/^[0-9a-f]{6}$/i.test(hex)) return "#e1f3ee";
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgb(${Math.round((r + 255 * 4) / 5)}, ${Math.round((g + 255 * 4) / 5)}, ${Math.round((b + 255 * 4) / 5)})`;
   }
 
   function section(title, rows, startIndex = 1, emptyText = "暂无") {
@@ -520,6 +692,107 @@
     noteInput.value = state.data.noteText || "";
   }
 
+  function renderLedger() {
+    const month = todayKey().slice(0, 7);
+    const items = asArray(state.data.ledger).filter((item) => String(item.date || "").startsWith(month));
+    const income = items.filter((item) => item.type === "income").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const expense = items.filter((item) => item.type !== "income").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const rows = [...items].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).map((item) => ({
+      time: item.date || "",
+      text: `${item.type === "income" ? "收入" : "支出"} ${formatMoney(item.amount)} ${item.note || ""}`.trim(),
+      key: item.id,
+      action: "deleteLedger",
+      label: "删除"
+    }));
+    content.innerHTML = [
+      '<div class="ledger-form">',
+      '<select data-ledger="type"><option value="expense">支出</option><option value="income">收入</option></select>',
+      '<input data-ledger="amount" type="number" step="0.01" placeholder="金额">',
+      '<input data-ledger="note" type="text" placeholder="备注">',
+      '<button data-action="addLedger" type="button">记一笔</button>',
+      "</div>",
+      '<div class="ledger-summary">',
+      `<span>收入 ${formatMoney(income)}</span>`,
+      `<span>支出 ${formatMoney(expense)}</span>`,
+      `<span>结余 ${formatMoney(income - expense)}</span>`,
+      "</div>",
+      section(`${month} 记录：`, rows, 1, "暂无记账")
+    ].join("");
+  }
+
+  function formatMoney(value) {
+    return Number(value || 0).toFixed(2).replace(/\.00$/, "");
+  }
+
+  function addLedger(type, amount, note) {
+    const number = Number(amount);
+    if (!number || number <= 0) {
+      setStatus("金额需要大于 0。", false);
+      return;
+    }
+    state.data.ledger.push({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      date: todayKey(),
+      type,
+      amount: Number(number.toFixed(2)),
+      note: String(note || "").trim()
+    });
+    scheduleSave();
+    setStatus("已记账 (｡･ω･｡)ﾉ");
+    render();
+  }
+
+  function deleteLedger(id) {
+    const before = state.data.ledger.length;
+    state.data.ledger = state.data.ledger.filter((item) => item.id !== id);
+    if (state.data.ledger.length === before) {
+      setStatus("没找到这条记账。", false);
+      return;
+    }
+    scheduleSave();
+    setStatus("已删除记账 (｡･ω･｡)ﾉ");
+    render();
+  }
+
+  function renderSettings() {
+    const current = settings();
+    const notificationText = !("Notification" in window)
+      ? "当前浏览器不支持系统通知"
+      : Notification.permission === "granted"
+        ? "系统通知已允许"
+        : Notification.permission === "denied"
+          ? "系统通知已被浏览器阻止"
+          : "点击开启系统通知";
+    content.innerHTML = [
+      '<div class="settings-panel">',
+      '<div class="section-title">界面颜色：</div>',
+      settingColor("bgColor", "背景色", current.bgColor),
+      settingColor("topColor", "顶部色", current.topColor),
+      settingColor("accentColor", "强调色", current.accentColor),
+      settingColor("markColor", "标题底色", current.markColor),
+      '<div class="section-title">欢迎界面：</div>',
+      settingCheckbox("welcomeEnabled", "每天首次打开显示欢迎界面", current.welcomeEnabled),
+      settingText("welcomeTitle", "欢迎标题", current.welcomeTitle),
+      settingText("welcomeText", "欢迎内容", current.welcomeText),
+      '<div class="section-title">提醒弹窗：</div>',
+      `<button class="setting-button" data-action="enableNotifications" type="button">${escapeHtml(notificationText)}</button>`,
+      '<div class="setting-note">网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。App 完全关闭或被系统冻结时，网页不能保证后台常驻。</div>',
+      "</div>"
+    ].join("");
+  }
+
+  function settingColor(key, label, value) {
+    return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="color" value="${escapeAttr(value)}"></label>`;
+  }
+
+  function settingText(key, label, value) {
+    return `<label class="setting-row setting-row-text"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="text" value="${escapeAttr(value)}"></label>`;
+  }
+
+  function settingCheckbox(key, label, value) {
+    return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="checkbox" ${value ? "checked" : ""}></label>`;
+  }
+
   function render() {
     dateLabel.textContent = navDate();
     document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === state.view));
@@ -531,6 +804,8 @@
     if (state.view === "reminders") renderReminders();
     if (state.view === "history") renderHistory();
     if (state.view === "notes") renderNotes();
+    if (state.view === "ledger") renderLedger();
+    if (state.view === "settings") renderSettings();
   }
 
   function addToday(text) {
@@ -839,6 +1114,8 @@
     if (!text) return;
     let match = text.match(/^删除\s*(.+)$/) || text.match(/^(.+?)\s*删除$/);
     if (match) return deleteByQuery(match[1].trim());
+    match = text.match(/^(支出|花了|收入|入账)\s*(\d+(?:\.\d{1,2})?)\s*(.*)$/);
+    if (match) return addLedger(match[1] === "收入" || match[1] === "入账" ? "income" : "expense", match[2], match[3]);
     match = text.match(/^完成\s*(.+)$/) || text.match(/^(.+?)(?:完成|好了|完事了|ok)$/i);
     if (match) return completeByQuery(match[1].trim());
     match = text.match(/^(.+?)ing$/i);
@@ -870,6 +1147,10 @@
   }
 
   async function signIn() {
+    if (!state.supabase) {
+      setStatus("当前未配置同步服务，只能本地使用。", false);
+      return;
+    }
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     setAuthBusy(true);
@@ -889,6 +1170,10 @@
   }
 
   async function signUp() {
+    if (!state.supabase) {
+      setStatus("当前未配置同步服务，只能本地使用。", false);
+      return;
+    }
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     setAuthBusy(true);
@@ -914,11 +1199,30 @@
     signInButton.textContent = isBusy ? "处理中" : "登录";
   }
 
+  function useLocalMode() {
+    state.user = null;
+    if (!state.data) loadLocalData();
+    showApp();
+  }
+
+  function openSyncLogin() {
+    if (!state.supabase) {
+      setStatus("当前未配置同步服务，只能本地使用。", false);
+      return;
+    }
+    showAuth();
+  }
+
   async function signOut() {
+    if (!state.user) {
+      openSyncLogin();
+      return;
+    }
     await state.supabase.auth.signOut();
     state.user = null;
-    state.data = null;
-    showAuth();
+    loadLocalData();
+    showApp();
+    setStatus("已退出，当前使用本地模式。");
   }
 
   function exportData() {
@@ -962,6 +1266,19 @@
       const row = todoRows().find((item) => item.key === event.target.dataset.key);
       if (row) completeRow(row);
     }
+    if (action === "addLedger") {
+      addLedger(
+        content.querySelector('[data-ledger="type"]').value,
+        content.querySelector('[data-ledger="amount"]').value,
+        content.querySelector('[data-ledger="note"]').value
+      );
+    }
+    if (action === "deleteLedger") {
+      deleteLedger(event.target.dataset.key);
+    }
+    if (action === "enableNotifications") {
+      enableNotifications();
+    }
     if (action === "historyToday") {
       state.historyDate = todayKey();
       localStorage.setItem(HISTORY_DATE_KEY, state.historyDate);
@@ -975,10 +1292,26 @@
   });
 
   content.addEventListener("change", (event) => {
-    if (event.target.dataset.action !== "historyDate") return;
-    state.historyDate = event.target.value || "";
-    localStorage.setItem(HISTORY_DATE_KEY, state.historyDate);
+    if (event.target.dataset.action === "historyDate") {
+      state.historyDate = event.target.value || "";
+      localStorage.setItem(HISTORY_DATE_KEY, state.historyDate);
+      render();
+      return;
+    }
+    const key = event.target.dataset.setting;
+    if (!key) return;
+    settings()[key] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+    applySettings();
+    scheduleSave();
     render();
+  });
+
+  content.addEventListener("input", (event) => {
+    const key = event.target.dataset.setting;
+    if (!key || event.target.type === "checkbox") return;
+    settings()[key] = event.target.value;
+    applySettings();
+    scheduleSave();
   });
 
   commandInput.addEventListener("keydown", (event) => {
@@ -1000,7 +1333,14 @@
 
   signInButton.addEventListener("click", signIn);
   signUpButton.addEventListener("click", signUp);
+  localUseButton.addEventListener("click", useLocalMode);
   signOutButton.addEventListener("click", signOut);
+  welcomeCloseButton.addEventListener("click", () => welcomeModal.classList.add("hidden"));
+  alarmCloseButton.addEventListener("click", closeAlarm);
+  alarmDoneButton.addEventListener("click", () => {
+    if (state.activeAlarm) completeRow(state.activeAlarm);
+    closeAlarm();
+  });
   exportButton.addEventListener("click", exportData);
   importInput.addEventListener("change", () => {
     if (importInput.files[0]) importData(importInput.files[0]);
