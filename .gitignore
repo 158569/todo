@@ -1,0 +1,5 @@
+workday-todo-board.pid
+workday-todos.backup-*.json
+workday-todos.json
+config.js
+*.zip

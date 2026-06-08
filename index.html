@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>待办提醒 顽张って！</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main id="authPanel" class="auth-panel hidden">
+    <h1>待办提醒 顽张って！</h1>
+    <p>登录后，待办数据只保存到你自己的账号下面。</p>
+    <label>
+      邮箱
+      <input id="emailInput" type="email" autocomplete="email" placeholder="you@example.com">
+    </label>
+    <label>
+      密码
+      <input id="passwordInput" type="password" autocomplete="current-password" placeholder="至少 6 位">
+    </label>
+    <div class="auth-actions">
+      <button id="signInButton" type="button">登录</button>
+      <button id="signUpButton" type="button">注册</button>
+    </div>
+  </main>
+
+  <main id="appPanel" class="shell hidden">
+    <header class="topbar">
+      <button id="pinButton" class="pin active" title="置顶标记" type="button" aria-label="置顶标记"></button>
+      <div id="dateLabel" class="date-label"></div>
+      <nav class="tabs" aria-label="主导航">
+        <button class="tab active" data-view="todos" type="button">待办</button>
+        <button class="tab" data-view="reminders" type="button">提醒</button>
+        <button class="tab" data-view="notes" type="button">便签</button>
+        <button class="tab" data-view="history" type="button">历史</button>
+      </nav>
+      <button id="signOutButton" class="mini-button" type="button">退出</button>
+    </header>
+
+    <section class="account-bar">
+      <span id="userLabel"></span>
+      <button id="exportButton" type="button">导出</button>
+      <label class="import-button">
+        导入
+        <input id="importInput" type="file" accept="application/json">
+      </label>
+    </section>
+
+    <section id="content" class="content" aria-live="polite"></section>
+
+    <section id="notePanel" class="note-panel hidden">
+      <textarea id="noteInput" spellcheck="false" placeholder="写点什么吧 (｡･ω･｡)ﾉ"></textarea>
+      <div class="note-meta">便签每 3 秒自动保存</div>
+    </section>
+
+    <footer id="commandBar" class="command-bar">
+      <input id="commandInput" type="text" autocomplete="off" placeholder="写点什么吧 (｡･ω･｡)ﾉ">
+    </footer>
+
+    <div id="status" class="status" role="status"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
