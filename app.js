@@ -11,6 +11,7 @@
   const OLD_WELCOME_TITLE = "待办提醒 顽张って！";
   const OLD_WELCOME_TEXT = "今天也从待办开始。";
   const PLACEHOLDER = "写点什么吧 (｡･ω･｡)ﾉ";
+  const DEFAULT_LEDGER_CATEGORIES = ["吃饭", "购物", "交通", "办公", "工资", "报销", "其他"];
   const DEFAULT_SETTINGS = {
     bgColor: "#fffefa",
     topColor: "#fff7ef",
@@ -20,7 +21,11 @@
     welcomeTitle: DEFAULT_WELCOME_TITLE,
     welcomeText: DEFAULT_WELCOME_TEXT,
     notificationsEnabled: false,
-    language: "zh"
+    language: "zh",
+    showNotes: true,
+    showLedger: true,
+    notesPinEnabled: false,
+    notesPin: ""
   };
   const TEXT = {
     zh: {
@@ -104,7 +109,35 @@
       topColor: "顶部色",
       accentColor: "强调色",
       markColor: "标题底色",
-      settingsResetDone: "默认设置已恢复 (｡･ω･｡)ﾉ"
+      settingsResetDone: "默认设置已恢复 (｡･ω･｡)ﾉ",
+      tutorialSection: "使用说明：",
+      openTutorial: "打开使用说明",
+      helpTitle: "待办使用说明",
+      helpClose: "知道了",
+      reminderInputPlaceholder: "输入提醒，例如：每天17:00提醒我xx",
+      editPlaceholder: "修改内容",
+      editDone: "已修改待办 (｡･ω･｡)ﾉ",
+      editDuplicate: "已经有这条了，不能改成重复内容。",
+      category: "分类",
+      addCategory: "添加分类",
+      newCategoryPlaceholder: "新增分类",
+      categoryAdded: "分类已添加 (｡･ω･｡)ﾉ",
+      categoryExists: "已经有这个分类了。",
+      categoryDeleted: "分类已删除。",
+      categoryInUse: "这个分类已经有记录，先保留。",
+      ledgerEmptyCategory: "分类不能为空。",
+      dailyPopupSection: "每日弹窗：",
+      dailyPopupEnabled: "每天首次打开显示自定义弹窗",
+      featureSection: "功能显示：",
+      showNotes: "显示便签/日记",
+      showLedger: "显示记账",
+      notesLockSection: "便签/日记密码：",
+      notesPinEnabled: "开启四位数字密码",
+      notesPin: "四位数字密码",
+      notesLockedTitle: "便签已锁定",
+      notesLockedHint: "请输入四位数字密码。",
+      unlock: "解锁",
+      wrongPin: "密码不对 (｡•́︿•̀｡)"
     },
     ja: {
       appTitle: "ToDoリマインダー 頑張って！",
@@ -187,7 +220,35 @@
       topColor: "上部色",
       accentColor: "強調色",
       markColor: "見出し色",
-      settingsResetDone: "初期設定に戻しました (｡･ω･｡)ﾉ"
+      settingsResetDone: "初期設定に戻しました (｡･ω･｡)ﾉ",
+      tutorialSection: "使い方：",
+      openTutorial: "使い方を開く",
+      helpTitle: "ToDoの使い方",
+      helpClose: "OK",
+      reminderInputPlaceholder: "例：毎日17:00にxxを通知",
+      editPlaceholder: "内容を編集",
+      editDone: "ToDoを編集しました (｡･ω･｡)ﾉ",
+      editDuplicate: "同じ内容がすでにあります。",
+      category: "分類",
+      addCategory: "分類を追加",
+      newCategoryPlaceholder: "新しい分類",
+      categoryAdded: "分類を追加しました (｡･ω･｡)ﾉ",
+      categoryExists: "この分類はすでにあります。",
+      categoryDeleted: "分類を削除しました。",
+      categoryInUse: "記録がある分類なので残します。",
+      ledgerEmptyCategory: "分類を入力してください。",
+      dailyPopupSection: "毎日のポップアップ：",
+      dailyPopupEnabled: "毎日初回だけカスタム表示",
+      featureSection: "機能表示：",
+      showNotes: "メモ/日記を表示",
+      showLedger: "家計簿を表示",
+      notesLockSection: "メモ/日記パスコード：",
+      notesPinEnabled: "4桁パスコードを有効にする",
+      notesPin: "4桁パスコード",
+      notesLockedTitle: "メモはロックされています",
+      notesLockedHint: "4桁のパスコードを入力してください。",
+      unlock: "解除",
+      wrongPin: "パスコードが違います (｡•́︿•̀｡)"
     },
     en: {
       appTitle: "Todo Reminder",
@@ -270,7 +331,35 @@
       topColor: "Top bar",
       accentColor: "Accent",
       markColor: "Highlight",
-      settingsResetDone: "Default settings restored (｡･ω･｡)ﾉ"
+      settingsResetDone: "Default settings restored (｡･ω･｡)ﾉ",
+      tutorialSection: "Guide:",
+      openTutorial: "Open guide",
+      helpTitle: "Todo guide",
+      helpClose: "Got it",
+      reminderInputPlaceholder: "Reminder example: daily 17:00 xx",
+      editPlaceholder: "Edit text",
+      editDone: "Todo updated (｡･ω･｡)ﾉ",
+      editDuplicate: "That item already exists.",
+      category: "Category",
+      addCategory: "Add category",
+      newCategoryPlaceholder: "New category",
+      categoryAdded: "Category added (｡･ω･｡)ﾉ",
+      categoryExists: "This category already exists.",
+      categoryDeleted: "Category deleted.",
+      categoryInUse: "This category has records, keeping it.",
+      ledgerEmptyCategory: "Category cannot be empty.",
+      dailyPopupSection: "Daily popup:",
+      dailyPopupEnabled: "Show custom popup once per day",
+      featureSection: "Feature visibility:",
+      showNotes: "Show notes/diary",
+      showLedger: "Show ledger",
+      notesLockSection: "Notes/diary PIN:",
+      notesPinEnabled: "Enable 4-digit PIN",
+      notesPin: "4-digit PIN",
+      notesLockedTitle: "Notes locked",
+      notesLockedHint: "Enter the 4-digit PIN.",
+      unlock: "Unlock",
+      wrongPin: "Wrong PIN (｡•́︿•̀｡)"
     }
   };
 
@@ -286,6 +375,7 @@
     alarmTimer: null,
     activeAlarm: null,
     firedAlarmKeys: new Set(),
+    notesUnlocked: false,
     statusTimer: null,
     noteTimer: null,
     saveTimer: null
@@ -318,6 +408,10 @@
   const alarmText = $("#alarmText");
   const alarmDoneButton = $("#alarmDoneButton");
   const alarmCloseButton = $("#alarmCloseButton");
+  const helpModal = $("#helpModal");
+  const helpTitle = $("#helpTitle");
+  const helpBody = $("#helpBody");
+  const helpCloseButton = $("#helpCloseButton");
 
   function emptyData() {
     return {
@@ -331,6 +425,7 @@
       noteText: "",
       versionLog: [],
       ledger: [],
+      ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
       settings: { ...DEFAULT_SETTINGS }
     };
   }
@@ -347,10 +442,12 @@
     data.noteText = typeof data.noteText === "string" ? data.noteText : "";
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger).filter((item) => item && typeof item === "object");
+    data.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...asArray(data.ledgerCategories)]);
     data.settings = { ...DEFAULT_SETTINGS, ...(data.settings && typeof data.settings === "object" ? data.settings : {}) };
     if (data.settings.welcomeTitle === OLD_WELCOME_TITLE) data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (data.settings.welcomeText === OLD_WELCOME_TEXT) data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
     if (!TEXT[data.settings.language]) data.settings.language = DEFAULT_SETTINGS.language;
+    data.settings.notesPin = String(data.settings.notesPin || "").replace(/\D/g, "").slice(0, 4);
     Object.keys(data.days).forEach((dateKey) => {
       const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
       current.pending = uniqueStrings(current.pending);
@@ -445,11 +542,7 @@
 
   function navDate() {
     const now = new Date();
-    const weekdays = {
-      zh: ["日", "一", "二", "三", "四", "五", "六"],
-      ja: ["日", "月", "火", "水", "木", "金", "土"],
-      en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-    }[language()] || ["日", "一", "二", "三", "四", "五", "六"];
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
     return `${now.getMonth() + 1}/${now.getDate()} ${weekdays[now.getDay()]}`;
   }
 
@@ -560,6 +653,7 @@
     merged.dateImportantReminders = dedupeBy([...merged.dateImportantReminders, ...extra.dateImportantReminders], (item) => item.text && `${item.date}|${item.text}`);
     merged.versionLog = dedupeBy([...merged.versionLog, ...extra.versionLog], (item) => `${item.at || ""}|${item.action || ""}|${item.text || item}`);
     merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
+    merged.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...extra.ledgerCategories, ...merged.ledgerCategories]);
     merged.noteText = merged.noteText || extra.noteText;
     merged.settings = { ...DEFAULT_SETTINGS, ...extra.settings, ...merged.settings };
 
@@ -716,6 +810,7 @@
     if (state.data.settings.welcomeTitle === OLD_WELCOME_TITLE) state.data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (state.data.settings.welcomeText === OLD_WELCOME_TEXT) state.data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
     if (!TEXT[state.data.settings.language]) state.data.settings.language = DEFAULT_SETTINGS.language;
+    state.data.settings.notesPin = String(state.data.settings.notesPin || "").replace(/\D/g, "").slice(0, 4);
     return state.data.settings;
   }
 
@@ -740,6 +835,28 @@
     });
     userLabel.textContent = state.user?.email ? `${tx("synced")}：${state.user.email}` : tx("localMode");
     signOutButton.textContent = state.user ? tx("signOut") : tx("sync");
+  }
+
+  function notesLocked() {
+    const current = settings();
+    return current.notesPinEnabled && /^\d{4}$/.test(current.notesPin || "") && !state.notesUnlocked;
+  }
+
+  function viewAvailable(view) {
+    const current = settings();
+    if (view === "notes") return current.showNotes !== false;
+    if (view === "ledger") return current.showLedger !== false;
+    return true;
+  }
+
+  function ensureViewAvailable() {
+    if (!viewAvailable(state.view)) state.view = "todos";
+  }
+
+  function applyFeatureVisibility() {
+    document.querySelectorAll('.tab[data-view="notes"]').forEach((tab) => tab.classList.toggle("hidden", settings().showNotes === false));
+    document.querySelectorAll('.tab[data-view="ledger"]').forEach((tab) => tab.classList.toggle("hidden", settings().showLedger === false));
+    if (settings().showNotes === false) state.notesUnlocked = false;
   }
 
   function applySettings() {
@@ -773,7 +890,8 @@
       const index = row.index || startIndex + i;
       const time = row.time ? `<span class="time">${escapeHtml(row.time)}</span> ` : "";
       const action = row.action ? `<button data-action="${row.action}" data-key="${escapeAttr(row.key)}">${row.label || tx("complete")}</button>` : "";
-      parts.push(`<div class="row"><span class="idx">${index}.</span><span>${time}${escapeHtml(row.text)}</span>${action}</div>`);
+      const editAttrs = row.editable ? ` class="row-main editable-row" title="双击修改" data-edit-group="${escapeAttr(row.editGroup)}" data-edit-key="${escapeAttr(row.editKey)}"` : ' class="row-main"';
+      parts.push(`<div class="row"><span class="idx">${index}.</span><span${editAttrs}>${time}${escapeHtml(row.text)}</span>${action}</div>`);
     });
     return parts.join("");
   }
@@ -868,8 +986,8 @@
     dueRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
 
     const current = day();
-    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, text, key: text, action: "complete", label: tx("complete") }));
-    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, text, key: text, action: "complete", label: tx("complete") }));
+    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, text, key: text, editable: true, editGroup: "inProgress", editKey: text, action: "complete", label: tx("complete") }));
+    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, text, key: text, editable: true, editGroup: "pending", editKey: text, action: "complete", label: tx("complete") }));
     laterRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
     return rows;
   }
@@ -1013,6 +1131,20 @@
     noteInput.value = state.data.noteText || "";
   }
 
+  function renderNoteLock() {
+    content.innerHTML = [
+      '<div class="note-lock">',
+      `<div class="section-title">${tx("notesLockedTitle")}</div>`,
+      `<p>${tx("notesLockedHint")}</p>`,
+      '<div class="note-lock-form">',
+      '<input data-note-pin type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">',
+      `<button data-action="unlockNotes" type="button">${tx("unlock")}</button>`,
+      "</div>",
+      "</div>"
+    ].join("");
+    requestAnimationFrame(() => content.querySelector("[data-note-pin]")?.focus());
+  }
+
   function monthKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
   }
@@ -1041,6 +1173,19 @@
     return { key: "thisMonth", title: tx("periodThisMonth"), match: (item) => String(item.date || "").startsWith(month) };
   }
 
+  function ledgerCategories() {
+    state.data.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...asArray(state.data.ledgerCategories)]);
+    return state.data.ledgerCategories;
+  }
+
+  function defaultLedgerCategory(type, note = "") {
+    if (type === "income") return "工资";
+    if (/饭|餐|奶茶|咖啡|吃|外卖|水果/.test(note)) return "吃饭";
+    if (/买|购物|衣|鞋|日用/.test(note)) return "购物";
+    if (/车|打车|地铁|公交|油|高铁/.test(note)) return "交通";
+    return "其他";
+  }
+
   function renderLedger() {
     const range = ledgerRange(state.ledgerPeriod);
     const items = asArray(state.data.ledger).filter(range.match);
@@ -1048,7 +1193,7 @@
     const expense = items.filter((item) => item.type !== "income").reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const rows = [...items].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).map((item) => ({
       time: item.date || "",
-      text: `${item.type === "income" ? tx("income") : tx("expense")} ${formatMoney(item.amount)} ${item.note || ""}`.trim(),
+      text: `${item.category || "其他"} ${item.type === "income" ? tx("income") : tx("expense")} ${formatMoney(item.amount)} ${item.note || ""}`.trim(),
       key: item.id,
       action: "deleteLedger",
       label: tx("delete")
@@ -1059,13 +1204,24 @@
       ["thisMonth", tx("periodThisMonth")],
       ["lastMonth", tx("periodLastMonth")]
     ].map(([key, label]) => `<button class="${range.key === key ? "active" : ""}" data-action="ledgerPeriod" data-period="${key}" type="button">${label}</button>`).join("");
+    const categoryOptions = ledgerCategories().map((category) => `<option value="${escapeAttr(category)}">${escapeHtml(category)}</option>`).join("");
+    const categoryChips = ledgerCategories().map((category) => {
+      const deletable = !DEFAULT_LEDGER_CATEGORIES.includes(category);
+      return `<button class="category-chip ${deletable ? "" : "locked"}" data-action="${deletable ? "deleteLedgerCategory" : ""}" data-category="${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>`;
+    }).join("");
     content.innerHTML = [
       '<div class="ledger-form">',
       `<select data-ledger="type"><option value="expense">${tx("expense")}</option><option value="income">${tx("income")}</option></select>`,
+      `<select data-ledger="category" aria-label="${tx("category")}">${categoryOptions}</select>`,
       `<input data-ledger="amount" type="number" step="0.01" placeholder="${tx("amount")}">`,
       `<input data-ledger="note" type="text" placeholder="${tx("note")}">`,
       `<button data-action="addLedger" type="button">${tx("addLedger")}</button>`,
       "</div>",
+      '<div class="ledger-category-tools">',
+      `<input data-ledger="newCategory" type="text" placeholder="${tx("newCategoryPlaceholder")}">`,
+      `<button data-action="addLedgerCategory" type="button">${tx("addCategory")}</button>`,
+      "</div>",
+      `<div class="category-chips">${categoryChips}</div>`,
       `<div class="ledger-periods" role="radiogroup" aria-label="${tx("date")}">${periodButtons}</div>`,
       '<div class="ledger-summary">',
       `<span>${tx("income")} ${formatMoney(income)}</span>`,
@@ -1080,21 +1236,54 @@
     return Number(value || 0).toFixed(2).replace(/\.00$/, "");
   }
 
-  function addLedger(type, amount, note) {
+  function addLedger(type, amount, note, category = "") {
     const number = Number(amount);
     if (!number || number <= 0) {
       setStatus("金额需要大于 0。", false);
       return;
     }
+    note = String(note || "").trim();
+    category = String(category || "").trim() || defaultLedgerCategory(type, note);
+    if (!ledgerCategories().includes(category)) state.data.ledgerCategories.push(category);
     state.data.ledger.push({
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       date: todayKey(),
       type,
       amount: Number(number.toFixed(2)),
-      note: String(note || "").trim()
+      category,
+      note
     });
     scheduleSave();
     setStatus("已记账 (｡･ω･｡)ﾉ");
+    render();
+  }
+
+  function addLedgerCategory(category) {
+    category = String(category || "").trim();
+    if (!category) {
+      setStatus(tx("ledgerEmptyCategory"), false);
+      return;
+    }
+    if (ledgerCategories().includes(category)) {
+      setStatus(tx("categoryExists"));
+      return;
+    }
+    state.data.ledgerCategories.push(category);
+    scheduleSave();
+    setStatus(tx("categoryAdded"));
+    render();
+  }
+
+  function deleteLedgerCategory(category) {
+    category = String(category || "").trim();
+    if (!category || DEFAULT_LEDGER_CATEGORIES.includes(category)) return;
+    if (asArray(state.data.ledger).some((item) => item.category === category)) {
+      setStatus(tx("categoryInUse"), false);
+      return;
+    }
+    state.data.ledgerCategories = ledgerCategories().filter((item) => item !== category);
+    scheduleSave();
+    setStatus(tx("categoryDeleted"));
     render();
   }
 
@@ -1126,14 +1315,22 @@
         ["ja", tx("languageJa")],
         ["en", tx("languageEn")]
       ]),
+      '<div class="section-title">' + tx("featureSection") + "</div>",
+      settingCheckbox("showNotes", tx("showNotes"), current.showNotes !== false),
+      settingCheckbox("showLedger", tx("showLedger"), current.showLedger !== false),
+      '<div class="section-title">' + tx("notesLockSection") + "</div>",
+      settingCheckbox("notesPinEnabled", tx("notesPinEnabled"), current.notesPinEnabled),
+      settingPin("notesPin", tx("notesPin"), current.notesPin),
+      '<div class="section-title">' + tx("tutorialSection") + "</div>",
+      `<button class="setting-button" data-action="openHelp" type="button">${tx("openTutorial")}</button>`,
       '<div class="section-title">' + tx("colorSection") + "</div>",
       settingColor("bgColor", tx("bgColor"), current.bgColor),
       settingColor("topColor", tx("topColor"), current.topColor),
       settingColor("accentColor", tx("accentColor"), current.accentColor),
       settingColor("markColor", tx("markColor"), current.markColor),
       `<button class="setting-button" data-action="resetSettings" type="button">${tx("resetSettings")}</button>`,
-      '<div class="section-title">' + tx("welcomeSection") + "</div>",
-      settingCheckbox("welcomeEnabled", tx("welcomeEnabled"), current.welcomeEnabled),
+      '<div class="section-title">' + tx("dailyPopupSection") + "</div>",
+      settingCheckbox("welcomeEnabled", tx("dailyPopupEnabled"), current.welcomeEnabled),
       settingText("welcomeTitle", tx("welcomeTitle"), current.welcomeTitle),
       settingText("welcomeText", tx("welcomeText"), current.welcomeText),
       '<div class="section-title">' + tx("alarmSection") + "</div>",
@@ -1155,23 +1352,88 @@
     return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="checkbox" ${value ? "checked" : ""}></label>`;
   }
 
+  function settingPin(key, label, value) {
+    return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="password" inputmode="numeric" maxlength="4" value="${escapeAttr(value)}" placeholder="0000"></label>`;
+  }
+
   function settingSelect(key, label, value, options) {
     const optionHtml = options.map(([optionValue, optionLabel]) => `<option value="${escapeAttr(optionValue)}" ${optionValue === value ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`).join("");
     return `<label class="setting-row"><span>${escapeHtml(label)}</span><select data-setting="${key}">${optionHtml}</select></label>`;
   }
 
+  function openHelp() {
+    helpTitle.textContent = tx("helpTitle");
+    helpCloseButton.textContent = tx("helpClose");
+    helpBody.innerHTML = helpHtml();
+    helpModal.classList.remove("hidden");
+  }
+
+  function closeHelp() {
+    helpModal.classList.add("hidden");
+  }
+
+  function helpHtml() {
+    if (language() === "en") {
+      return [
+        "<p>Use xx as your actual task text.</p>",
+        "<ul>",
+        "<li>Add todo: type <code>xx</code>, then Enter.</li>",
+        "<li>Mark done: <code>xx done</code> or <code>done 1</code>.</li>",
+        "<li>In progress: <code>1 ing</code> or <code>xx ing</code>.</li>",
+        "<li>Delete: <code>delete xx</code> or <code>xx delete</code>.</li>",
+        "<li>Future todo: <code>tomorrow xx</code> is supported in Chinese commands such as <code>明天xx</code>.</li>",
+        "<li>Timed reminders: <code>每天17:00提醒我xx</code>, <code>明天14:30提醒我xx</code>, <code>每周三10:25提醒我xx</code>, <code>每月1号提醒我xx</code>.</li>",
+        "<li>Edit: double-click a normal Today/In progress row.</li>",
+        "<li>Ledger commands: <code>支出25 xx</code>, <code>收入300 xx</code>.</li>",
+        "</ul>"
+      ].join("");
+    }
+    if (language() === "ja") {
+      return [
+        "<p>xx を実際の内容に置き換えて使います。</p>",
+        "<ul>",
+        "<li>ToDo追加：<code>xx</code> と入力して Enter。</li>",
+        "<li>完了：<code>xx完成</code> / <code>完成1</code>。</li>",
+        "<li>進行中：<code>1 ing</code> / <code>xx ing</code>。</li>",
+        "<li>削除：<code>删除xx</code> / <code>xx删除</code>。</li>",
+        "<li>未来のToDo：<code>明天xx</code> / <code>后天xx</code> / <code>大后天xx</code>。</li>",
+        "<li>通知：<code>每天17:00提醒我xx</code> / <code>明天14:30提醒我xx</code> / <code>每周三10:25提醒我xx</code> / <code>每月1号提醒我xx</code>。</li>",
+        "<li>編集：今日待办 / 进行中 の普通項目をダブルクリック。</li>",
+        "<li>記帳：<code>支出25 xx</code> / <code>收入300 xx</code>。</li>",
+        "</ul>"
+      ].join("");
+    }
+    return [
+      "<p>把 xx 换成具体事项即可。</p>",
+      "<ul>",
+      "<li>添加今日待办：输入 <code>xx</code> 后回车；也可以输入 <code>加入xx</code>。</li>",
+      "<li>标记完成：<code>xx完成</code>、<code>完成1</code>、<code>1 ok</code> 都可以。</li>",
+      "<li>标记进行中：<code>1 ing</code> 或 <code>xx ing</code>。</li>",
+      "<li>删除事项：<code>删除xx</code> 或 <code>xx删除</code>。</li>",
+      "<li>未来待办：<code>明天xx</code>、<code>后天xx</code>、<code>大后天xx</code>。</li>",
+      "<li>定时提醒：<code>每天17:00提醒我xx</code>、<code>明天14:30提醒我xx</code>、<code>每周三10:25提醒我xx</code>、<code>每月1号提醒我xx</code>。</li>",
+      "<li>修改文字：双击“今日待办”或“进行中”的普通事项，输入新内容后回车。</li>",
+      "<li>记账：<code>支出25 xx</code>、<code>收入300 xx</code>；也可以在记账页选择分类后记录。</li>",
+      "</ul>"
+    ].join("");
+  }
+
   function render() {
+    ensureViewAvailable();
     applyLanguage();
+    applyFeatureVisibility();
     dateLabel.textContent = navDate();
     document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === state.view));
-    notePanel.classList.toggle("hidden", state.view !== "notes");
-    content.classList.toggle("hidden", state.view === "notes");
-    commandBar.classList.toggle("hidden", state.view !== "todos");
+    const lockedNotes = state.view === "notes" && notesLocked();
+    notePanel.classList.toggle("hidden", state.view !== "notes" || lockedNotes);
+    content.classList.toggle("hidden", state.view === "notes" && !lockedNotes);
+    commandBar.classList.toggle("hidden", !["todos", "reminders"].includes(state.view));
+    commandInput.placeholder = state.view === "reminders" ? tx("reminderInputPlaceholder") : tx("placeholder");
     localStorage.setItem(VIEW_KEY, state.view);
     if (state.view === "todos") renderTodos();
     if (state.view === "reminders") renderReminders();
     if (state.view === "history") renderHistory();
-    if (state.view === "notes") renderNotes();
+    if (state.view === "notes") lockedNotes ? renderNoteLock() : renderNotes();
     if (state.view === "ledger") renderLedger();
     if (state.view === "settings") renderSettings();
   }
@@ -1376,6 +1638,68 @@
     render();
   }
 
+  function beginInlineEdit(target) {
+    if (target.querySelector("input")) return;
+    const group = target.dataset.editGroup;
+    const oldText = target.dataset.editKey;
+    if (!group || !oldText) return;
+    const input = document.createElement("input");
+    input.className = "inline-edit";
+    input.type = "text";
+    input.value = oldText;
+    input.placeholder = tx("editPlaceholder");
+    target.replaceChildren(input);
+    input.focus();
+    input.select();
+
+    let closed = false;
+    const close = (shouldSave) => {
+      if (closed) return;
+      closed = true;
+      if (shouldSave) editTodayText(group, oldText, input.value);
+      else render();
+    };
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        close(true);
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(false);
+      }
+    });
+    input.addEventListener("blur", () => close(true));
+  }
+
+  function editTodayText(group, oldText, nextText) {
+    nextText = String(nextText || "").trim();
+    if (!nextText || nextText === oldText) {
+      render();
+      return;
+    }
+    const current = day();
+    const listName = group === "inProgress" ? "inProgress" : "pending";
+    const otherName = listName === "pending" ? "inProgress" : "pending";
+    if (current[listName].includes(nextText) || current[otherName].includes(nextText)) {
+      setStatus(tx("editDuplicate"), false);
+      render();
+      return;
+    }
+    const index = current[listName].indexOf(oldText);
+    if (index === -1) {
+      setStatus("没找到这条待办 (｡•́︿•̀｡)", false);
+      render();
+      return;
+    }
+    current[listName][index] = nextText;
+    logUpdate("修改", `${oldText} -> ${nextText}`);
+    scheduleSave();
+    setStatus(tx("editDone"));
+    render();
+  }
+
   function deleteByQuery(query) {
     query = query.trim();
     if (!query) return;
@@ -1511,6 +1835,7 @@
     if (match) return addDatedTodo({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]], match[2].trim());
     match = text.match(/^加入\s*(.+)$/);
     if (match) return addToday(match[1].trim());
+    if (state.view === "reminders") return addDailyImportant(text);
     return addToday(text);
   }
 
@@ -1638,8 +1963,15 @@
       addLedger(
         content.querySelector('[data-ledger="type"]').value,
         content.querySelector('[data-ledger="amount"]').value,
-        content.querySelector('[data-ledger="note"]').value
+        content.querySelector('[data-ledger="note"]').value,
+        content.querySelector('[data-ledger="category"]').value
       );
+    }
+    if (action === "addLedgerCategory") {
+      addLedgerCategory(content.querySelector('[data-ledger="newCategory"]').value);
+    }
+    if (action === "deleteLedgerCategory") {
+      deleteLedgerCategory(event.target.dataset.category);
     }
     if (action === "ledgerPeriod") {
       state.ledgerPeriod = normalizeLedgerPeriod(event.target.dataset.period);
@@ -1654,11 +1986,24 @@
     }
     if (action === "resetSettings") {
       state.data.settings = { ...DEFAULT_SETTINGS };
+      state.notesUnlocked = false;
       applySettings();
       applyLanguage();
       scheduleSave();
       setStatus(tx("settingsResetDone"));
       render();
+    }
+    if (action === "openHelp") {
+      openHelp();
+    }
+    if (action === "unlockNotes") {
+      const value = content.querySelector("[data-note-pin]")?.value || "";
+      if (value === settings().notesPin) {
+        state.notesUnlocked = true;
+        render();
+      } else {
+        setStatus(tx("wrongPin"), false);
+      }
     }
     if (action === "historyToday") {
       state.historyDate = todayKey();
@@ -1672,6 +2017,12 @@
     }
   });
 
+  content.addEventListener("dblclick", (event) => {
+    const editable = event.target.closest(".editable-row");
+    if (!editable || !content.contains(editable)) return;
+    beginInlineEdit(editable);
+  });
+
   content.addEventListener("change", (event) => {
     if (event.target.dataset.action === "historyDate") {
       state.historyDate = event.target.value || "";
@@ -1681,7 +2032,9 @@
     }
     const key = event.target.dataset.setting;
     if (!key) return;
-    settings()[key] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+    const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+    settings()[key] = key === "notesPin" ? String(value || "").replace(/\D/g, "").slice(0, 4) : value;
+    if (key === "notesPin" || key === "notesPinEnabled") state.notesUnlocked = false;
     applySettings();
     applyLanguage();
     scheduleSave();
@@ -1691,9 +2044,25 @@
   content.addEventListener("input", (event) => {
     const key = event.target.dataset.setting;
     if (!key || event.target.type === "checkbox") return;
-    settings()[key] = event.target.value;
+    settings()[key] = key === "notesPin" ? String(event.target.value || "").replace(/\D/g, "").slice(0, 4) : event.target.value;
+    if (key === "notesPin") {
+      event.target.value = settings()[key];
+      state.notesUnlocked = false;
+    }
     applySettings();
     scheduleSave();
+  });
+
+  content.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || !event.target.matches("[data-note-pin]")) return;
+    event.preventDefault();
+    const value = event.target.value || "";
+    if (value === settings().notesPin) {
+      state.notesUnlocked = true;
+      render();
+    } else {
+      setStatus(tx("wrongPin"), false);
+    }
   });
 
   commandInput.addEventListener("keydown", (event) => {
@@ -1723,6 +2092,7 @@
     if (state.activeAlarm) completeRow(state.activeAlarm);
     closeAlarm();
   });
+  helpCloseButton.addEventListener("click", closeHelp);
   exportButton.addEventListener("click", exportData);
   importInput.addEventListener("change", () => {
     if (importInput.files[0]) importData(importInput.files[0]);
