@@ -250,6 +250,29 @@ button:disabled {
   cursor: pointer;
 }
 
+.history-filter {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+.history-filter input,
+.history-filter button {
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf8;
+  padding: 0 8px;
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.history-filter button {
+  cursor: pointer;
+}
+
 .note-panel {
   display: grid;
   grid-template-rows: 1fr 22px;

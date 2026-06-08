@@ -2,6 +2,7 @@
   const CONFIG = window.TODO_SUPABASE_CONFIG || {};
   const VIEW_KEY = "todoCloudView";
   const LAST_EMAIL_KEY = "todoCloudLastEmail";
+  const HISTORY_DATE_KEY = "todoCloudHistoryDate";
   const PLACEHOLDER = "写点什么吧 (｡･ω･｡)ﾉ";
 
   const state = {
@@ -9,6 +10,7 @@
     user: null,
     data: null,
     view: localStorage.getItem(VIEW_KEY) || "todos",
+    historyDate: localStorage.getItem(HISTORY_DATE_KEY) || todayKey(),
     showCompleted: true,
     statusTimer: null,
     noteTimer: null,
@@ -43,7 +45,8 @@
       oneTimeReminders: [],
       dateImportantReminders: [],
       days: {},
-      noteText: ""
+      noteText: "",
+      versionLog: []
     };
   }
 
@@ -57,6 +60,7 @@
     data.oneTimeReminders = asArray(data.oneTimeReminders);
     data.dateImportantReminders = asArray(data.dateImportantReminders);
     data.noteText = typeof data.noteText === "string" ? data.noteText : "";
+    data.versionLog = asArray(data.versionLog).filter(Boolean);
     Object.keys(data.days).forEach((dateKey) => {
       const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
       current.pending = uniqueStrings(current.pending);
@@ -149,6 +153,30 @@
     const now = new Date();
     const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
     return `${now.getMonth() + 1}/${now.getDate()} ${weekdays[now.getDay()]}`;
+  }
+
+  function nowStamp() {
+    const now = new Date();
+    return `${toDateKey(now)} ${normalizeTime(now.getHours(), now.getMinutes())}`;
+  }
+
+  function logUpdate(action, text) {
+    state.data.versionLog ||= [];
+    state.data.versionLog.unshift({
+      at: nowStamp(),
+      action,
+      text
+    });
+    state.data.versionLog = state.data.versionLog.slice(0, 300);
+  }
+
+  function logDate(entry) {
+    return String(entry.at || "").slice(0, 10);
+  }
+
+  function logText(entry) {
+    if (typeof entry === "string") return entry;
+    return `${entry.action || "更新"} ${entry.text || ""}`.trim();
   }
 
   function day(dateKey = todayKey()) {
@@ -437,15 +465,55 @@
     }[name] || name;
   }
 
+  function reminderLogText(item) {
+    if (item.at) {
+      const [date, time = ""] = item.at.split(" ");
+      return `${shortDate(date)} ${time} ${item.text}`.trim();
+    }
+    if (item.date) return `${shortDate(item.date)} ${item.text}`;
+    if (item.day) return `每月${Number(item.day)}号 ${item.text}`;
+    if (item.days) return `${asArray(item.days).map(dayName).join("/")} ${item.time || ""} ${item.text}`.trim();
+    const times = reminderTimes(item);
+    if (times.length) return `${times.join(" / ")} ${item.text}`;
+    return `每天 ${item.text}`;
+  }
+
   function renderHistory() {
-    let html = "";
+    const selectedDate = state.historyDate || "";
+    let html = [
+      '<div class="history-filter">',
+      '<span>日期</span>',
+      `<input data-action="historyDate" type="date" value="${escapeAttr(selectedDate)}">`,
+      '<button data-action="historyToday" type="button">今天</button>',
+      '<button data-action="historyAll" type="button">全部</button>',
+      "</div>"
+    ].join("");
+
+    const completedRows = selectedDate ? completedRowsForDate(selectedDate) : allCompletedRows();
+    html += section(selectedDate ? `已完成：${selectedDate}` : "已完成：全部", completedRows, 1, "暂无已完成");
+
+    const logRows = versionLogRows(selectedDate);
+    html += section(selectedDate ? `更新记录：${selectedDate}` : "更新记录：全部", logRows, 1, "暂无更新记录");
+    content.innerHTML = html;
+  }
+
+  function completedRowsForDate(dateKey) {
+    return asArray(state.data.days?.[dateKey]?.completed).map((text) => ({ text }));
+  }
+
+  function allCompletedRows() {
+    const rows = [];
     Object.keys(state.data.days).sort().reverse().forEach((dateKey) => {
-      const completed = day(dateKey).completed;
-      if (!completed.length) return;
-      html += `<div class="section-title">${escapeHtml(dateKey)}</div>`;
-      html += completed.map((text, i) => `<div class="row"><span class="idx">${i + 1}.</span><span>${escapeHtml(text)}</span><span></span></div>`).join("");
+      asArray(state.data.days[dateKey].completed).forEach((text) => rows.push({ time: dateKey, text }));
     });
-    content.innerHTML = html || '<div class="empty">暂无</div>';
+    return rows;
+  }
+
+  function versionLogRows(dateKey = "") {
+    return asArray(state.data.versionLog)
+      .filter((entry) => !dateKey || logDate(entry) === dateKey)
+      .sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")))
+      .map((entry) => ({ time: entry.at || "", text: logText(entry) }));
   }
 
   function renderNotes() {
@@ -491,6 +559,7 @@
       return;
     }
     current.pending.push(text);
+    if (dateKey !== todayKey()) logUpdate("增加", `${shortDate(dateKey)} ${text}`);
     scheduleSave();
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
@@ -504,6 +573,7 @@
       return;
     }
     state.data.dailyReminders.push({ times: [time], text });
+    logUpdate("增加", `${time} ${text}`);
     scheduleSave();
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
@@ -517,6 +587,7 @@
       return;
     }
     state.data.dailyImportantReminders.push({ startDate, text });
+    logUpdate("增加", `每天 ${text}`);
     scheduleSave();
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
@@ -531,6 +602,7 @@
       return;
     }
     state.data.oneTimeReminders.push({ at, text });
+    logUpdate("增加", `${shortDate(dateKey)} ${time} ${text}`);
     scheduleSave();
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
@@ -545,6 +617,7 @@
       return;
     }
     state.data.weeklyReminders.push({ days: [day], time, text });
+    logUpdate("增加", `${dayName(day)} ${time} ${text}`);
     scheduleSave();
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
@@ -558,6 +631,7 @@
       return;
     }
     state.data.monthlyReminders.push({ day: Number(dayNumber), text });
+    logUpdate("增加", `每月${Number(dayNumber)}号 ${text}`);
     scheduleSave();
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
@@ -604,14 +678,19 @@
     render();
   }
 
-  function removeSingleReminder(row) {
+  function removeSingleReminder(row, shouldLog = false) {
     if (row.source === "once") {
       const [at, text] = row.key.split("|");
       state.data.oneTimeReminders = state.data.oneTimeReminders.filter((item) => !(item.at === at && item.text === text));
+      if (shouldLog) {
+        const [date, time = ""] = at.split(" ");
+        logUpdate("删除", `${shortDate(date)} ${time} ${text}`.trim());
+      }
     }
     if (row.source === "dateImportant") {
       const [date, text] = row.key.split("|");
       state.data.dateImportantReminders = state.data.dateImportantReminders.filter((item) => !(item.date === date && item.text === text));
+      if (shouldLog) logUpdate("删除", `${shortDate(date)} ${text}`);
     }
   }
 
@@ -668,18 +747,25 @@
         if (dateKey < currentDate) return;
         const current = day(dateKey);
         ["pending", "inProgress", "hidden"].forEach((field) => {
-          const before = current[field].length;
-          current[field] = current[field].filter((item) => !item.includes(query));
-          removed += before - current[field].length;
+          const kept = [];
+          current[field].forEach((item) => {
+            if (item.includes(query)) {
+              removed += 1;
+              if (dateKey !== currentDate) logUpdate("删除", `${shortDate(dateKey)} ${item}`);
+            } else {
+              kept.push(item);
+            }
+          });
+          current[field] = kept;
         });
       });
 
-      removed += removeFromArray("dailyImportantReminders", (item) => item.text && item.text.includes(query));
-      removed += removeFromArray("dailyReminders", (item) => item.text && item.text.includes(query));
-      removed += removeFromArray("weeklyReminders", (item) => item.text && item.text.includes(query));
-      removed += removeFromArray("monthlyReminders", (item) => item.text && item.text.includes(query));
-      removed += removeFromArray("oneTimeReminders", (item) => item.text && item.text.includes(query));
-      removed += removeFromArray("dateImportantReminders", (item) => item.text && item.text.includes(query));
+      removed += removeFromArray("dailyImportantReminders", (item) => item.text && item.text.includes(query), reminderLogText);
+      removed += removeFromArray("dailyReminders", (item) => item.text && item.text.includes(query), reminderLogText);
+      removed += removeFromArray("weeklyReminders", (item) => item.text && item.text.includes(query), reminderLogText);
+      removed += removeFromArray("monthlyReminders", (item) => item.text && item.text.includes(query), reminderLogText);
+      removed += removeFromArray("oneTimeReminders", (item) => item.text && item.text.includes(query), reminderLogText);
+      removed += removeFromArray("dateImportantReminders", (item) => item.text && item.text.includes(query), reminderLogText);
     }
 
     if (!removed) {
@@ -702,7 +788,7 @@
       return before - old.pending.length;
     }
     if (row.group === "overdueSingle" || row.group === "single") {
-      removeSingleReminder(row);
+      removeSingleReminder(row, true);
       return 1;
     }
     if (row.group === "reminder") {
@@ -717,18 +803,34 @@
   function removeDailyReminder(row) {
     let removed = 0;
     if (!row.time) {
-      removed += removeFromArray("dailyImportantReminders", (item) => item.text === row.text);
+      removed += removeFromArray("dailyImportantReminders", (item) => item.text === row.text, reminderLogText);
     } else {
       const before = state.data.dailyReminders.length;
-      state.data.dailyReminders = state.data.dailyReminders.filter((item) => !(item.text === row.text && reminderTimes(item).includes(row.time)));
+      const kept = [];
+      state.data.dailyReminders.forEach((item) => {
+        if (item.text === row.text && reminderTimes(item).includes(row.time)) {
+          logUpdate("删除", reminderLogText(item));
+        } else {
+          kept.push(item);
+        }
+      });
+      state.data.dailyReminders = kept;
       removed += before - state.data.dailyReminders.length;
     }
     return removed;
   }
 
-  function removeFromArray(field, predicate) {
+  function removeFromArray(field, predicate, logFormatter = null) {
     const before = state.data[field].length;
-    state.data[field] = state.data[field].filter((item) => !predicate(item));
+    const kept = [];
+    state.data[field].forEach((item) => {
+      if (predicate(item)) {
+        if (logFormatter) logUpdate("删除", logFormatter(item));
+      } else {
+        kept.push(item);
+      }
+    });
+    state.data[field] = kept;
     return before - state.data[field].length;
   }
 
@@ -860,6 +962,23 @@
       const row = todoRows().find((item) => item.key === event.target.dataset.key);
       if (row) completeRow(row);
     }
+    if (action === "historyToday") {
+      state.historyDate = todayKey();
+      localStorage.setItem(HISTORY_DATE_KEY, state.historyDate);
+      render();
+    }
+    if (action === "historyAll") {
+      state.historyDate = "";
+      localStorage.setItem(HISTORY_DATE_KEY, state.historyDate);
+      render();
+    }
+  });
+
+  content.addEventListener("change", (event) => {
+    if (event.target.dataset.action !== "historyDate") return;
+    state.historyDate = event.target.value || "";
+    localStorage.setItem(HISTORY_DATE_KEY, state.historyDate);
+    render();
   });
 
   commandInput.addEventListener("keydown", (event) => {
