@@ -4,6 +4,7 @@
   const LOCAL_DATA_KEY = "todoCloudLocalData";
   const LAST_EMAIL_KEY = "todoCloudLastEmail";
   const HISTORY_DATE_KEY = "todoCloudHistoryDate";
+  const DIARY_DATE_KEY = "todoCloudDiaryDate";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
   const LEDGER_PERIOD_KEY = "todoCloudLedgerPeriod";
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ω･｡)ﾉ";
@@ -23,9 +24,10 @@
     notificationsEnabled: false,
     language: "zh",
     showNotes: true,
+    showDiary: true,
     showLedger: true,
-    notesPinEnabled: false,
-    notesPin: ""
+    diaryPinEnabled: false,
+    diaryPin: ""
   };
   const TEXT = {
     zh: {
@@ -40,6 +42,7 @@
       tabTodos: "待办",
       tabReminders: "提醒",
       tabNotes: "便签",
+      tabDiary: "日记",
       tabLedger: "记账",
       tabHistory: "历史",
       tabSettings: "设置",
@@ -51,6 +54,8 @@
       localMode: "本地模式：未登录",
       placeholder: PLACEHOLDER,
       noteMeta: "便签每 3 秒自动保存",
+      diaryMeta: "日记每 3 秒自动保存",
+      diaryPlaceholder: "今天想记录点什么 (｡･ω･｡)",
       enterTodos: "进入待办",
       alarmBadge: "到点了",
       alarmTitle: "待办提醒",
@@ -129,13 +134,20 @@
       dailyPopupSection: "每日弹窗：",
       dailyPopupEnabled: "每天首次打开显示自定义弹窗",
       featureSection: "功能显示：",
-      showNotes: "显示便签/日记",
+      showNotes: "显示便签",
+      showDiary: "显示日记",
       showLedger: "显示记账",
-      notesLockSection: "便签/日记密码：",
-      notesPinEnabled: "开启四位数字密码",
-      notesPin: "四位数字密码",
-      notesLockedTitle: "便签已锁定",
-      notesLockedHint: "请输入四位数字密码。",
+      diaryLockSection: "日记密码：",
+      diaryPinEnabled: "开启四位数字密码",
+      diaryPin: "新四位密码",
+      diaryPinPlaceholder: "不修改就留空",
+      diaryOldPinPrompt: "修改或关闭日记密码前，请先输入原密码。",
+      diaryPinRequired: "请输入 4 位数字密码。",
+      diaryPinUpdated: "日记密码已更新 (｡･ω･｡)ﾉ",
+      diaryPinDisabled: "日记密码已关闭。",
+      localMerged: "已合并本地旧数据并同步到当前账号。",
+      diaryLockedTitle: "日记已锁定",
+      diaryLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
       wrongPin: "密码不对 (｡•́︿•̀｡)",
       timerNone: "完成提醒：不需要",
@@ -159,6 +171,7 @@
       tabTodos: "今日",
       tabReminders: "通知",
       tabNotes: "メモ",
+      tabDiary: "日記",
       tabLedger: "家計簿",
       tabHistory: "履歴",
       tabSettings: "設定",
@@ -170,6 +183,8 @@
       localMode: "ローカル：未ログイン",
       placeholder: "ここに書いてね (｡･ω･｡)ﾉ",
       noteMeta: "メモは3秒ごとに自動保存",
+      diaryMeta: "日記は3秒ごとに自動保存",
+      diaryPlaceholder: "今日のことを書いてね (｡･ω･｡)",
       enterTodos: "始める",
       alarmBadge: "時間です",
       alarmTitle: "ToDoリマインダー",
@@ -248,13 +263,20 @@
       dailyPopupSection: "毎日のポップアップ：",
       dailyPopupEnabled: "毎日初回だけカスタム表示",
       featureSection: "機能表示：",
-      showNotes: "メモ/日記を表示",
+      showNotes: "メモを表示",
+      showDiary: "日記を表示",
       showLedger: "家計簿を表示",
-      notesLockSection: "メモ/日記パスコード：",
-      notesPinEnabled: "4桁パスコードを有効にする",
-      notesPin: "4桁パスコード",
-      notesLockedTitle: "メモはロックされています",
-      notesLockedHint: "4桁のパスコードを入力してください。",
+      diaryLockSection: "日記パスコード：",
+      diaryPinEnabled: "4桁パスコードを有効にする",
+      diaryPin: "新しい4桁パスコード",
+      diaryPinPlaceholder: "変更しない場合は空欄",
+      diaryOldPinPrompt: "日記パスコードを変更または無効化する前に、現在のパスコードを入力してください。",
+      diaryPinRequired: "4桁の数字を入力してください。",
+      diaryPinUpdated: "日記パスコードを更新しました (｡･ω･｡)ﾉ",
+      diaryPinDisabled: "日記パスコードを無効にしました。",
+      localMerged: "ローカルの旧データを統合して同期しました。",
+      diaryLockedTitle: "日記はロックされています",
+      diaryLockedHint: "4桁のパスコードを入力してください。",
       unlock: "解除",
       wrongPin: "パスコードが違います (｡•́︿•̀｡)",
       timerNone: "完了通知：なし",
@@ -278,6 +300,7 @@
       tabTodos: "Todo",
       tabReminders: "Alerts",
       tabNotes: "Notes",
+      tabDiary: "Diary",
       tabLedger: "Ledger",
       tabHistory: "History",
       tabSettings: "Settings",
@@ -289,6 +312,8 @@
       localMode: "Local mode: not signed in",
       placeholder: "Write something (｡･ω･｡)ﾉ",
       noteMeta: "Notes auto-save every 3 seconds",
+      diaryMeta: "Diary auto-saves every 3 seconds",
+      diaryPlaceholder: "Write today's diary (｡･ω･｡)",
       enterTodos: "Enter todo",
       alarmBadge: "Due now",
       alarmTitle: "Todo reminder",
@@ -367,13 +392,20 @@
       dailyPopupSection: "Daily popup:",
       dailyPopupEnabled: "Show custom popup once per day",
       featureSection: "Feature visibility:",
-      showNotes: "Show notes/diary",
+      showNotes: "Show notes",
+      showDiary: "Show diary",
       showLedger: "Show ledger",
-      notesLockSection: "Notes/diary PIN:",
-      notesPinEnabled: "Enable 4-digit PIN",
-      notesPin: "4-digit PIN",
-      notesLockedTitle: "Notes locked",
-      notesLockedHint: "Enter the 4-digit PIN.",
+      diaryLockSection: "Diary PIN:",
+      diaryPinEnabled: "Enable 4-digit PIN",
+      diaryPin: "New 4-digit PIN",
+      diaryPinPlaceholder: "Leave blank to keep current",
+      diaryOldPinPrompt: "Enter the current diary PIN before changing or disabling it.",
+      diaryPinRequired: "Enter a 4-digit PIN.",
+      diaryPinUpdated: "Diary PIN updated (｡･ω･｡)ﾉ",
+      diaryPinDisabled: "Diary PIN disabled.",
+      localMerged: "Merged local old data and synced it to this account.",
+      diaryLockedTitle: "Diary locked",
+      diaryLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
       wrongPin: "Wrong PIN (｡•́︿•̀｡)",
       timerNone: "Completion reminder: none",
@@ -394,14 +426,16 @@
     localReady: false,
     view: "todos",
     historyDate: localStorage.getItem(HISTORY_DATE_KEY) || todayKey(),
+    diaryDate: localStorage.getItem(DIARY_DATE_KEY) || todayKey(),
     ledgerPeriod: normalizeLedgerPeriod(localStorage.getItem(LEDGER_PERIOD_KEY)),
     showCompleted: true,
     alarmTimer: null,
     activeAlarm: null,
     firedAlarmKeys: new Set(),
-    notesUnlocked: false,
+    diaryUnlocked: false,
     statusTimer: null,
     noteTimer: null,
+    diaryTimer: null,
     saveTimer: null
   };
 
@@ -418,6 +452,9 @@
   const content = $("#content");
   const notePanel = $("#notePanel");
   const noteInput = $("#noteInput");
+  const diaryPanel = $("#diaryPanel");
+  const diaryInput = $("#diaryInput");
+  const diaryDateInput = $("#diaryDateInput");
   const commandBar = $("#commandBar");
   const commandInput = $("#commandInput");
   const commandTimerSelect = $("#commandTimerSelect");
@@ -448,6 +485,7 @@
       dateImportantReminders: [],
       days: {},
       noteText: "",
+      diaries: {},
       versionLog: [],
       ledger: [],
       ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
@@ -459,20 +497,33 @@
     data = data && typeof data === "object" ? data : emptyData();
     data.days = data.days && typeof data.days === "object" ? data.days : {};
     data.dailyImportantReminders = asArray(data.dailyImportantReminders);
+    if (Array.isArray(data.dailyTodos)) {
+      data.dailyImportantReminders = [
+        ...data.dailyImportantReminders,
+        ...data.dailyTodos.map((text) => ({ text: String(text || "").trim() })).filter((item) => item.text)
+      ];
+    }
     data.dailyReminders = asArray(data.dailyReminders);
     data.weeklyReminders = asArray(data.weeklyReminders);
     data.monthlyReminders = asArray(data.monthlyReminders);
     data.oneTimeReminders = asArray(data.oneTimeReminders);
     data.dateImportantReminders = asArray(data.dateImportantReminders);
     data.noteText = typeof data.noteText === "string" ? data.noteText : "";
+    if (!data.noteText && Array.isArray(data.notes)) data.noteText = data.notes.filter(Boolean).join("\n");
+    data.diaries = data.diaries && typeof data.diaries === "object" ? data.diaries : {};
+    Object.keys(data.diaries).forEach((dateKey) => {
+      data.diaries[dateKey] = typeof data.diaries[dateKey] === "string" ? data.diaries[dateKey] : "";
+    });
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger).filter((item) => item && typeof item === "object");
     data.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...asArray(data.ledgerCategories)]);
     data.settings = { ...DEFAULT_SETTINGS, ...(data.settings && typeof data.settings === "object" ? data.settings : {}) };
     if (data.settings.welcomeTitle === OLD_WELCOME_TITLE) data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (data.settings.welcomeText === OLD_WELCOME_TEXT) data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
+    if (data.settings.notesPin && !data.settings.diaryPin) data.settings.diaryPin = data.settings.notesPin;
+    if (data.settings.notesPinEnabled && data.settings.diaryPinEnabled === DEFAULT_SETTINGS.diaryPinEnabled) data.settings.diaryPinEnabled = true;
     if (!TEXT[data.settings.language]) data.settings.language = DEFAULT_SETTINGS.language;
-    data.settings.notesPin = String(data.settings.notesPin || "").replace(/\D/g, "").slice(0, 4);
+    data.settings.diaryPin = String(data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
     Object.keys(data.days).forEach((dateKey) => {
       const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
       current.pending = uniqueStrings(current.pending);
@@ -692,6 +743,7 @@
     merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
     merged.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...extra.ledgerCategories, ...merged.ledgerCategories]);
     merged.noteText = merged.noteText || extra.noteText;
+    merged.diaries = { ...extra.diaries, ...merged.diaries };
     merged.settings = { ...DEFAULT_SETTINGS, ...extra.settings, ...merged.settings };
 
     Object.keys(extra.days).forEach((dateKey) => {
@@ -706,6 +758,28 @@
 
   function structuredCloneSafe(value) {
     return JSON.parse(JSON.stringify(value || emptyData()));
+  }
+
+  function hasMeaningfulData(data) {
+    const current = normalizeData(data);
+    return Boolean(
+      current.noteText ||
+      Object.values(current.diaries).some(Boolean) ||
+      current.ledger.length ||
+      current.versionLog.length ||
+      current.dailyImportantReminders.length ||
+      current.dailyReminders.length ||
+      current.weeklyReminders.length ||
+      current.monthlyReminders.length ||
+      current.oneTimeReminders.length ||
+      current.dateImportantReminders.length ||
+      Object.values(current.days).some((item) =>
+        asArray(item.pending).length ||
+        asArray(item.inProgress).length ||
+        asArray(item.completed).length ||
+        asArray(item.hidden).length
+      )
+    );
   }
 
   async function loadUser() {
@@ -723,6 +797,7 @@
 
   async function loadCloudData() {
     const local = localData();
+    const hadLocalData = hasMeaningfulData(local);
     const { data, error } = await state.supabase
       .from("todo_documents")
       .select("data")
@@ -733,6 +808,7 @@
     state.data = mergeData(data ? data.data : emptyData(), local);
     state.localReady = true;
     await saveNow();
+    if (hadLocalData) setStatus(tx("localMerged"));
   }
 
   function scheduleSave() {
@@ -849,7 +925,7 @@
     if (state.data.settings.welcomeTitle === OLD_WELCOME_TITLE) state.data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (state.data.settings.welcomeText === OLD_WELCOME_TEXT) state.data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
     if (!TEXT[state.data.settings.language]) state.data.settings.language = DEFAULT_SETTINGS.language;
-    state.data.settings.notesPin = String(state.data.settings.notesPin || "").replace(/\D/g, "").slice(0, 4);
+    state.data.settings.diaryPin = String(state.data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
     return state.data.settings;
   }
 
@@ -893,14 +969,77 @@
     });
   }
 
-  function notesLocked() {
+  function diaryLocked() {
     const current = settings();
-    return current.notesPinEnabled && /^\d{4}$/.test(current.notesPin || "") && !state.notesUnlocked;
+    return current.diaryPinEnabled && /^\d{4}$/.test(current.diaryPin || "") && !state.diaryUnlocked;
+  }
+
+  function activeDiaryPin() {
+    const current = settings();
+    return current.diaryPinEnabled && /^\d{4}$/.test(current.diaryPin || "") ? current.diaryPin : "";
+  }
+
+  function verifyDiaryPinForChange() {
+    const oldPin = activeDiaryPin();
+    if (!oldPin) return true;
+    const value = window.prompt(tx("diaryOldPinPrompt"));
+    if (value === null) return false;
+    return String(value || "").replace(/\D/g, "").slice(0, 4) === oldPin;
+  }
+
+  function updateDiaryPin(nextPin) {
+    const cleanPin = String(nextPin || "").replace(/\D/g, "").slice(0, 4);
+    if (!/^\d{4}$/.test(cleanPin)) {
+      setStatus(tx("diaryPinRequired"), false);
+      render();
+      return false;
+    }
+    if (activeDiaryPin() && cleanPin !== activeDiaryPin() && !verifyDiaryPinForChange()) {
+      setStatus(tx("wrongPin"), false);
+      render();
+      return false;
+    }
+    settings().diaryPin = cleanPin;
+    settings().diaryPinEnabled = true;
+    state.diaryUnlocked = false;
+    scheduleSave();
+    setStatus(tx("diaryPinUpdated"));
+    render();
+    return true;
+  }
+
+  function toggleDiaryPin(enabled) {
+    const current = settings();
+    if (!enabled && activeDiaryPin()) {
+      if (!verifyDiaryPinForChange()) {
+        setStatus(tx("wrongPin"), false);
+        render();
+        return false;
+      }
+      current.diaryPinEnabled = false;
+      current.diaryPin = "";
+      state.diaryUnlocked = false;
+      scheduleSave();
+      setStatus(tx("diaryPinDisabled"));
+      render();
+      return true;
+    }
+    if (enabled && !activeDiaryPin()) {
+      setStatus(tx("diaryPinRequired"), false);
+      render();
+      return false;
+    }
+    current.diaryPinEnabled = Boolean(enabled);
+    state.diaryUnlocked = false;
+    scheduleSave();
+    render();
+    return true;
   }
 
   function viewAvailable(view) {
     const current = settings();
     if (view === "notes") return current.showNotes !== false;
+    if (view === "diary") return current.showDiary !== false;
     if (view === "ledger") return current.showLedger !== false;
     return true;
   }
@@ -911,8 +1050,9 @@
 
   function applyFeatureVisibility() {
     document.querySelectorAll('.tab[data-view="notes"]').forEach((tab) => tab.classList.toggle("hidden", settings().showNotes === false));
+    document.querySelectorAll('.tab[data-view="diary"]').forEach((tab) => tab.classList.toggle("hidden", settings().showDiary === false));
     document.querySelectorAll('.tab[data-view="ledger"]').forEach((tab) => tab.classList.toggle("hidden", settings().showLedger === false));
-    if (settings().showNotes === false) state.notesUnlocked = false;
+    if (settings().showDiary === false) state.diaryUnlocked = false;
   }
 
   function applySettings() {
@@ -1230,18 +1370,24 @@
     noteInput.value = state.data.noteText || "";
   }
 
-  function renderNoteLock() {
+  function renderDiary() {
+    state.data.diaries ||= {};
+    diaryDateInput.value = state.diaryDate;
+    diaryInput.value = state.data.diaries[state.diaryDate] || "";
+  }
+
+  function renderDiaryLock() {
     content.innerHTML = [
       '<div class="note-lock">',
-      `<div class="section-title">${tx("notesLockedTitle")}</div>`,
-      `<p>${tx("notesLockedHint")}</p>`,
+      `<div class="section-title">${tx("diaryLockedTitle")}</div>`,
+      `<p>${tx("diaryLockedHint")}</p>`,
       '<div class="note-lock-form">',
-      '<input data-note-pin type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">',
-      `<button data-action="unlockNotes" type="button">${tx("unlock")}</button>`,
+      '<input data-diary-pin type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000">',
+      `<button data-action="unlockDiary" type="button">${tx("unlock")}</button>`,
       "</div>",
       "</div>"
     ].join("");
-    requestAnimationFrame(() => content.querySelector("[data-note-pin]")?.focus());
+    requestAnimationFrame(() => content.querySelector("[data-diary-pin]")?.focus());
   }
 
   function monthKey(date) {
@@ -1416,10 +1562,11 @@
       ]),
       '<div class="section-title">' + tx("featureSection") + "</div>",
       settingCheckbox("showNotes", tx("showNotes"), current.showNotes !== false),
+      settingCheckbox("showDiary", tx("showDiary"), current.showDiary !== false),
       settingCheckbox("showLedger", tx("showLedger"), current.showLedger !== false),
-      '<div class="section-title">' + tx("notesLockSection") + "</div>",
-      settingCheckbox("notesPinEnabled", tx("notesPinEnabled"), current.notesPinEnabled),
-      settingPin("notesPin", tx("notesPin"), current.notesPin),
+      '<div class="section-title">' + tx("diaryLockSection") + "</div>",
+      settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled),
+      settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")),
       '<div class="section-title">' + tx("tutorialSection") + "</div>",
       `<button class="setting-button" data-action="openHelp" type="button">${tx("openTutorial")}</button>`,
       '<div class="section-title">' + tx("colorSection") + "</div>",
@@ -1451,8 +1598,8 @@
     return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="checkbox" ${value ? "checked" : ""}></label>`;
   }
 
-  function settingPin(key, label, value) {
-    return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="password" inputmode="numeric" maxlength="4" value="${escapeAttr(value)}" placeholder="0000"></label>`;
+  function settingPin(key, label, value, placeholder = "0000") {
+    return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="password" inputmode="numeric" maxlength="4" value="${escapeAttr(value)}" placeholder="${escapeAttr(placeholder)}"></label>`;
   }
 
   function settingSelect(key, label, value, options) {
@@ -1523,9 +1670,10 @@
     applyFeatureVisibility();
     dateLabel.textContent = navDate();
     document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === state.view));
-    const lockedNotes = state.view === "notes" && notesLocked();
-    notePanel.classList.toggle("hidden", state.view !== "notes" || lockedNotes);
-    content.classList.toggle("hidden", state.view === "notes" && !lockedNotes);
+    const lockedDiary = state.view === "diary" && diaryLocked();
+    notePanel.classList.toggle("hidden", state.view !== "notes");
+    diaryPanel.classList.toggle("hidden", state.view !== "diary" || lockedDiary);
+    content.classList.toggle("hidden", (state.view === "notes") || (state.view === "diary" && !lockedDiary));
     commandBar.classList.toggle("hidden", !["todos", "reminders"].includes(state.view));
     commandTimerSelect.classList.toggle("hidden", state.view !== "todos");
     commandInput.placeholder = state.view === "reminders" ? tx("reminderInputPlaceholder") : tx("placeholder");
@@ -1533,7 +1681,8 @@
     if (state.view === "todos") renderTodos();
     if (state.view === "reminders") renderReminders();
     if (state.view === "history") renderHistory();
-    if (state.view === "notes") lockedNotes ? renderNoteLock() : renderNotes();
+    if (state.view === "notes") renderNotes();
+    if (state.view === "diary") lockedDiary ? renderDiaryLock() : renderDiary();
     if (state.view === "ledger") renderLedger();
     if (state.view === "settings") renderSettings();
   }
@@ -2117,7 +2266,7 @@
     }
     if (action === "resetSettings") {
       state.data.settings = { ...DEFAULT_SETTINGS };
-      state.notesUnlocked = false;
+      state.diaryUnlocked = false;
       applySettings();
       applyLanguage();
       scheduleSave();
@@ -2127,10 +2276,10 @@
     if (action === "openHelp") {
       openHelp();
     }
-    if (action === "unlockNotes") {
-      const value = content.querySelector("[data-note-pin]")?.value || "";
-      if (value === settings().notesPin) {
-        state.notesUnlocked = true;
+    if (action === "unlockDiary") {
+      const value = content.querySelector("[data-diary-pin]")?.value || "";
+      if (value === settings().diaryPin) {
+        state.diaryUnlocked = true;
         render();
       } else {
         setStatus(tx("wrongPin"), false);
@@ -2164,8 +2313,16 @@
     const key = event.target.dataset.setting;
     if (!key) return;
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
-    settings()[key] = key === "notesPin" ? String(value || "").replace(/\D/g, "").slice(0, 4) : value;
-    if (key === "notesPin" || key === "notesPinEnabled") state.notesUnlocked = false;
+    if (key === "diaryPin") {
+      if (String(value || "").trim()) updateDiaryPin(value);
+      else render();
+      return;
+    }
+    if (key === "diaryPinEnabled") {
+      toggleDiaryPin(value);
+      return;
+    }
+    settings()[key] = value;
     applySettings();
     applyLanguage();
     scheduleSave();
@@ -2175,21 +2332,21 @@
   content.addEventListener("input", (event) => {
     const key = event.target.dataset.setting;
     if (!key || event.target.type === "checkbox") return;
-    settings()[key] = key === "notesPin" ? String(event.target.value || "").replace(/\D/g, "").slice(0, 4) : event.target.value;
-    if (key === "notesPin") {
-      event.target.value = settings()[key];
-      state.notesUnlocked = false;
+    if (key === "diaryPin") {
+      event.target.value = String(event.target.value || "").replace(/\D/g, "").slice(0, 4);
+      return;
     }
+    settings()[key] = event.target.value;
     applySettings();
     scheduleSave();
   });
 
   content.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" || !event.target.matches("[data-note-pin]")) return;
+    if (event.key !== "Enter" || !event.target.matches("[data-diary-pin]")) return;
     event.preventDefault();
     const value = event.target.value || "";
-    if (value === settings().notesPin) {
-      state.notesUnlocked = true;
+    if (value === settings().diaryPin) {
+      state.diaryUnlocked = true;
       render();
     } else {
       setStatus(tx("wrongPin"), false);
@@ -2212,6 +2369,22 @@
       state.data.noteText = noteInput.value;
       scheduleSave();
       setStatus("便签已自动保存 (｡･ω･｡)ﾉ");
+    }, 3000);
+  });
+
+  diaryDateInput.addEventListener("change", () => {
+    state.diaryDate = diaryDateInput.value || todayKey();
+    localStorage.setItem(DIARY_DATE_KEY, state.diaryDate);
+    render();
+  });
+
+  diaryInput.addEventListener("input", () => {
+    clearTimeout(state.diaryTimer);
+    state.diaryTimer = setTimeout(() => {
+      state.data.diaries ||= {};
+      state.data.diaries[state.diaryDate] = diaryInput.value;
+      scheduleSave();
+      setStatus("日记已自动保存 (｡･ω･｡)ﾉ");
     }, 3000);
   });
 

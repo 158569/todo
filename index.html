@@ -36,6 +36,7 @@
         <button class="tab active" data-view="todos" data-i18n="tabTodos" type="button">待办</button>
         <button class="tab" data-view="reminders" data-i18n="tabReminders" type="button">提醒</button>
         <button class="tab" data-view="notes" data-i18n="tabNotes" type="button">便签</button>
+        <button class="tab" data-view="diary" data-i18n="tabDiary" type="button">日记</button>
         <button class="tab" data-view="ledger" data-i18n="tabLedger" type="button">记账</button>
         <button class="tab" data-view="history" data-i18n="tabHistory" type="button">历史</button>
         <button class="tab" data-view="settings" data-i18n="tabSettings" type="button">设置</button>
@@ -57,6 +58,14 @@
     <section id="notePanel" class="note-panel hidden">
       <textarea id="noteInput" spellcheck="false" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ"></textarea>
       <div class="note-meta" data-i18n="noteMeta">便签每 3 秒自动保存</div>
+    </section>
+
+    <section id="diaryPanel" class="note-panel diary-panel hidden">
+      <div class="diary-toolbar">
+        <input id="diaryDateInput" type="date">
+        <span data-i18n="diaryMeta">日记每 3 秒自动保存</span>
+      </div>
+      <textarea id="diaryInput" spellcheck="false" data-i18n-placeholder="diaryPlaceholder" placeholder="今天想记录点什么 (｡･ω･｡)"></textarea>
     </section>
 
     <footer id="commandBar" class="command-bar">

@@ -341,6 +341,30 @@ button:disabled {
   font-size: 12px;
 }
 
+.diary-panel {
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+}
+
+.diary-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.diary-toolbar input {
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffdf8;
+  padding: 0 8px;
+  color: var(--ink);
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
 .note-lock {
   display: grid;
   gap: 12px;
