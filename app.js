@@ -436,24 +436,46 @@
   async function signIn() {
     const email = emailInput.value.trim();
     const password = passwordInput.value;
-    const { error } = await state.supabase.auth.signInWithPassword({ email, password });
-    if (error) {
+    setAuthBusy(true);
+    setStatus("正在登录...");
+    try {
+      const { error } = await state.supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setStatus(`登录失败：${error.message}`, false);
+        return;
+      }
+      await loadUser();
+    } catch (error) {
       setStatus(`登录失败：${error.message}`, false);
-      return;
+    } finally {
+      setAuthBusy(false);
     }
-    await loadUser();
   }
 
   async function signUp() {
     const email = emailInput.value.trim();
     const password = passwordInput.value;
-    const { error } = await state.supabase.auth.signUp({ email, password });
-    if (error) {
+    setAuthBusy(true);
+    setStatus("正在注册...");
+    try {
+      const { error } = await state.supabase.auth.signUp({ email, password });
+      if (error) {
+        setStatus(`注册失败：${error.message}`, false);
+        return;
+      }
+      setStatus("注册成功。若 Supabase 开了邮件确认，请先去邮箱确认。");
+      await loadUser();
+    } catch (error) {
       setStatus(`注册失败：${error.message}`, false);
-      return;
+    } finally {
+      setAuthBusy(false);
     }
-    setStatus("注册成功。若 Supabase 开了邮件确认，请先去邮箱确认。");
-    await loadUser();
+  }
+
+  function setAuthBusy(isBusy) {
+    signInButton.disabled = isBusy;
+    signUpButton.disabled = isBusy;
+    signInButton.textContent = isBusy ? "处理中" : "登录";
   }
 
   async function signOut() {
@@ -533,7 +555,12 @@
   });
 
   if (initClient()) {
-    state.supabase.auth.onAuthStateChange(() => loadUser());
+    state.supabase.auth.onAuthStateChange(() => {
+      loadUser().catch((error) => {
+        setStatus(`初始化失败：${error.message}`, false);
+        showAuth();
+      });
+    });
     loadUser().catch((error) => {
       setStatus(`初始化失败：${error.message}`, false);
       showAuth();
