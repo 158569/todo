@@ -11,20 +11,20 @@
 </head>
 <body>
   <main id="authPanel" class="auth-panel hidden">
-    <h1>待办提醒 顽张って！</h1>
-    <p>不登录也能本地使用；登录后可在电脑和手机之间同步。</p>
+    <h1 data-i18n="appTitle">待办提醒 顽张って！</h1>
+    <p data-i18n="authHint">不登录也能本地使用；登录后可在电脑和手机之间同步。</p>
     <label>
-      邮箱
+      <span data-i18n="email">邮箱</span>
       <input id="emailInput" type="email" autocomplete="email" placeholder="you@example.com">
     </label>
     <label>
-      密码
-      <input id="passwordInput" type="password" autocomplete="current-password" placeholder="至少 6 位">
+      <span data-i18n="password">密码</span>
+      <input id="passwordInput" type="password" autocomplete="current-password" data-i18n-placeholder="passwordPlaceholder" placeholder="至少 6 位">
     </label>
     <div class="auth-actions">
-      <button id="signInButton" type="button">登录</button>
-      <button id="signUpButton" type="button">注册</button>
-      <button id="localUseButton" type="button">先本地使用</button>
+      <button id="signInButton" data-i18n="login" type="button">登录</button>
+      <button id="signUpButton" data-i18n="register" type="button">注册</button>
+      <button id="localUseButton" data-i18n="localUse" type="button">先本地使用</button>
     </div>
   </main>
 
@@ -33,21 +33,21 @@
       <button id="pinButton" class="pin active" title="置顶标记" type="button" aria-label="置顶标记"></button>
       <div id="dateLabel" class="date-label"></div>
       <nav class="tabs" aria-label="主导航">
-        <button class="tab active" data-view="todos" type="button">待办</button>
-        <button class="tab" data-view="reminders" type="button">提醒</button>
-        <button class="tab" data-view="notes" type="button">便签</button>
-        <button class="tab" data-view="ledger" type="button">记账</button>
-        <button class="tab" data-view="history" type="button">历史</button>
-        <button class="tab" data-view="settings" type="button">设置</button>
+        <button class="tab active" data-view="todos" data-i18n="tabTodos" type="button">待办</button>
+        <button class="tab" data-view="reminders" data-i18n="tabReminders" type="button">提醒</button>
+        <button class="tab" data-view="notes" data-i18n="tabNotes" type="button">便签</button>
+        <button class="tab" data-view="ledger" data-i18n="tabLedger" type="button">记账</button>
+        <button class="tab" data-view="history" data-i18n="tabHistory" type="button">历史</button>
+        <button class="tab" data-view="settings" data-i18n="tabSettings" type="button">设置</button>
       </nav>
       <button id="signOutButton" class="mini-button" type="button">退出</button>
     </header>
 
     <section class="account-bar">
       <span id="userLabel"></span>
-      <button id="exportButton" type="button">导出</button>
+      <button id="exportButton" data-i18n="export" type="button">导出</button>
       <label class="import-button">
-        导入
+        <span data-i18n="import">导入</span>
         <input id="importInput" type="file" accept="application/json">
       </label>
     </section>
@@ -55,12 +55,12 @@
     <section id="content" class="content" aria-live="polite"></section>
 
     <section id="notePanel" class="note-panel hidden">
-      <textarea id="noteInput" spellcheck="false" placeholder="写点什么吧 (｡･ω･｡)ﾉ"></textarea>
-      <div class="note-meta">便签每 3 秒自动保存</div>
+      <textarea id="noteInput" spellcheck="false" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ"></textarea>
+      <div class="note-meta" data-i18n="noteMeta">便签每 3 秒自动保存</div>
     </section>
 
     <footer id="commandBar" class="command-bar">
-      <input id="commandInput" type="text" autocomplete="off" placeholder="写点什么吧 (｡･ω･｡)ﾉ">
+      <input id="commandInput" type="text" autocomplete="off" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ">
     </footer>
 
   </main>
@@ -68,23 +68,23 @@
   <div id="status" class="status" role="status"></div>
 
   <div id="welcomeModal" class="modal hidden" role="dialog" aria-modal="true">
-    <section class="modal-card">
+    <section class="modal-card welcome-card">
       <h2 id="welcomeTitle"></h2>
       <p id="welcomeText"></p>
       <div class="modal-actions">
-        <button id="welcomeCloseButton" type="button">进入待办</button>
+        <button id="welcomeCloseButton" data-i18n="enterTodos" type="button">进入待办</button>
       </div>
     </section>
   </div>
 
   <div id="alarmModal" class="modal hidden" role="alertdialog" aria-modal="true">
     <section class="modal-card alarm-card">
-      <div class="alarm-badge">到点了</div>
-      <h2 id="alarmTitle">待办提醒</h2>
+      <div class="alarm-badge" data-i18n="alarmBadge">到点了</div>
+      <h2 id="alarmTitle" data-i18n="alarmTitle">待办提醒</h2>
       <p id="alarmText"></p>
       <div class="modal-actions">
-        <button id="alarmDoneButton" type="button">今日完成</button>
-        <button id="alarmCloseButton" type="button">知道了</button>
+        <button id="alarmDoneButton" data-i18n="alarmDone" type="button">今日完成</button>
+        <button id="alarmCloseButton" data-i18n="alarmClose" type="button">知道了</button>
       </div>
     </section>
   </div>

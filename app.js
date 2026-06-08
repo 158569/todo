@@ -5,6 +5,11 @@
   const LAST_EMAIL_KEY = "todoCloudLastEmail";
   const HISTORY_DATE_KEY = "todoCloudHistoryDate";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
+  const LEDGER_PERIOD_KEY = "todoCloudLedgerPeriod";
+  const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ω･｡)ﾉ";
+  const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
+  const OLD_WELCOME_TITLE = "待办提醒 顽张って！";
+  const OLD_WELCOME_TEXT = "今天也从待办开始。";
   const PLACEHOLDER = "写点什么吧 (｡･ω･｡)ﾉ";
   const DEFAULT_SETTINGS = {
     bgColor: "#fffefa",
@@ -12,9 +17,261 @@
     accentColor: "#62a68e",
     markColor: "#fff1c6",
     welcomeEnabled: true,
-    welcomeTitle: "待办提醒 顽张って！",
-    welcomeText: "今天也从待办开始。",
-    notificationsEnabled: false
+    welcomeTitle: DEFAULT_WELCOME_TITLE,
+    welcomeText: DEFAULT_WELCOME_TEXT,
+    notificationsEnabled: false,
+    language: "zh"
+  };
+  const TEXT = {
+    zh: {
+      appTitle: "待办提醒 顽张って！",
+      authHint: "不登录也能本地使用；登录后可在电脑和手机之间同步。",
+      email: "邮箱",
+      password: "密码",
+      passwordPlaceholder: "至少 6 位",
+      login: "登录",
+      register: "注册",
+      localUse: "先本地使用",
+      tabTodos: "待办",
+      tabReminders: "提醒",
+      tabNotes: "便签",
+      tabLedger: "记账",
+      tabHistory: "历史",
+      tabSettings: "设置",
+      export: "导出",
+      import: "导入",
+      signOut: "退出",
+      sync: "同步",
+      synced: "已同步",
+      localMode: "本地模式：未登录",
+      placeholder: PLACEHOLDER,
+      noteMeta: "便签每 3 秒自动保存",
+      enterTodos: "进入待办",
+      alarmBadge: "到点了",
+      alarmTitle: "待办提醒",
+      alarmDone: "今日完成",
+      alarmClose: "知道了",
+      overdueTitle: "过期待办：",
+      inProgressTitle: "进行中：",
+      todosTitle: "今日待办：",
+      completedTitle: "已完成：",
+      collapse: "▼ 点击收起",
+      expand: "▶ 点击展开",
+      none: "暂无",
+      noOverdue: "没有过期待办哦 (｡･ω･｡)ﾉ",
+      complete: "完成",
+      delete: "删除",
+      futureTodos: "未来待办：",
+      dailyReminders: "每日提醒：",
+      weeklyReminders: "每周提醒：",
+      monthlyReminders: "每月提醒：",
+      date: "日期",
+      today: "今天",
+      all: "全部",
+      completedAll: "已完成：全部",
+      updateAll: "更新记录：全部",
+      noCompleted: "暂无已完成",
+      noUpdate: "暂无更新记录",
+      income: "收入",
+      expense: "支出",
+      balance: "结余",
+      amount: "金额",
+      note: "备注",
+      addLedger: "记一笔 (｡･ω･｡)ﾉ",
+      ledgerRecords: "记录：",
+      noLedger: "暂无记账",
+      periodToday: "今日",
+      periodYesterday: "昨日",
+      periodThisMonth: "本月",
+      periodLastMonth: "上月",
+      uiLanguage: "语言",
+      languageZh: "中文",
+      languageJa: "日本語",
+      languageEn: "English",
+      colorSection: "界面颜色：",
+      resetSettings: "恢复默认设置",
+      welcomeSection: "欢迎界面：",
+      welcomeEnabled: "每天首次打开显示欢迎界面",
+      welcomeTitle: "欢迎标题",
+      welcomeText: "欢迎内容",
+      alarmSection: "提醒弹窗：",
+      notifyUnsupported: "当前浏览器不支持系统通知",
+      notifyAllowed: "系统通知已允许",
+      notifyDenied: "系统通知已被浏览器阻止",
+      notifyEnable: "点击开启系统通知",
+      notifyNote: "网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。App 完全关闭或被系统冻结时，网页不能保证后台常驻。",
+      bgColor: "背景色",
+      topColor: "顶部色",
+      accentColor: "强调色",
+      markColor: "标题底色",
+      settingsResetDone: "默认设置已恢复 (｡･ω･｡)ﾉ"
+    },
+    ja: {
+      appTitle: "ToDoリマインダー 頑張って！",
+      authHint: "ログインしなくてもローカルで使えます。ログインするとPCとスマホで同期できます。",
+      email: "メール",
+      password: "パスワード",
+      passwordPlaceholder: "6文字以上",
+      login: "ログイン",
+      register: "登録",
+      localUse: "ローカルで使う",
+      tabTodos: "今日",
+      tabReminders: "通知",
+      tabNotes: "メモ",
+      tabLedger: "家計簿",
+      tabHistory: "履歴",
+      tabSettings: "設定",
+      export: "出力",
+      import: "取込",
+      signOut: "退出",
+      sync: "同期",
+      synced: "同期済み",
+      localMode: "ローカル：未ログイン",
+      placeholder: "ここに書いてね (｡･ω･｡)ﾉ",
+      noteMeta: "メモは3秒ごとに自動保存",
+      enterTodos: "始める",
+      alarmBadge: "時間です",
+      alarmTitle: "ToDoリマインダー",
+      alarmDone: "今日完了",
+      alarmClose: "OK",
+      overdueTitle: "期限切れ：",
+      inProgressTitle: "進行中：",
+      todosTitle: "今日のToDo：",
+      completedTitle: "完了：",
+      collapse: "▼ 閉じる",
+      expand: "▶ 開く",
+      none: "なし",
+      noOverdue: "期限切れはありません (｡･ω･｡)ﾉ",
+      complete: "完了",
+      delete: "削除",
+      futureTodos: "今後のToDo：",
+      dailyReminders: "毎日の通知：",
+      weeklyReminders: "毎週の通知：",
+      monthlyReminders: "毎月の通知：",
+      date: "日付",
+      today: "今日",
+      all: "全部",
+      completedAll: "完了：全部",
+      updateAll: "更新履歴：全部",
+      noCompleted: "完了なし",
+      noUpdate: "更新なし",
+      income: "収入",
+      expense: "支出",
+      balance: "残高",
+      amount: "金額",
+      note: "メモ",
+      addLedger: "記録する (｡･ω･｡)ﾉ",
+      ledgerRecords: "記録：",
+      noLedger: "記録なし",
+      periodToday: "今日",
+      periodYesterday: "昨日",
+      periodThisMonth: "今月",
+      periodLastMonth: "先月",
+      uiLanguage: "言語",
+      languageZh: "中文",
+      languageJa: "日本語",
+      languageEn: "English",
+      colorSection: "画面の色：",
+      resetSettings: "初期設定に戻す",
+      welcomeSection: "ウェルカム：",
+      welcomeEnabled: "毎日初回だけ表示",
+      welcomeTitle: "タイトル",
+      welcomeText: "本文",
+      alarmSection: "通知ポップアップ：",
+      notifyUnsupported: "このブラウザは通知に対応していません",
+      notifyAllowed: "通知は許可済み",
+      notifyDenied: "通知はブラウザでブロックされています",
+      notifyEnable: "通知を有効にする",
+      notifyNote: "Web Appを開いている時は、時間になると画面内で強めに通知します。システム通知を許可すると追加で通知します。Appを完全に閉じた時やOSに停止された時は、常駐を保証できません。",
+      bgColor: "背景色",
+      topColor: "上部色",
+      accentColor: "強調色",
+      markColor: "見出し色",
+      settingsResetDone: "初期設定に戻しました (｡･ω･｡)ﾉ"
+    },
+    en: {
+      appTitle: "Todo Reminder",
+      authHint: "Use it locally without signing in. Sign in to sync between desktop and mobile.",
+      email: "Email",
+      password: "Password",
+      passwordPlaceholder: "At least 6 characters",
+      login: "Sign in",
+      register: "Sign up",
+      localUse: "Use locally",
+      tabTodos: "Todo",
+      tabReminders: "Alerts",
+      tabNotes: "Notes",
+      tabLedger: "Ledger",
+      tabHistory: "History",
+      tabSettings: "Settings",
+      export: "Export",
+      import: "Import",
+      signOut: "Sign out",
+      sync: "Sync",
+      synced: "Synced",
+      localMode: "Local mode: not signed in",
+      placeholder: "Write something (｡･ω･｡)ﾉ",
+      noteMeta: "Notes auto-save every 3 seconds",
+      enterTodos: "Enter todo",
+      alarmBadge: "Due now",
+      alarmTitle: "Todo reminder",
+      alarmDone: "Done today",
+      alarmClose: "OK",
+      overdueTitle: "Overdue:",
+      inProgressTitle: "In progress:",
+      todosTitle: "Today:",
+      completedTitle: "Done:",
+      collapse: "▼ Collapse",
+      expand: "▶ Expand",
+      none: "None",
+      noOverdue: "No overdue todos (｡･ω･｡)ﾉ",
+      complete: "Done",
+      delete: "Delete",
+      futureTodos: "Future todos:",
+      dailyReminders: "Daily reminders:",
+      weeklyReminders: "Weekly reminders:",
+      monthlyReminders: "Monthly reminders:",
+      date: "Date",
+      today: "Today",
+      all: "All",
+      completedAll: "Done: all",
+      updateAll: "Update log: all",
+      noCompleted: "No completed items",
+      noUpdate: "No updates",
+      income: "Income",
+      expense: "Expense",
+      balance: "Balance",
+      amount: "Amount",
+      note: "Note",
+      addLedger: "Add entry (｡･ω･｡)ﾉ",
+      ledgerRecords: "Records:",
+      noLedger: "No ledger entries",
+      periodToday: "Today",
+      periodYesterday: "Yesterday",
+      periodThisMonth: "This month",
+      periodLastMonth: "Last month",
+      uiLanguage: "Language",
+      languageZh: "中文",
+      languageJa: "日本語",
+      languageEn: "English",
+      colorSection: "Colors:",
+      resetSettings: "Restore defaults",
+      welcomeSection: "Welcome:",
+      welcomeEnabled: "Show welcome once per day",
+      welcomeTitle: "Welcome title",
+      welcomeText: "Welcome text",
+      alarmSection: "Reminder popups:",
+      notifyUnsupported: "This browser does not support notifications",
+      notifyAllowed: "System notifications allowed",
+      notifyDenied: "System notifications blocked by browser",
+      notifyEnable: "Enable notifications",
+      notifyNote: "When the Web App is open, due reminders show an in-app popup. If system notifications are allowed, it also sends a browser notification. If the app is fully closed or frozen by the OS, a web app cannot guarantee background running.",
+      bgColor: "Background",
+      topColor: "Top bar",
+      accentColor: "Accent",
+      markColor: "Highlight",
+      settingsResetDone: "Default settings restored (｡･ω･｡)ﾉ"
+    }
   };
 
   const state = {
@@ -24,6 +281,7 @@
     localReady: false,
     view: "todos",
     historyDate: localStorage.getItem(HISTORY_DATE_KEY) || todayKey(),
+    ledgerPeriod: normalizeLedgerPeriod(localStorage.getItem(LEDGER_PERIOD_KEY)),
     showCompleted: true,
     alarmTimer: null,
     activeAlarm: null,
@@ -90,6 +348,9 @@
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger).filter((item) => item && typeof item === "object");
     data.settings = { ...DEFAULT_SETTINGS, ...(data.settings && typeof data.settings === "object" ? data.settings : {}) };
+    if (data.settings.welcomeTitle === OLD_WELCOME_TITLE) data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
+    if (data.settings.welcomeText === OLD_WELCOME_TEXT) data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
+    if (!TEXT[data.settings.language]) data.settings.language = DEFAULT_SETTINGS.language;
     Object.keys(data.days).forEach((dateKey) => {
       const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
       current.pending = uniqueStrings(current.pending);
@@ -106,6 +367,10 @@
     if (Array.isArray(value)) return value;
     if (!value) return [];
     return [value];
+  }
+
+  function normalizeLedgerPeriod(value) {
+    return ["today", "yesterday", "thisMonth", "lastMonth"].includes(value) ? value : "today";
   }
 
   function uniqueStrings(value) {
@@ -180,7 +445,11 @@
 
   function navDate() {
     const now = new Date();
-    const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+    const weekdays = {
+      zh: ["日", "一", "二", "三", "四", "五", "六"],
+      ja: ["日", "月", "火", "水", "木", "金", "土"],
+      en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    }[language()] || ["日", "一", "二", "三", "四", "五", "六"];
     return `${now.getMonth() + 1}/${now.getDate()} ${weekdays[now.getDay()]}`;
   }
 
@@ -357,6 +626,7 @@
 
   function showAuth() {
     if (!emailInput.value) emailInput.value = localStorage.getItem(LAST_EMAIL_KEY) || "";
+    applyLanguage();
     authPanel.classList.remove("hidden");
     appPanel.classList.add("hidden");
   }
@@ -365,8 +635,7 @@
     authPanel.classList.add("hidden");
     appPanel.classList.remove("hidden");
     applySettings();
-    userLabel.textContent = state.user?.email ? `已同步：${state.user.email}` : "本地模式：未登录";
-    signOutButton.textContent = state.user ? "退出" : "同步";
+    applyLanguage();
     if (state.user?.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
     render();
     showWelcomeIfNeeded();
@@ -444,7 +713,33 @@
   function settings() {
     state.data.settings ||= { ...DEFAULT_SETTINGS };
     state.data.settings = { ...DEFAULT_SETTINGS, ...state.data.settings };
+    if (state.data.settings.welcomeTitle === OLD_WELCOME_TITLE) state.data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
+    if (state.data.settings.welcomeText === OLD_WELCOME_TEXT) state.data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
+    if (!TEXT[state.data.settings.language]) state.data.settings.language = DEFAULT_SETTINGS.language;
     return state.data.settings;
+  }
+
+  function language() {
+    const code = state.data?.settings?.language || DEFAULT_SETTINGS.language;
+    return TEXT[code] ? code : DEFAULT_SETTINGS.language;
+  }
+
+  function tx(key) {
+    return TEXT[language()]?.[key] || TEXT.zh[key] || key;
+  }
+
+  function applyLanguage() {
+    const htmlLang = { zh: "zh-CN", ja: "ja", en: "en" }[language()] || "zh-CN";
+    document.documentElement.lang = htmlLang;
+    document.title = tx("appTitle");
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      node.textContent = tx(node.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+      node.setAttribute("placeholder", tx(node.dataset.i18nPlaceholder));
+    });
+    userLabel.textContent = state.user?.email ? `${tx("synced")}：${state.user.email}` : tx("localMode");
+    signOutButton.textContent = state.user ? tx("signOut") : tx("sync");
   }
 
   function applySettings() {
@@ -468,7 +763,7 @@
     return `rgb(${Math.round((r + 255 * 4) / 5)}, ${Math.round((g + 255 * 4) / 5)}, ${Math.round((b + 255 * 4) / 5)})`;
   }
 
-  function section(title, rows, startIndex = 1, emptyText = "暂无") {
+  function section(title, rows, startIndex = 1, emptyText = tx("none")) {
     const parts = [`<div class="section-title">${escapeHtml(title)}</div>`];
     if (!rows.length) {
       parts.push(`<div class="empty">${escapeHtml(emptyText)}</div>`);
@@ -477,7 +772,7 @@
     rows.forEach((row, i) => {
       const index = row.index || startIndex + i;
       const time = row.time ? `<span class="time">${escapeHtml(row.time)}</span> ` : "";
-      const action = row.action ? `<button data-action="${row.action}" data-key="${escapeAttr(row.key)}">${row.label || "完成"}</button>` : "";
+      const action = row.action ? `<button data-action="${row.action}" data-key="${escapeAttr(row.key)}">${row.label || tx("complete")}</button>` : "";
       parts.push(`<div class="row"><span class="idx">${index}.</span><span>${time}${escapeHtml(row.text)}</span>${action}</div>`);
     });
     return parts.join("");
@@ -564,18 +859,18 @@
   function todoRows() {
     const rows = [];
     const overdue = overdueRows();
-    overdue.forEach((row, i) => rows.push({ ...row, index: i + 1, action: "complete", label: "完成" }));
+    overdue.forEach((row, i) => rows.push({ ...row, index: i + 1, action: "complete", label: tx("complete") }));
 
     let index = rows.length + 1;
     const timedRows = [...dailyReminderRows(false), ...oneTimeTodayRows()];
     const dueRows = timedRows.filter((row) => !row.time || row.sortTime <= nowMinutes());
     const laterRows = timedRows.filter((row) => row.time && row.sortTime > nowMinutes());
-    dueRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: "完成" }));
+    dueRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
 
     const current = day();
-    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, text, key: text, action: "complete", label: "完成" }));
-    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, text, key: text, action: "complete", label: "完成" }));
-    laterRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: "完成" }));
+    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, text, key: text, action: "complete", label: tx("complete") }));
+    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, text, key: text, action: "complete", label: tx("complete") }));
+    laterRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
     return rows;
   }
 
@@ -583,14 +878,14 @@
     const rows = todoRows();
     const completed = day().completed;
     let html = "";
-    html += section("过期待办：", rows.filter((row) => row.group === "overdue" || row.group === "overdueSingle"), 1, "没有过期待办哦 (｡･ω･｡)ﾉ");
-    html += section("进行中：", rows.filter((row) => row.group === "ing"));
-    html += section("今日待办：", rows.filter((row) => row.group === "todo" || row.group === "reminder" || row.group === "single"));
-    html += `<div class="section-title completed-toggle" data-action="toggleCompleted">已完成：${state.showCompleted ? "▼ 点击收起" : "▶ 点击展开"}</div>`;
+    html += section(tx("overdueTitle"), rows.filter((row) => row.group === "overdue" || row.group === "overdueSingle"), 1, tx("noOverdue"));
+    html += section(tx("inProgressTitle"), rows.filter((row) => row.group === "ing"));
+    html += section(tx("todosTitle"), rows.filter((row) => row.group === "todo" || row.group === "reminder" || row.group === "single"));
+    html += `<div class="section-title completed-toggle" data-action="toggleCompleted">${tx("completedTitle")}${state.showCompleted ? tx("collapse") : tx("expand")}</div>`;
     if (state.showCompleted) {
       html += completed.length
         ? completed.map((text, i) => `<div class="row"><span class="idx">${i + 1}.</span><span>${escapeHtml(text)}</span><span></span></div>`).join("")
-        : '<div class="empty">暂无</div>';
+        : `<div class="empty">${tx("none")}</div>`;
     }
     content.innerHTML = html;
   }
@@ -619,14 +914,14 @@
       .map((item) => ({ time: `每月${item.day}号`, text: item.text }))
       .sort((a, b) => Number(a.time.match(/\d+/)?.[0] || 99) - Number(b.time.match(/\d+/)?.[0] || 99));
     content.innerHTML =
-      section("未来待办：", future) +
-      section("每日提醒：", dailyReminderRows(true)) +
-      section("每周提醒：", weekly) +
-      section("每月提醒：", monthly);
+      section(tx("futureTodos"), future) +
+      section(tx("dailyReminders"), dailyReminderRows(true)) +
+      section(tx("weeklyReminders"), weekly) +
+      section(tx("monthlyReminders"), monthly);
   }
 
   function dayName(name) {
-    return {
+    const zh = {
       Monday: "周一",
       Tuesday: "周二",
       Wednesday: "周三",
@@ -634,7 +929,26 @@
       Friday: "周五",
       Saturday: "周六",
       Sunday: "周日"
-    }[name] || name;
+    };
+    const ja = {
+      Monday: "月",
+      Tuesday: "火",
+      Wednesday: "水",
+      Thursday: "木",
+      Friday: "金",
+      Saturday: "土",
+      Sunday: "日"
+    };
+    const en = {
+      Monday: "Mon",
+      Tuesday: "Tue",
+      Wednesday: "Wed",
+      Thursday: "Thu",
+      Friday: "Fri",
+      Saturday: "Sat",
+      Sunday: "Sun"
+    };
+    return ({ zh, ja, en }[language()] || zh)[name] || name;
   }
 
   function reminderLogText(item) {
@@ -654,19 +968,26 @@
     const selectedDate = state.historyDate || "";
     let html = [
       '<div class="history-filter">',
-      '<span>日期</span>',
+      `<span>${tx("date")}</span>`,
       `<input data-action="historyDate" type="date" value="${escapeAttr(selectedDate)}">`,
-      '<button data-action="historyToday" type="button">今天</button>',
-      '<button data-action="historyAll" type="button">全部</button>',
+      `<button data-action="historyToday" type="button">${tx("today")}</button>`,
+      `<button data-action="historyAll" type="button">${tx("all")}</button>`,
       "</div>"
     ].join("");
 
     const completedRows = selectedDate ? completedRowsForDate(selectedDate) : allCompletedRows();
-    html += section(selectedDate ? `已完成：${selectedDate}` : "已完成：全部", completedRows, 1, "暂无已完成");
+    html += section(selectedDate ? `${tx("completedTitle")}${selectedDate}` : tx("completedAll"), completedRows, 1, tx("noCompleted"));
 
     const logRows = versionLogRows(selectedDate);
-    html += section(selectedDate ? `更新记录：${selectedDate}` : "更新记录：全部", logRows, 1, "暂无更新记录");
+    html += section(historyUpdateTitle(selectedDate), logRows, 1, tx("noUpdate"));
     content.innerHTML = html;
+  }
+
+  function historyUpdateTitle(selectedDate) {
+    if (!selectedDate) return tx("updateAll");
+    if (language() === "en") return `Update log: ${selectedDate}`;
+    if (language() === "ja") return `更新履歴：${selectedDate}`;
+    return `更新记录：${selectedDate}`;
   }
 
   function completedRowsForDate(dateKey) {
@@ -692,31 +1013,66 @@
     noteInput.value = state.data.noteText || "";
   }
 
+  function monthKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  function lastMonthKey() {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return monthKey(date);
+  }
+
+  function ledgerRange(period) {
+    const current = normalizeLedgerPeriod(period);
+    if (current === "today") {
+      const date = todayKey();
+      return { key: current, title: tx("periodToday"), match: (item) => item.date === date };
+    }
+    if (current === "yesterday") {
+      const date = dateWithOffset(-1);
+      return { key: current, title: tx("periodYesterday"), match: (item) => item.date === date };
+    }
+    if (current === "lastMonth") {
+      const month = lastMonthKey();
+      return { key: current, title: tx("periodLastMonth"), match: (item) => String(item.date || "").startsWith(month) };
+    }
+    const month = monthKey(new Date());
+    return { key: "thisMonth", title: tx("periodThisMonth"), match: (item) => String(item.date || "").startsWith(month) };
+  }
+
   function renderLedger() {
-    const month = todayKey().slice(0, 7);
-    const items = asArray(state.data.ledger).filter((item) => String(item.date || "").startsWith(month));
+    const range = ledgerRange(state.ledgerPeriod);
+    const items = asArray(state.data.ledger).filter(range.match);
     const income = items.filter((item) => item.type === "income").reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const expense = items.filter((item) => item.type !== "income").reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const rows = [...items].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).map((item) => ({
       time: item.date || "",
-      text: `${item.type === "income" ? "收入" : "支出"} ${formatMoney(item.amount)} ${item.note || ""}`.trim(),
+      text: `${item.type === "income" ? tx("income") : tx("expense")} ${formatMoney(item.amount)} ${item.note || ""}`.trim(),
       key: item.id,
       action: "deleteLedger",
-      label: "删除"
+      label: tx("delete")
     }));
+    const periodButtons = [
+      ["today", tx("periodToday")],
+      ["yesterday", tx("periodYesterday")],
+      ["thisMonth", tx("periodThisMonth")],
+      ["lastMonth", tx("periodLastMonth")]
+    ].map(([key, label]) => `<button class="${range.key === key ? "active" : ""}" data-action="ledgerPeriod" data-period="${key}" type="button">${label}</button>`).join("");
     content.innerHTML = [
       '<div class="ledger-form">',
-      '<select data-ledger="type"><option value="expense">支出</option><option value="income">收入</option></select>',
-      '<input data-ledger="amount" type="number" step="0.01" placeholder="金额">',
-      '<input data-ledger="note" type="text" placeholder="备注">',
-      '<button data-action="addLedger" type="button">记一笔</button>',
+      `<select data-ledger="type"><option value="expense">${tx("expense")}</option><option value="income">${tx("income")}</option></select>`,
+      `<input data-ledger="amount" type="number" step="0.01" placeholder="${tx("amount")}">`,
+      `<input data-ledger="note" type="text" placeholder="${tx("note")}">`,
+      `<button data-action="addLedger" type="button">${tx("addLedger")}</button>`,
       "</div>",
+      `<div class="ledger-periods" role="radiogroup" aria-label="${tx("date")}">${periodButtons}</div>`,
       '<div class="ledger-summary">',
-      `<span>收入 ${formatMoney(income)}</span>`,
-      `<span>支出 ${formatMoney(expense)}</span>`,
-      `<span>结余 ${formatMoney(income - expense)}</span>`,
+      `<span>${tx("income")} ${formatMoney(income)}</span>`,
+      `<span>${tx("expense")} ${formatMoney(expense)}</span>`,
+      `<span>${tx("balance")} ${formatMoney(income - expense)}</span>`,
       "</div>",
-      section(`${month} 记录：`, rows, 1, "暂无记账")
+      section(`${range.title}${tx("ledgerRecords")}`, rows, 1, tx("noLedger"))
     ].join("");
   }
 
@@ -757,26 +1113,32 @@
   function renderSettings() {
     const current = settings();
     const notificationText = !("Notification" in window)
-      ? "当前浏览器不支持系统通知"
+      ? tx("notifyUnsupported")
       : Notification.permission === "granted"
-        ? "系统通知已允许"
+        ? tx("notifyAllowed")
         : Notification.permission === "denied"
-          ? "系统通知已被浏览器阻止"
-          : "点击开启系统通知";
+          ? tx("notifyDenied")
+          : tx("notifyEnable");
     content.innerHTML = [
       '<div class="settings-panel">',
-      '<div class="section-title">界面颜色：</div>',
-      settingColor("bgColor", "背景色", current.bgColor),
-      settingColor("topColor", "顶部色", current.topColor),
-      settingColor("accentColor", "强调色", current.accentColor),
-      settingColor("markColor", "标题底色", current.markColor),
-      '<div class="section-title">欢迎界面：</div>',
-      settingCheckbox("welcomeEnabled", "每天首次打开显示欢迎界面", current.welcomeEnabled),
-      settingText("welcomeTitle", "欢迎标题", current.welcomeTitle),
-      settingText("welcomeText", "欢迎内容", current.welcomeText),
-      '<div class="section-title">提醒弹窗：</div>',
+      settingSelect("language", tx("uiLanguage"), current.language, [
+        ["zh", tx("languageZh")],
+        ["ja", tx("languageJa")],
+        ["en", tx("languageEn")]
+      ]),
+      '<div class="section-title">' + tx("colorSection") + "</div>",
+      settingColor("bgColor", tx("bgColor"), current.bgColor),
+      settingColor("topColor", tx("topColor"), current.topColor),
+      settingColor("accentColor", tx("accentColor"), current.accentColor),
+      settingColor("markColor", tx("markColor"), current.markColor),
+      `<button class="setting-button" data-action="resetSettings" type="button">${tx("resetSettings")}</button>`,
+      '<div class="section-title">' + tx("welcomeSection") + "</div>",
+      settingCheckbox("welcomeEnabled", tx("welcomeEnabled"), current.welcomeEnabled),
+      settingText("welcomeTitle", tx("welcomeTitle"), current.welcomeTitle),
+      settingText("welcomeText", tx("welcomeText"), current.welcomeText),
+      '<div class="section-title">' + tx("alarmSection") + "</div>",
       `<button class="setting-button" data-action="enableNotifications" type="button">${escapeHtml(notificationText)}</button>`,
-      '<div class="setting-note">网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。App 完全关闭或被系统冻结时，网页不能保证后台常驻。</div>',
+      `<div class="setting-note">${tx("notifyNote")}</div>`,
       "</div>"
     ].join("");
   }
@@ -793,7 +1155,13 @@
     return `<label class="setting-row"><span>${escapeHtml(label)}</span><input data-setting="${key}" type="checkbox" ${value ? "checked" : ""}></label>`;
   }
 
+  function settingSelect(key, label, value, options) {
+    const optionHtml = options.map(([optionValue, optionLabel]) => `<option value="${escapeAttr(optionValue)}" ${optionValue === value ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`).join("");
+    return `<label class="setting-row"><span>${escapeHtml(label)}</span><select data-setting="${key}">${optionHtml}</select></label>`;
+  }
+
   function render() {
+    applyLanguage();
     dateLabel.textContent = navDate();
     document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === state.view));
     notePanel.classList.toggle("hidden", state.view !== "notes");
@@ -1196,7 +1564,7 @@
   function setAuthBusy(isBusy) {
     signInButton.disabled = isBusy;
     signUpButton.disabled = isBusy;
-    signInButton.textContent = isBusy ? "处理中" : "登录";
+    signInButton.textContent = isBusy ? (language() === "en" ? "Working" : language() === "ja" ? "処理中" : "处理中") : tx("login");
   }
 
   function useLocalMode() {
@@ -1273,11 +1641,24 @@
         content.querySelector('[data-ledger="note"]').value
       );
     }
+    if (action === "ledgerPeriod") {
+      state.ledgerPeriod = normalizeLedgerPeriod(event.target.dataset.period);
+      localStorage.setItem(LEDGER_PERIOD_KEY, state.ledgerPeriod);
+      render();
+    }
     if (action === "deleteLedger") {
       deleteLedger(event.target.dataset.key);
     }
     if (action === "enableNotifications") {
       enableNotifications();
+    }
+    if (action === "resetSettings") {
+      state.data.settings = { ...DEFAULT_SETTINGS };
+      applySettings();
+      applyLanguage();
+      scheduleSave();
+      setStatus(tx("settingsResetDone"));
+      render();
     }
     if (action === "historyToday") {
       state.historyDate = todayKey();
@@ -1302,6 +1683,7 @@
     if (!key) return;
     settings()[key] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
     applySettings();
+    applyLanguage();
     scheduleSave();
     render();
   });
