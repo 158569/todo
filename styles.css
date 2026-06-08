@@ -92,7 +92,7 @@ button:disabled {
   height: min(100vh, 620px);
   min-height: 500px;
   display: grid;
-  grid-template-rows: 50px 34px 1fr auto 22px;
+  grid-template-rows: 50px 34px 1fr auto;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 12px;

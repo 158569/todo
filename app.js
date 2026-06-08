@@ -1,6 +1,7 @@
 (function () {
   const CONFIG = window.TODO_SUPABASE_CONFIG || {};
   const VIEW_KEY = "todoCloudView";
+  const LAST_EMAIL_KEY = "todoCloudLastEmail";
   const PLACEHOLDER = "写点什么吧 (｡･ω･｡)ﾉ";
 
   const state = {
@@ -48,15 +49,59 @@
 
   function normalizeData(data) {
     data = data && typeof data === "object" ? data : emptyData();
-    data.days ||= {};
-    data.dailyImportantReminders ||= [];
-    data.dailyReminders ||= [];
-    data.weeklyReminders ||= [];
-    data.monthlyReminders ||= [];
-    data.oneTimeReminders ||= [];
-    data.dateImportantReminders ||= [];
-    data.noteText ||= "";
+    data.days = data.days && typeof data.days === "object" ? data.days : {};
+    data.dailyImportantReminders = asArray(data.dailyImportantReminders);
+    data.dailyReminders = asArray(data.dailyReminders);
+    data.weeklyReminders = asArray(data.weeklyReminders);
+    data.monthlyReminders = asArray(data.monthlyReminders);
+    data.oneTimeReminders = asArray(data.oneTimeReminders);
+    data.dateImportantReminders = asArray(data.dateImportantReminders);
+    data.noteText = typeof data.noteText === "string" ? data.noteText : "";
+    Object.keys(data.days).forEach((dateKey) => {
+      const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
+      current.pending = uniqueStrings(current.pending);
+      current.inProgress = uniqueStrings(current.inProgress);
+      current.completed = uniqueStrings(current.completed);
+      current.hidden = uniqueStrings(current.hidden);
+      data.days[dateKey] = current;
+    });
+    dedupeReminders(data);
     return data;
+  }
+
+  function asArray(value) {
+    if (Array.isArray(value)) return value;
+    if (!value) return [];
+    return [value];
+  }
+
+  function uniqueStrings(value) {
+    return [...new Set(asArray(value).filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim()))];
+  }
+
+  function dedupeBy(items, keyFn) {
+    const seen = new Set();
+    return asArray(items).filter((item) => {
+      const key = keyFn(item);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function dedupeReminders(data) {
+    data.dailyImportantReminders = dedupeBy(data.dailyImportantReminders, (item) => item.text && `important|${item.startDate || ""}|${item.text}`);
+    data.dailyReminders = dedupeBy(data.dailyReminders, (item) => {
+      const times = reminderTimes(item).join(",");
+      return item.text && times && `daily|${times}|${item.text}`;
+    });
+    data.weeklyReminders = dedupeBy(data.weeklyReminders, (item) => {
+      const days = asArray(item.days).join(",");
+      return item.text && item.time && `weekly|${days}|${item.time}|${item.text}`;
+    });
+    data.monthlyReminders = dedupeBy(data.monthlyReminders, (item) => item.text && item.day && `monthly|${item.day}|${item.text}`);
+    data.oneTimeReminders = dedupeBy(data.oneTimeReminders, (item) => item.text && item.at && `once|${item.at}|${item.text}`);
+    data.dateImportantReminders = dedupeBy(data.dateImportantReminders, (item) => item.text && item.date && `date|${item.date}|${item.text}`);
   }
 
   function todayKey() {
@@ -68,9 +113,36 @@
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   }
 
+  function dateWithOffset(offset) {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return toDateKey(date);
+  }
+
   function shortDate(dateKey) {
     const parts = dateKey.split("-").map(Number);
     return `${parts[1]}/${parts[2]}`;
+  }
+
+  function normalizeTime(hour, minute = "00") {
+    return `${String(hour).padStart(2, "0")}:${String(minute || "00").padStart(2, "0")}`;
+  }
+
+  function timeMinutes(time) {
+    const match = String(time || "").match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return 24 * 60 + 1;
+    return Number(match[1]) * 60 + Number(match[2]);
+  }
+
+  function nowMinutes() {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }
+
+  function reminderTimes(item) {
+    if (Array.isArray(item.times) && item.times.length) return item.times.map((time) => normalizeTime(...String(time).trim().split(":")));
+    if (Array.isArray(item.hours) && item.hours.length) return item.hours.map((hour) => normalizeTime(hour));
+    return [];
   }
 
   function navDate() {
@@ -107,6 +179,10 @@
       .replaceAll(">", "&gt;");
   }
 
+  function escapeAttr(text) {
+    return escapeHtml(text).replaceAll('"', "&quot;");
+  }
+
   function requireConfig() {
     return Boolean(CONFIG.url && CONFIG.anonKey && window.supabase);
   }
@@ -124,7 +200,13 @@
       authPanel.classList.remove("hidden");
       return false;
     }
-    state.supabase = window.supabase.createClient(CONFIG.url, CONFIG.anonKey);
+    state.supabase = window.supabase.createClient(CONFIG.url, CONFIG.anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
     return true;
   }
 
@@ -173,6 +255,7 @@
   }
 
   function showAuth() {
+    if (!emailInput.value) emailInput.value = localStorage.getItem(LAST_EMAIL_KEY) || "";
     authPanel.classList.remove("hidden");
     appPanel.classList.add("hidden");
   }
@@ -181,19 +264,20 @@
     authPanel.classList.add("hidden");
     appPanel.classList.remove("hidden");
     userLabel.textContent = state.user.email || "";
+    if (state.user.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
     render();
   }
 
-  function section(title, rows, startIndex = 1) {
+  function section(title, rows, startIndex = 1, emptyText = "暂无") {
     const parts = [`<div class="section-title">${escapeHtml(title)}</div>`];
     if (!rows.length) {
-      parts.push('<div class="empty">暂无</div>');
+      parts.push(`<div class="empty">${escapeHtml(emptyText)}</div>`);
       return parts.join("");
     }
     rows.forEach((row, i) => {
       const index = row.index || startIndex + i;
       const time = row.time ? `<span class="time">${escapeHtml(row.time)}</span> ` : "";
-      const action = row.action ? `<button data-action="${row.action}" data-key="${escapeHtml(row.key)}">${row.label || "完成"}</button>` : "";
+      const action = row.action ? `<button data-action="${row.action}" data-key="${escapeAttr(row.key)}">${row.label || "完成"}</button>` : "";
       parts.push(`<div class="row"><span class="idx">${index}.</span><span>${time}${escapeHtml(row.text)}</span>${action}</div>`);
     });
     return parts.join("");
@@ -211,33 +295,70 @@
         }
       });
     });
+    state.data.oneTimeReminders.forEach((item) => {
+      if (!item.at || !item.text) return;
+      const [date, time = ""] = item.at.split(" ");
+      if (date >= current) return;
+      rows.push({ group: "overdueSingle", source: "once", dateKey: date, time: `${shortDate(date)} ${time}`.trim(), text: item.text, key: `${item.at}|${item.text}` });
+    });
+    state.data.dateImportantReminders.forEach((item) => {
+      if (!item.date || !item.text || item.date >= current) return;
+      rows.push({ group: "overdueSingle", source: "dateImportant", dateKey: item.date, time: shortDate(item.date), text: item.text, key: `${item.date}|${item.text}` });
+    });
     return rows;
   }
 
   function dailyReminderRows(includeFuture = false) {
     const current = todayKey();
-    const completed = day().completed;
+    const completed = includeFuture ? [] : day().completed;
     const rows = [];
 
     state.data.dailyImportantReminders.forEach((item) => {
       if (!includeFuture && item.startDate && item.startDate > current) return;
       const text = item.text;
       if (!completed.includes(text) && !completed.includes(`今日已完成：${text}`)) {
-        rows.push({ group: "reminder", time: "", text, key: text });
+        rows.push({ group: "reminder", time: "", text, key: text, sortTime: -1 });
       }
     });
 
     state.data.dailyReminders.forEach((item) => {
-      const times = item.times || (item.hours || []).map((hour) => `${String(hour).padStart(2, "0")}:00`);
+      const times = reminderTimes(item);
       times.forEach((time) => {
         const key = `${time}  ${item.text}`;
         if (!completed.includes(key) && !completed.includes(`今日已完成：${key}`)) {
-          rows.push({ group: "reminder", time, text: item.text, key });
+          rows.push({ group: "reminder", time, text: item.text, key, sortTime: timeMinutes(time) });
         }
       });
     });
 
-    return rows.sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00"));
+    return rows.sort((a, b) => a.sortTime - b.sortTime);
+  }
+
+  function oneTimeTodayRows() {
+    const current = todayKey();
+    const completed = day().completed;
+    const rows = [];
+
+    state.data.oneTimeReminders.forEach((item) => {
+      if (!item.at || !item.text) return;
+      const [date, time = ""] = item.at.split(" ");
+      if (date !== current) return;
+      const key = `${item.at}|${item.text}`;
+      const doneText = `${time}  ${item.text}`.trim();
+      if (!completed.includes(doneText) && !completed.includes(`今日已完成：${doneText}`)) {
+        rows.push({ group: "single", source: "once", dateKey: date, time, text: item.text, key, sortTime: timeMinutes(time) });
+      }
+    });
+
+    state.data.dateImportantReminders.forEach((item) => {
+      if (!item.date || item.date !== current || !item.text) return;
+      const key = `${item.date}|${item.text}`;
+      if (!completed.includes(item.text) && !completed.includes(`今日已完成：${item.text}`)) {
+        rows.push({ group: "single", source: "dateImportant", dateKey: item.date, time: "", text: item.text, key, sortTime: -1 });
+      }
+    });
+
+    return rows.sort((a, b) => a.sortTime - b.sortTime);
   }
 
   function todoRows() {
@@ -246,10 +367,15 @@
     overdue.forEach((row, i) => rows.push({ ...row, index: i + 1, action: "complete", label: "完成" }));
 
     let index = rows.length + 1;
+    const timedRows = [...dailyReminderRows(false), ...oneTimeTodayRows()];
+    const dueRows = timedRows.filter((row) => !row.time || row.sortTime <= nowMinutes());
+    const laterRows = timedRows.filter((row) => row.time && row.sortTime > nowMinutes());
+    dueRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: "完成" }));
+
     const current = day();
     current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, text, key: text, action: "complete", label: "完成" }));
     current.pending.forEach((text) => rows.push({ group: "todo", index: index++, text, key: text, action: "complete", label: "完成" }));
-    dailyReminderRows(false).forEach((row) => rows.push({ ...row, index: index++, action: "complete", label: "完成" }));
+    laterRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: "完成" }));
     return rows;
   }
 
@@ -257,14 +383,14 @@
     const rows = todoRows();
     const completed = day().completed;
     let html = "";
-    html += section("过期待办：", rows.filter((row) => row.group === "overdue"));
+    html += section("过期待办：", rows.filter((row) => row.group === "overdue" || row.group === "overdueSingle"), 1, "没有过期待办哦 (｡･ω･｡)ﾉ");
     html += section("进行中：", rows.filter((row) => row.group === "ing"));
-    html += section("今日待办：", rows.filter((row) => row.group === "todo" || row.group === "reminder"));
-    if (completed.length) {
-      html += `<div class="section-title completed-toggle" data-action="toggleCompleted">已完成：${state.showCompleted ? "▼ 点击收起" : "▶ 点击展开"}</div>`;
-      if (state.showCompleted) {
-        html += completed.map((text, i) => `<div class="row"><span class="idx">${i + 1}.</span><span>${escapeHtml(text)}</span><span></span></div>`).join("");
-      }
+    html += section("今日待办：", rows.filter((row) => row.group === "todo" || row.group === "reminder" || row.group === "single"));
+    html += `<div class="section-title completed-toggle" data-action="toggleCompleted">已完成：${state.showCompleted ? "▼ 点击收起" : "▶ 点击展开"}</div>`;
+    if (state.showCompleted) {
+      html += completed.length
+        ? completed.map((text, i) => `<div class="row"><span class="idx">${i + 1}.</span><span>${escapeHtml(text)}</span><span></span></div>`).join("")
+        : '<div class="empty">暂无</div>';
     }
     content.innerHTML = html;
   }
@@ -273,14 +399,25 @@
     const future = [];
     Object.keys(state.data.days).sort().forEach((dateKey) => {
       if (dateKey <= todayKey()) return;
-      day(dateKey).pending.forEach((text) => future.push({ time: shortDate(dateKey), text }));
+      day(dateKey).pending.forEach((text) => future.push({ time: shortDate(dateKey), text, sortKey: `${dateKey} 00:00` }));
     });
     state.data.oneTimeReminders.forEach((item) => {
-      const [date, time] = item.at.split(" ");
-      if (date >= todayKey()) future.push({ time: `${shortDate(date)} ${time}`, text: item.text });
+      if (!item.at || !item.text) return;
+      const [date, time = ""] = item.at.split(" ");
+      if (date > todayKey()) future.push({ time: `${shortDate(date)} ${time}`.trim(), text: item.text, sortKey: item.at });
     });
-    const weekly = state.data.weeklyReminders.map((item) => ({ time: `${(item.days || []).map(dayName).join("/")} ${item.time}`, text: item.text }));
-    const monthly = state.data.monthlyReminders.map((item) => ({ time: `每月${item.day}号`, text: item.text }));
+    state.data.dateImportantReminders.forEach((item) => {
+      if (!item.date || !item.text || item.date <= todayKey()) return;
+      future.push({ time: shortDate(item.date), text: item.text, sortKey: `${item.date} 00:00` });
+    });
+    future.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+    const weekly = state.data.weeklyReminders
+      .map((item) => ({ time: `${asArray(item.days).map(dayName).join("/")} ${item.time || ""}`.trim(), text: item.text }))
+      .sort((a, b) => a.time.localeCompare(b.time));
+    const monthly = state.data.monthlyReminders
+      .map((item) => ({ time: `每月${item.day}号`, text: item.text }))
+      .sort((a, b) => Number(a.time.match(/\d+/)?.[0] || 99) - Number(b.time.match(/\d+/)?.[0] || 99));
     content.innerHTML =
       section("未来待办：", future) +
       section("每日提醒：", dailyReminderRows(true)) +
@@ -320,7 +457,7 @@
     document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === state.view));
     notePanel.classList.toggle("hidden", state.view !== "notes");
     content.classList.toggle("hidden", state.view === "notes");
-    commandBar.classList.toggle("hidden", state.view === "notes");
+    commandBar.classList.toggle("hidden", state.view !== "todos");
     localStorage.setItem(VIEW_KEY, state.view);
     if (state.view === "todos") renderTodos();
     if (state.view === "reminders") renderReminders();
@@ -329,6 +466,8 @@
   }
 
   function addToday(text) {
+    text = text.trim();
+    if (!text) return;
     const current = day();
     if (current.pending.includes(text) || current.completed.includes(text)) {
       setStatus("已经有这条待办了，不重复添加 (｡･ω･｡)ﾉ");
@@ -340,16 +479,26 @@
   }
 
   function addDatedTodo(offset, text) {
-    const date = new Date();
-    date.setDate(date.getDate() + offset);
-    const current = day(toDateKey(date));
-    if (!current.pending.includes(text)) current.pending.push(text);
+    addTodoOnDate(dateWithOffset(offset), text);
+  }
+
+  function addTodoOnDate(dateKey, text) {
+    text = text.trim();
+    if (!text) return;
+    const current = day(dateKey);
+    if (current.pending.includes(text) || current.completed.includes(text)) {
+      setStatus("已经有这条待办了，不重复添加 (｡･ω･｡)ﾉ");
+      return;
+    }
+    current.pending.push(text);
     scheduleSave();
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
 
   function addDailyReminder(time, text) {
-    const exists = state.data.dailyReminders.some((item) => item.text === text && (item.times || []).includes(time));
+    text = text.trim();
+    if (!text) return;
+    const exists = state.data.dailyReminders.some((item) => item.text === text && reminderTimes(item).includes(time));
     if (exists) {
       setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
       return;
@@ -359,7 +508,50 @@
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
 
+  function addDailyImportant(text, startDate = dateWithOffset(1)) {
+    text = text.trim();
+    if (!text) return;
+    const exists = state.data.dailyImportantReminders.some((item) => item.text === text && (!item.startDate || item.startDate <= startDate));
+    if (exists) {
+      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      return;
+    }
+    state.data.dailyImportantReminders.push({ startDate, text });
+    scheduleSave();
+    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+  }
+
+  function addOneTimeReminder(dateKey, time, text) {
+    text = text.trim();
+    if (!text) return;
+    const at = `${dateKey} ${time}`;
+    const exists = state.data.oneTimeReminders.some((item) => item.at === at && item.text === text);
+    if (exists) {
+      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      return;
+    }
+    state.data.oneTimeReminders.push({ at, text });
+    scheduleSave();
+    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+  }
+
+  function addWeeklyReminder(dayText, time, text) {
+    text = text.trim();
+    if (!text) return;
+    const day = weekName(dayText);
+    const exists = state.data.weeklyReminders.some((item) => asArray(item.days).includes(day) && item.time === time && item.text === text);
+    if (exists) {
+      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      return;
+    }
+    state.data.weeklyReminders.push({ days: [day], time, text });
+    scheduleSave();
+    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+  }
+
   function addMonthlyReminder(dayNumber, text) {
+    text = text.trim();
+    if (!text) return;
     const exists = state.data.monthlyReminders.some((item) => Number(item.day) === Number(dayNumber) && item.text === text);
     if (exists) {
       setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
@@ -370,6 +562,25 @@
     setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
   }
 
+  function weekName(text) {
+    return {
+      一: "Monday",
+      二: "Tuesday",
+      三: "Wednesday",
+      四: "Thursday",
+      五: "Friday",
+      六: "Saturday",
+      日: "Sunday",
+      天: "Sunday"
+    }[text] || text;
+  }
+
+  function normalizeDateText(text) {
+    const match = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+    if (!match) return text;
+    return `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}`;
+  }
+
   function completeRow(row) {
     const current = day();
     if (row.group === "overdue") {
@@ -378,6 +589,9 @@
       old.pending = old.pending.filter((item) => item !== text);
       old.hidden.push(text);
       current.completed.push(`补完成：${text}（原 ${dateKey}）`);
+    } else if (row.group === "overdueSingle" || row.group === "single") {
+      removeSingleReminder(row);
+      current.completed.push(`${row.time ? `${row.time}  ` : ""}${row.text}`.trim());
     } else if (row.group === "reminder") {
       current.completed.push(`今日已完成：${row.time ? `${row.time}  ` : ""}${row.text}`);
     } else {
@@ -388,6 +602,17 @@
     scheduleSave();
     setStatus("已完成记录 (｡･ω･｡)ﾉ");
     render();
+  }
+
+  function removeSingleReminder(row) {
+    if (row.source === "once") {
+      const [at, text] = row.key.split("|");
+      state.data.oneTimeReminders = state.data.oneTimeReminders.filter((item) => !(item.at === at && item.text === text));
+    }
+    if (row.source === "dateImportant") {
+      const [date, text] = row.key.split("|");
+      state.data.dateImportantReminders = state.data.dateImportantReminders.filter((item) => !(item.date === date && item.text === text));
+    }
   }
 
   function completeByQuery(query) {
@@ -408,24 +633,133 @@
       return;
     }
     const current = day();
-    current.pending = current.pending.filter((item) => item !== target.key);
-    if (!current.inProgress.includes(target.key)) current.inProgress.push(target.key);
+    let text = target.text || target.key;
+    if (target.group === "overdue") {
+      const [dateKey, oldText] = target.key.split("|");
+      const old = day(dateKey);
+      old.pending = old.pending.filter((item) => item !== oldText);
+      old.hidden.push(oldText);
+      text = oldText;
+    } else if (target.group === "overdueSingle" || target.group === "single") {
+      removeSingleReminder(target);
+      text = `${target.time ? `${target.time}  ` : ""}${target.text}`.trim();
+    } else if (target.group === "reminder") {
+      text = `${target.time ? `${target.time}  ` : ""}${target.text}`.trim();
+    } else {
+      current.pending = current.pending.filter((item) => item !== target.key);
+    }
+    if (!current.inProgress.includes(text)) current.inProgress.push(text);
     scheduleSave();
     setStatus("已标记进行中 (｡･ω･｡)ﾉ");
     render();
   }
 
+  function deleteByQuery(query) {
+    query = query.trim();
+    if (!query) return;
+    let removed = 0;
+
+    const visible = /^\d+$/.test(query) ? todoRows().find((row) => row.index === Number(query)) : null;
+    if (visible) {
+      removed += deleteVisibleRow(visible);
+    } else {
+      const currentDate = todayKey();
+      Object.keys(state.data.days).forEach((dateKey) => {
+        if (dateKey < currentDate) return;
+        const current = day(dateKey);
+        ["pending", "inProgress", "hidden"].forEach((field) => {
+          const before = current[field].length;
+          current[field] = current[field].filter((item) => !item.includes(query));
+          removed += before - current[field].length;
+        });
+      });
+
+      removed += removeFromArray("dailyImportantReminders", (item) => item.text && item.text.includes(query));
+      removed += removeFromArray("dailyReminders", (item) => item.text && item.text.includes(query));
+      removed += removeFromArray("weeklyReminders", (item) => item.text && item.text.includes(query));
+      removed += removeFromArray("monthlyReminders", (item) => item.text && item.text.includes(query));
+      removed += removeFromArray("oneTimeReminders", (item) => item.text && item.text.includes(query));
+      removed += removeFromArray("dateImportantReminders", (item) => item.text && item.text.includes(query));
+    }
+
+    if (!removed) {
+      setStatus("没找到可删除的内容 (｡•́︿•̀｡)", false);
+      return;
+    }
+    scheduleSave();
+    setStatus("已删除记录 (｡･ω･｡)ﾉ");
+    render();
+  }
+
+  function deleteVisibleRow(row) {
+    const current = day();
+    if (row.group === "overdue") {
+      const [dateKey, text] = row.key.split("|");
+      const old = day(dateKey);
+      const before = old.pending.length;
+      old.pending = old.pending.filter((item) => item !== text);
+      old.hidden.push(text);
+      return before - old.pending.length;
+    }
+    if (row.group === "overdueSingle" || row.group === "single") {
+      removeSingleReminder(row);
+      return 1;
+    }
+    if (row.group === "reminder") {
+      return removeDailyReminder(row);
+    }
+    const before = current.pending.length + current.inProgress.length;
+    current.pending = current.pending.filter((item) => item !== row.key);
+    current.inProgress = current.inProgress.filter((item) => item !== row.key);
+    return before - current.pending.length - current.inProgress.length;
+  }
+
+  function removeDailyReminder(row) {
+    let removed = 0;
+    if (!row.time) {
+      removed += removeFromArray("dailyImportantReminders", (item) => item.text === row.text);
+    } else {
+      const before = state.data.dailyReminders.length;
+      state.data.dailyReminders = state.data.dailyReminders.filter((item) => !(item.text === row.text && reminderTimes(item).includes(row.time)));
+      removed += before - state.data.dailyReminders.length;
+    }
+    return removed;
+  }
+
+  function removeFromArray(field, predicate) {
+    const before = state.data[field].length;
+    state.data[field] = state.data[field].filter((item) => !predicate(item));
+    return before - state.data[field].length;
+  }
+
   function parseCommand(raw) {
     const text = raw.trim();
     if (!text) return;
-    let match = text.match(/^完成\s*(.+)$/) || text.match(/^(.+?)(?:完成|好了|完事了|ok)$/i);
+    let match = text.match(/^删除\s*(.+)$/) || text.match(/^(.+?)\s*删除$/);
+    if (match) return deleteByQuery(match[1].trim());
+    match = text.match(/^完成\s*(.+)$/) || text.match(/^(.+?)(?:完成|好了|完事了|ok)$/i);
     if (match) return completeByQuery(match[1].trim());
     match = text.match(/^(.+?)ing$/i);
     if (match) return startByQuery(match[1].trim());
-    match = text.match(/^(每天|每日)\s*(\d{1,2})[:：；点](\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
-    if (match) return addDailyReminder(`${match[2].padStart(2, "0")}:${(match[3] || "00").padStart(2, "0")}`, match[4].trim());
+
+    match = text.match(/^每周\s*([一二三四五六日天])\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
+    if (match) return addWeeklyReminder(match[1], normalizeTime(match[2], match[3] || "00"), match[4]);
+    match = text.match(/^(每天|每日)\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
+    if (match) return addDailyReminder(normalizeTime(match[2], match[3] || "00"), match[4].trim());
     match = text.match(/^每月\s*(\d{1,2})\s*(?:号|日)?\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addMonthlyReminder(match[1], match[2].trim());
+
+    match = text.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})\s+(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
+    if (match) return addOneTimeReminder(normalizeDateText(match[1]), normalizeTime(match[2], match[3] || "00"), match[4]);
+    match = text.match(/^(明天|后天|大后天)\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
+    if (match) return addOneTimeReminder(dateWithOffset({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]]), normalizeTime(match[2], match[3] || "00"), match[4]);
+    match = text.match(/^(每天|每日)\s*(?:提醒我|提醒)?\s*(.+)$/);
+    if (match) return addDailyImportant(match[2].trim());
+
+    match = text.match(/^提醒我\s*(明天|后天|大后天)\s*(.+)$/);
+    if (match) return addDatedTodo({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]], match[2].trim());
+    match = text.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})\s+(.+)$/);
+    if (match) return addTodoOnDate(normalizeDateText(match[1]), match[2].trim());
     match = text.match(/^(明天|后天|大后天)\s*(.+)$/);
     if (match) return addDatedTodo({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]], match[2].trim());
     match = text.match(/^加入\s*(.+)$/);

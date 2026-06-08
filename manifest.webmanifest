@@ -1,0 +1,18 @@
+{
+  "name": "待办提醒 顽张って！",
+  "short_name": "待办提醒",
+  "description": "工作待办、提醒、便签和历史记录。",
+  "start_url": "https://todo.baoyifangbx.com/",
+  "scope": "https://todo.baoyifangbx.com/",
+  "display": "standalone",
+  "background_color": "#fff7ef",
+  "theme_color": "#fff7ef",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
