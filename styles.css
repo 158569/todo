@@ -120,7 +120,7 @@ button:disabled {
 
 .topbar {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
   padding: 7px 8px;
@@ -237,7 +237,8 @@ button:disabled {
 
 .content {
   padding: 14px 16px 8px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   line-height: 1.55;
   font-size: 14px;
   white-space: pre-wrap;
@@ -529,6 +530,14 @@ button:disabled {
   padding: 10px 12px 12px;
   border-top: 1px solid #e8d9c7;
   background: linear-gradient(180deg, rgba(255, 247, 239, 0.4), var(--bg));
+}
+
+.command-form {
+  min-width: 0;
+}
+
+.command-form input {
+  display: block;
 }
 
 .command-bar input,
@@ -1101,11 +1110,20 @@ button:disabled {
   }
 
   .ledger-rangebar {
-    grid-template-columns: 126px auto minmax(120px, 1fr);
+    grid-template-columns: minmax(116px, 1fr) auto;
+  }
+
+  .ledger-save-button {
+    grid-column: 1 / -1;
+    min-height: 34px;
   }
 
   .ledger-record-card {
-    grid-template-columns: 108px 86px minmax(0, 1fr);
+    grid-template-columns: minmax(106px, 1fr) minmax(82px, 0.8fr);
+  }
+
+  .ledger-record-main {
+    grid-column: 1 / -1;
   }
 }
 

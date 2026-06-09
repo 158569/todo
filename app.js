@@ -85,7 +85,7 @@
       none: "暂无",
       noOverdue: "没有过期待办哦 (｡•ᴗ•｡)",
       complete: "完成",
-      completeIcon: "✓",
+      completeIcon: "完",
       delete: "删除",
       futureTodos: "未来待办：",
       dailyReminders: "每日提醒：",
@@ -158,7 +158,7 @@
       diaryLockSection: "日记密码：",
       diaryPinEnabled: "开启四位数字密码",
       diaryPin: "四位数字密码",
-      diaryPinPlaceholder: "不改可留空",
+      diaryPinPlaceholder: "",
       diaryOldPinPrompt: "修改或关闭日记密码前，请先输入原密码。",
       diaryPinRequired: "请输入 4 位数字密码。",
       diaryPinUpdated: "日记密码已更新 (｡•̀ᴗ-)و",
@@ -168,13 +168,13 @@
       diaryLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
       wrongPin: "密码不对 (｡>﹏<｡)",
-      timerNone: "完成提醒：无",
-      timer1h: "1 小时完成",
-      timer2h: "2 小时完成",
-      timer4h: "4 小时完成",
-      timer8h: "8 小时完成",
+      timerNone: "中途提醒：无",
+      timer1h: "中途提醒：1小时",
+      timer2h: "中途提醒：2小时",
+      timer4h: "中途提醒：4小时",
+      timer8h: "中途提醒：8小时",
       halfway: "中段",
-      timerAlarmPrefix: "完成提醒",
+      timerAlarmPrefix: "中途提醒",
       timerSet: "已添加待办，并设置中段提醒 (๑•̀᎑<๑)و"
     },
     ja: {
@@ -229,7 +229,7 @@
       none: "なし",
       noOverdue: "期限切れはありません (｡•ᴗ•｡)",
       complete: "完了",
-      completeIcon: "✓",
+      completeIcon: "済",
       delete: "削除",
       futureTodos: "これからのToDo：",
       dailyReminders: "毎日のリマインダー：",
@@ -302,7 +302,7 @@
       diaryLockSection: "日記ロック：",
       diaryPinEnabled: "4桁パスコードを有効にする",
       diaryPin: "新しい4桁パスコード",
-      diaryPinPlaceholder: "変更しない場合は空欄",
+      diaryPinPlaceholder: "",
       diaryOldPinPrompt: "日記パスコードを変更または無効化する前に、現在のパスコードを入力してください。",
       diaryPinRequired: "4桁の数字を入力してください。",
       diaryPinUpdated: "日記パスコードを更新しました (｡•̀ᴗ-)و",
@@ -312,13 +312,13 @@
       diaryLockedHint: "4桁のパスコードを入力してください。",
       unlock: "ロック解除",
       wrongPin: "パスコードが違います (｡>﹏<｡)",
-      timerNone: "完了リマインダー：なし",
-      timer1h: "1時間で完了",
-      timer2h: "2時間で完了",
-      timer4h: "4時間で完了",
-      timer8h: "8時間で完了",
+      timerNone: "途中リマインダー：なし",
+      timer1h: "途中リマインダー：1時間",
+      timer2h: "途中リマインダー：2時間",
+      timer4h: "途中リマインダー：4時間",
+      timer8h: "途中リマインダー：8時間",
       halfway: "中間",
-      timerAlarmPrefix: "完了リマインダー",
+      timerAlarmPrefix: "途中リマインダー",
       timerSet: "ToDoを追加し、中間リマインダーを設定しました (๑•̀᎑<๑)و"
     },
     en: {
@@ -373,7 +373,7 @@
       none: "None",
       noOverdue: "No overdue todos (｡•ᴗ•｡)",
       complete: "Done",
-      completeIcon: "✓",
+      completeIcon: "Done",
       delete: "Delete",
       futureTodos: "Future todos:",
       dailyReminders: "Daily reminders:",
@@ -446,7 +446,7 @@
       diaryLockSection: "Diary PIN:",
       diaryPinEnabled: "Enable 4-digit PIN",
       diaryPin: "New 4-digit PIN",
-      diaryPinPlaceholder: "Leave blank to keep current",
+      diaryPinPlaceholder: "",
       diaryOldPinPrompt: "Enter the current diary PIN before changing or disabling it.",
       diaryPinRequired: "Enter a 4-digit PIN.",
       diaryPinUpdated: "Diary PIN updated (｡•̀ᴗ-)و",
@@ -456,13 +456,13 @@
       diaryLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
       wrongPin: "Wrong PIN (｡>﹏<｡)",
-      timerNone: "Completion reminder: off",
-      timer1h: "Finish in 1h",
-      timer2h: "Finish in 2h",
-      timer4h: "Finish in 4h",
-      timer8h: "Finish in 8h",
+      timerNone: "Midpoint reminder: off",
+      timer1h: "Midpoint reminder: 1h",
+      timer2h: "Midpoint reminder: 2h",
+      timer4h: "Midpoint reminder: 4h",
+      timer8h: "Midpoint reminder: 8h",
       halfway: "Midpoint",
-      timerAlarmPrefix: "Completion reminder",
+      timerAlarmPrefix: "Midpoint reminder",
       timerSet: "Todo added with midpoint reminder (๑•̀᎑<๑)و"
     }
   };
@@ -520,6 +520,7 @@
   const diaryInput = $("#diaryInput");
   const diaryDateInput = $("#diaryDateInput");
   const commandBar = $("#commandBar");
+  const commandForm = $("#commandForm");
   const commandInput = $("#commandInput");
   const commandTimerSelect = $("#commandTimerSelect");
   const statusEl = $("#status");
@@ -1201,11 +1202,6 @@
       setStatus(tx("diaryPinDisabled"));
       render();
       return true;
-    }
-    if (enabled && !activeDiaryPin()) {
-      setStatus(tx("diaryPinRequired"), false);
-      render();
-      return false;
     }
     current.diaryPinEnabled = Boolean(enabled);
     state.diaryUnlocked = false;
@@ -1920,7 +1916,7 @@
       settingCheckbox("showLedger", tx("showLedger"), current.showLedger !== false),
       '<div class="section-title">' + tx("diaryLockSection") + "</div>",
       settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled),
-      settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")),
+      current.diaryPinEnabled ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
       '<div class="section-title">' + tx("tutorialSection") + "</div>",
       `<button class="setting-button" data-action="openHelp" type="button">${tx("openTutorial")}</button>`,
       '<div class="section-title">' + tx("colorSection") + "</div>",
@@ -2811,14 +2807,21 @@
     }
   });
 
-  commandInput.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
+  function submitCommand(event) {
+    event?.preventDefault();
     const duration = state.view === "todos" ? Number(commandTimerSelect.value || 0) : 0;
     parseCommand(commandInput.value, duration);
     commandInput.value = "";
     commandTimerSelect.value = "0";
     render();
+  }
+
+  commandForm.addEventListener("submit", submitCommand);
+
+  commandInput.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.isComposing) return;
+    event.preventDefault();
+    submitCommand();
   });
 
   noteTitleInput.addEventListener("input", () => {
@@ -2923,7 +2926,7 @@
   signInButton.addEventListener("click", signIn);
   signUpButton.addEventListener("click", signUp);
   localUseButton.addEventListener("click", useLocalMode);
-  fullscreenButton.addEventListener("click", toggleFullscreen);
+  fullscreenButton?.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", updateFullscreenButton);
   window.addEventListener("resize", schedulePwaWindowSizeSave);
   window.addEventListener("beforeunload", savePwaWindowSize);
