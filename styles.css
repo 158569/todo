@@ -626,9 +626,116 @@ button:disabled {
   align-items: center;
 }
 
-.ledger-main-row select[data-ledger="category"] {
+.ledger-category-picker {
+  position: relative;
   min-width: 0;
   max-width: 98px;
+}
+
+.ledger-category-trigger {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px;
+  align-items: center;
+  text-align: left;
+}
+
+.ledger-category-trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-caret {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.ledger-category-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  width: min(190px, calc(100vw - 36px));
+  max-height: 236px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fffdf8;
+  box-shadow: 0 14px 32px rgba(44, 35, 26, 0.16);
+}
+
+.ledger-category-scroll {
+  display: grid;
+  gap: 5px;
+  max-height: 150px;
+  overflow: auto;
+}
+
+.ledger-category-option {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--cream);
+  touch-action: pan-y;
+}
+
+.ledger-category-pick {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid #ead9c5;
+  border-radius: 10px;
+  background: var(--cream);
+  text-align: left;
+  transition: transform 0.16s ease;
+}
+
+.ledger-category-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 58px;
+  height: 100%;
+  border: 0;
+  border-radius: 0 10px 10px 0;
+  background: #e45757;
+  color: #fff;
+  font-weight: 700;
+}
+
+.ledger-category-option.show-delete .ledger-category-pick {
+  transform: translateX(-58px);
+}
+
+.ledger-category-add-toggle {
+  width: 100%;
+  min-height: 30px;
+  border: 1px dashed #e0c59e;
+  border-radius: 999px;
+  background: #fff8df;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ledger-category-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.ledger-category-add-row input,
+.ledger-category-add-row button {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffdf8;
+  padding: 0 8px;
+  font: 12px SimSun, "Microsoft YaHei", sans-serif;
 }
 
 .ledger-form input[data-ledger="amount"] {

@@ -23,7 +23,7 @@
     welcomeEnabled: true,
     welcomeTitle: DEFAULT_WELCOME_TITLE,
     welcomeText: DEFAULT_WELCOME_TEXT,
-    notificationsEnabled: false,
+    notificationsEnabled: true,
     language: "zh",
     showNotes: true,
     showDiary: true,
@@ -459,6 +459,9 @@
     activeNoteId: localStorage.getItem(NOTE_ID_KEY) || "",
     noteListCollapsed: localStorage.getItem(NOTE_LIST_COLLAPSED_KEY) === "1",
     ledgerPeriod: "today",
+    ledgerCategory: "",
+    categorySwipe: null,
+    ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
     activeAlarm: null,
@@ -951,7 +954,7 @@
   }
 
   function sendSystemNotification(row) {
-    if (!settings().notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
     try {
       new Notification("待办提醒", {
         body: `${row.time}  ${row.text}`,
@@ -1620,25 +1623,37 @@
       ["lastMonth", tx("periodLastMonth")]
     ].map(([key, label]) => `<button class="${range.key === key ? "active" : ""}" data-action="ledgerPeriod" data-period="${key}" type="button">${label}</button>`).join("");
     const categories = ledgerCategories();
-    const categoryOptions = categories.map((category) => `<option value="${escapeAttr(category)}">${escapeHtml(category)}</option>`).join("");
-    const categoryChips = categories.map((category) => {
-      return `<button class="category-chip" data-action="deleteLedgerCategory" data-category="${escapeAttr(category)}" title="${tx("delete")}${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>`;
-    }).join("");
+    if (!state.ledgerCategory || !categories.includes(state.ledgerCategory)) state.ledgerCategory = categories[0] || "";
+    const categoryRows = categories.map((category) => `
+        <div class="ledger-category-option" data-category-row data-category="${escapeAttr(category)}">
+          <button class="ledger-category-pick" data-action="selectLedgerCategory" data-category="${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>
+          <button class="ledger-category-delete" data-action="deleteLedgerCategory" data-category="${escapeAttr(category)}" type="button">${tx("delete")}</button>
+        </div>
+      `).join("");
     content.innerHTML = [
       '<div class="ledger-form">',
       '<div class="ledger-main-row">',
       `<select data-ledger="type"><option value="expense">${tx("expense")}</option><option value="income">${tx("income")}</option></select>`,
-      `<select data-ledger="category" aria-label="${tx("category")}">${categoryOptions || `<option value="">${tx("category")}</option>`}</select>`,
+      `<div class="ledger-category-picker" data-category-picker>
+        <input data-ledger="category" type="hidden" value="${escapeAttr(state.ledgerCategory)}">
+        <button class="ledger-category-trigger" data-action="toggleLedgerCategoryMenu" type="button">
+          <span data-category-label>${escapeHtml(state.ledgerCategory || tx("category"))}</span>
+          <span class="category-caret">⌄</span>
+        </button>
+        <div class="ledger-category-menu hidden" data-category-menu>
+          <div class="ledger-category-scroll">${categoryRows || `<div class="empty">${tx("none")}</div>`}</div>
+          <button class="ledger-category-add-toggle" data-action="toggleLedgerCategoryAdd" type="button">＋</button>
+          <div class="ledger-category-add-row hidden" data-category-add-row>
+            <input data-ledger="newCategory" type="text" maxlength="8" placeholder="${tx("newCategoryPlaceholder")}">
+            <button data-action="addLedgerCategory" type="button">${tx("addCategory")}</button>
+          </div>
+        </div>
+      </div>`,
       `<input data-ledger="amount" type="number" step="0.01" placeholder="${tx("amount")}">`,
       "</div>",
       `<input data-ledger="note" type="text" placeholder="${tx("note")}">`,
       `<button data-action="addLedger" type="button">${tx("addLedger")}</button>`,
       "</div>",
-      '<div class="ledger-category-tools">',
-      `<input data-ledger="newCategory" type="text" placeholder="${tx("newCategoryPlaceholder")}">`,
-      `<button data-action="addLedgerCategory" type="button">${tx("addCategory")}</button>`,
-      "</div>",
-      `<div class="category-chips">${categoryChips}</div>`,
       `<div class="ledger-periods" role="radiogroup" aria-label="${tx("date")}">${periodButtons}</div>`,
       '<div class="ledger-summary">',
       `<span>${tx("income")} ${formatMoney(income)}</span>`,
@@ -1686,6 +1701,7 @@
       return;
     }
     state.data.ledgerCategories.push(category);
+    state.ledgerCategory = category;
     scheduleSave();
     setStatus(tx("categoryAdded"));
     render();
@@ -1695,9 +1711,38 @@
     category = String(category || "").trim();
     if (!category) return;
     state.data.ledgerCategories = ledgerCategories().filter((item) => item !== category);
+    if (state.ledgerCategory === category) state.ledgerCategory = state.data.ledgerCategories[0] || "";
     scheduleSave();
     setStatus(tx("categoryDeleted"));
     render();
+  }
+
+  function toggleLedgerCategoryMenu() {
+    const menu = content.querySelector("[data-category-menu]");
+    if (!menu) return;
+    menu.classList.toggle("hidden");
+    content.querySelectorAll(".ledger-category-option.show-delete").forEach((row) => row.classList.remove("show-delete"));
+  }
+
+  function closeLedgerCategoryMenu() {
+    content.querySelector("[data-category-menu]")?.classList.add("hidden");
+  }
+
+  function selectLedgerCategory(category) {
+    category = String(category || "").trim();
+    state.ledgerCategory = category;
+    const input = content.querySelector('[data-ledger="category"]');
+    const label = content.querySelector("[data-category-label]");
+    if (input) input.value = category;
+    if (label) label.textContent = category || tx("category");
+    closeLedgerCategoryMenu();
+  }
+
+  function toggleLedgerCategoryAdd() {
+    const row = content.querySelector("[data-category-add-row]");
+    if (!row) return;
+    row.classList.toggle("hidden");
+    if (!row.classList.contains("hidden")) row.querySelector("input")?.focus();
   }
 
   function deleteLedger(id) {
@@ -1723,11 +1768,6 @@
           : tx("notifyEnable");
     content.innerHTML = [
       '<div class="settings-panel">',
-      settingSelect("language", tx("uiLanguage"), current.language, [
-        ["zh", tx("languageZh")],
-        ["ja", tx("languageJa")],
-        ["en", tx("languageEn")]
-      ]),
       '<div class="section-title">' + tx("featureSection") + "</div>",
       settingCheckbox("showNotes", tx("showNotes"), current.showNotes !== false),
       settingCheckbox("showDiary", tx("showDiary"), current.showDiary !== false),
@@ -1750,6 +1790,11 @@
       '<div class="section-title">' + tx("alarmSection") + "</div>",
       `<button class="setting-button" data-action="enableNotifications" type="button">${escapeHtml(notificationText)}</button>`,
       `<div class="setting-note">${tx("notifyNote")}</div>`,
+      settingSelect("language", tx("uiLanguage"), current.language, [
+        ["zh", tx("languageZh")],
+        ["ja", tx("languageJa")],
+        ["en", tx("languageEn")]
+      ]),
       "</div>"
     ].join("");
   }
@@ -2401,14 +2446,60 @@
     });
   });
 
+  content.addEventListener("pointerdown", (event) => {
+    const row = event.target.closest("[data-category-row]");
+    if (!row || event.target.closest(".ledger-category-delete")) return;
+    state.categorySwipe = {
+      row,
+      startX: event.clientX,
+      startY: event.clientY,
+      swiped: false
+    };
+  });
+
+  content.addEventListener("pointermove", (event) => {
+    const swipe = state.categorySwipe;
+    if (!swipe) return;
+    const dx = event.clientX - swipe.startX;
+    const dy = event.clientY - swipe.startY;
+    if (Math.abs(dx) > 32 && Math.abs(dx) > Math.abs(dy) && !swipe.swiped) {
+      swipe.swiped = true;
+      state.ignoreCategoryClick = true;
+      content.querySelectorAll(".ledger-category-option.show-delete").forEach((row) => row.classList.remove("show-delete"));
+      swipe.row.classList.add("show-delete");
+    }
+  });
+
+  content.addEventListener("pointerup", () => {
+    const swiped = state.categorySwipe?.swiped;
+    state.categorySwipe = null;
+    if (swiped) {
+      window.setTimeout(() => {
+        state.ignoreCategoryClick = false;
+      }, 250);
+    }
+  });
+
+  content.addEventListener("pointercancel", () => {
+    state.categorySwipe = null;
+    state.ignoreCategoryClick = false;
+  });
+
   content.addEventListener("click", (event) => {
-    const action = event.target.dataset.action;
+    if (!event.target.closest("[data-category-picker]")) closeLedgerCategoryMenu();
+    const actionTarget = event.target.closest("[data-action]");
+    const action = actionTarget?.dataset.action;
+    if (!action) return;
+    if (state.ignoreCategoryClick && ["selectLedgerCategory", "toggleLedgerCategoryMenu"].includes(action)) {
+      event.preventDefault();
+      return;
+    }
     if (action === "toggleCompleted") {
       state.showCompleted = !state.showCompleted;
       render();
     }
     if (action === "complete") {
-      const row = todoRows().find((item) => item.key === event.target.dataset.key);
+      const row = todoRows().find((item) => item.key === actionTarget.dataset.key);
       if (row) completeRow(row);
     }
     if (action === "addLedger") {
@@ -2423,14 +2514,23 @@
       addLedgerCategory(content.querySelector('[data-ledger="newCategory"]').value);
     }
     if (action === "deleteLedgerCategory") {
-      deleteLedgerCategory(event.target.dataset.category);
+      deleteLedgerCategory(actionTarget.dataset.category);
+    }
+    if (action === "toggleLedgerCategoryMenu") {
+      toggleLedgerCategoryMenu();
+    }
+    if (action === "selectLedgerCategory") {
+      selectLedgerCategory(actionTarget.dataset.category);
+    }
+    if (action === "toggleLedgerCategoryAdd") {
+      toggleLedgerCategoryAdd();
     }
     if (action === "ledgerPeriod") {
-      state.ledgerPeriod = normalizeLedgerPeriod(event.target.dataset.period);
+      state.ledgerPeriod = normalizeLedgerPeriod(actionTarget.dataset.period);
       render();
     }
     if (action === "deleteLedger") {
-      deleteLedger(event.target.dataset.key);
+      deleteLedger(actionTarget.dataset.key);
     }
     if (action === "enableNotifications") {
       enableNotifications();
