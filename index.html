@@ -57,14 +57,21 @@
     <section id="content" class="content" aria-live="polite"></section>
 
     <section id="notePanel" class="note-panel hidden">
-      <textarea id="noteInput" spellcheck="false" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ"></textarea>
-      <div class="note-meta" data-i18n="noteMeta">便签每 3 秒自动保存</div>
+      <div class="note-editor">
+        <input id="noteTitleInput" class="note-title-input" type="text" data-i18n-placeholder="noteTitlePlaceholder" placeholder="便签标题">
+        <textarea id="noteInput" spellcheck="false" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ"></textarea>
+      </div>
+      <aside id="noteSidebar" class="note-sidebar">
+        <div id="noteList" class="note-list"></div>
+        <button id="noteAddButton" class="note-tool-button" type="button">＋</button>
+        <button id="noteToggleButton" class="note-tool-button" type="button">收起</button>
+      </aside>
+      <button id="noteExpandButton" class="note-expand hidden" type="button">⌃</button>
     </section>
 
     <section id="diaryPanel" class="note-panel diary-panel hidden">
       <div class="diary-toolbar">
         <input id="diaryDateInput" type="date">
-        <span data-i18n="diaryMeta">日记每 3 秒自动保存</span>
       </div>
       <textarea id="diaryInput" spellcheck="false" data-i18n-placeholder="diaryPlaceholder" placeholder="今天想记录点什么 (｡･ω･｡)"></textarea>
     </section>
@@ -72,7 +79,7 @@
     <footer id="commandBar" class="command-bar">
       <input id="commandInput" type="text" autocomplete="off" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ">
       <select id="commandTimerSelect" class="command-timer" aria-label="完成提醒">
-        <option value="0">完成提醒：不需要</option>
+        <option value="0">完成提醒：无</option>
         <option value="60">1 小时完成</option>
         <option value="120">2 小时完成</option>
         <option value="240">4 小时完成</option>

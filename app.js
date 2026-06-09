@@ -5,8 +5,10 @@
   const LAST_EMAIL_KEY = "todoCloudLastEmail";
   const HISTORY_DATE_KEY = "todoCloudHistoryDate";
   const DIARY_DATE_KEY = "todoCloudDiaryDate";
+  const NOTE_ID_KEY = "todoCloudActiveNoteId";
+  const NOTE_LIST_COLLAPSED_KEY = "todoCloudNoteListCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
-  const LEDGER_PERIOD_KEY = "todoCloudLedgerPeriod";
+  const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSize";
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ω･｡)ﾉ";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
   const OLD_WELCOME_TITLE = "待办提醒 顽张って！";
@@ -57,6 +59,11 @@
       localMode: "本地模式：未登录",
       placeholder: PLACEHOLDER,
       noteMeta: "便签每 3 秒自动保存",
+      noteTitlePlaceholder: "便签标题",
+      noteDefaultTitle: "便签",
+      noteAdd: "新建便签",
+      noteCollapse: "收起",
+      noteExpand: "展开便签列表",
       diaryMeta: "日记每 3 秒自动保存",
       diaryPlaceholder: "今天想记录点什么 (｡･ω･｡)",
       enterTodos: "进入待办",
@@ -73,6 +80,7 @@
       none: "暂无",
       noOverdue: "没有过期待办哦 (｡･ω･｡)ﾉ",
       complete: "完成",
+      completeIcon: "✓",
       delete: "删除",
       futureTodos: "未来待办：",
       dailyReminders: "每日提醒：",
@@ -122,7 +130,7 @@
       openTutorial: "打开使用说明",
       helpTitle: "待办使用说明",
       helpClose: "知道了",
-      reminderInputPlaceholder: "输入提醒，例如：每天17:00提醒我xx",
+      reminderInputPlaceholder: "写个小提醒吧，例如：每天17:00提醒我xx",
       editPlaceholder: "修改内容",
       editDone: "已修改待办 (｡･ω･｡)ﾉ",
       editDuplicate: "已经有这条了，不能改成重复内容。",
@@ -153,7 +161,7 @@
       diaryLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
       wrongPin: "密码不对 (｡•́︿•̀｡)",
-      timerNone: "完成提醒：不需要",
+      timerNone: "完成提醒：无",
       timer1h: "1 小时完成",
       timer2h: "2 小时完成",
       timer4h: "4 小时完成",
@@ -189,6 +197,11 @@
       localMode: "ローカル：未ログイン",
       placeholder: "ここに書いてね (｡･ω･｡)ﾉ",
       noteMeta: "メモは3秒ごとに自動保存",
+      noteTitlePlaceholder: "メモのタイトル",
+      noteDefaultTitle: "メモ",
+      noteAdd: "メモを追加",
+      noteCollapse: "閉じる",
+      noteExpand: "メモ一覧を開く",
       diaryMeta: "日記は3秒ごとに自動保存",
       diaryPlaceholder: "今日のことを書いてね (｡･ω･｡)",
       enterTodos: "始める",
@@ -205,6 +218,7 @@
       none: "なし",
       noOverdue: "期限切れはありません (｡･ω･｡)ﾉ",
       complete: "完了",
+      completeIcon: "✓",
       delete: "削除",
       futureTodos: "今後のToDo：",
       dailyReminders: "毎日の通知：",
@@ -254,7 +268,7 @@
       openTutorial: "使い方を開く",
       helpTitle: "ToDoの使い方",
       helpClose: "OK",
-      reminderInputPlaceholder: "例：毎日17:00にxxを通知",
+      reminderInputPlaceholder: "小さな通知を書く：毎日17:00にxxを通知",
       editPlaceholder: "内容を編集",
       editDone: "ToDoを編集しました (｡･ω･｡)ﾉ",
       editDuplicate: "同じ内容がすでにあります。",
@@ -321,6 +335,11 @@
       localMode: "Local mode: not signed in",
       placeholder: "Write something (｡･ω･｡)ﾉ",
       noteMeta: "Notes auto-save every 3 seconds",
+      noteTitlePlaceholder: "Note title",
+      noteDefaultTitle: "Note",
+      noteAdd: "New note",
+      noteCollapse: "Collapse",
+      noteExpand: "Open note list",
       diaryMeta: "Diary auto-saves every 3 seconds",
       diaryPlaceholder: "Write today's diary (｡･ω･｡)",
       enterTodos: "Enter todo",
@@ -337,6 +356,7 @@
       none: "None",
       noOverdue: "No overdue todos (｡･ω･｡)ﾉ",
       complete: "Done",
+      completeIcon: "✓",
       delete: "Delete",
       futureTodos: "Future todos:",
       dailyReminders: "Daily reminders:",
@@ -386,7 +406,7 @@
       openTutorial: "Open guide",
       helpTitle: "Todo guide",
       helpClose: "Got it",
-      reminderInputPlaceholder: "Reminder example: daily 17:00 xx",
+      reminderInputPlaceholder: "Write a tiny reminder: daily 17:00 xx",
       editPlaceholder: "Edit text",
       editDone: "Todo updated (｡･ω･｡)ﾉ",
       editDuplicate: "That item already exists.",
@@ -417,7 +437,7 @@
       diaryLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
       wrongPin: "Wrong PIN (｡•́︿•̀｡)",
-      timerNone: "Completion reminder: none",
+      timerNone: "Completion reminder: off",
       timer1h: "Finish in 1h",
       timer2h: "Finish in 2h",
       timer4h: "Finish in 4h",
@@ -436,7 +456,9 @@
     view: "todos",
     historyDate: localStorage.getItem(HISTORY_DATE_KEY) || todayKey(),
     diaryDate: localStorage.getItem(DIARY_DATE_KEY) || todayKey(),
-    ledgerPeriod: normalizeLedgerPeriod(localStorage.getItem(LEDGER_PERIOD_KEY)),
+    activeNoteId: localStorage.getItem(NOTE_ID_KEY) || "",
+    noteListCollapsed: localStorage.getItem(NOTE_LIST_COLLAPSED_KEY) === "1",
+    ledgerPeriod: "today",
     showCompleted: true,
     alarmTimer: null,
     activeAlarm: null,
@@ -445,6 +467,7 @@
     statusTimer: null,
     noteTimer: null,
     diaryTimer: null,
+    windowSizeTimer: null,
     saveTimer: null
   };
 
@@ -461,7 +484,13 @@
   const userLabel = $("#userLabel");
   const content = $("#content");
   const notePanel = $("#notePanel");
+  const noteTitleInput = $("#noteTitleInput");
   const noteInput = $("#noteInput");
+  const noteSidebar = $("#noteSidebar");
+  const noteList = $("#noteList");
+  const noteAddButton = $("#noteAddButton");
+  const noteToggleButton = $("#noteToggleButton");
+  const noteExpandButton = $("#noteExpandButton");
   const diaryPanel = $("#diaryPanel");
   const diaryInput = $("#diaryInput");
   const diaryDateInput = $("#diaryDateInput");
@@ -495,12 +524,47 @@
       dateImportantReminders: [],
       days: {},
       noteText: "",
+      notes: [],
       diaries: {},
       versionLog: [],
       ledger: [],
       ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
       settings: { ...DEFAULT_SETTINGS }
     };
+  }
+
+  function defaultNoteTitle(index = 1) {
+    return `便签${index}`;
+  }
+
+  function normalizeNotes(value, fallbackText = "") {
+    let notes = [];
+    if (Array.isArray(value)) {
+      if (value.some((item) => item && typeof item === "object")) {
+        notes = value.map((item, index) => ({
+          id: String(item.id || `note-${index + 1}`),
+          title: String(item.title || defaultNoteTitle(index + 1)).trim() || defaultNoteTitle(index + 1),
+          text: typeof item.text === "string" ? item.text : ""
+        }));
+      } else {
+        const text = value.filter(Boolean).join("\n");
+        if (text) notes = [{ id: "note-1", title: defaultNoteTitle(1), text }];
+      }
+    }
+    if (!notes.length) {
+      notes = [{ id: "note-1", title: defaultNoteTitle(1), text: fallbackText || "" }];
+    }
+    const seen = new Set();
+    return notes.map((note, index) => {
+      let id = note.id || `note-${index + 1}`;
+      while (seen.has(id)) id = `${id}-${index + 1}`;
+      seen.add(id);
+      return {
+        id,
+        title: note.title || defaultNoteTitle(index + 1),
+        text: typeof note.text === "string" ? note.text : ""
+      };
+    });
   }
 
   function normalizeData(data) {
@@ -519,14 +583,17 @@
     data.oneTimeReminders = asArray(data.oneTimeReminders);
     data.dateImportantReminders = asArray(data.dateImportantReminders);
     data.noteText = typeof data.noteText === "string" ? data.noteText : "";
-    if (!data.noteText && Array.isArray(data.notes)) data.noteText = data.notes.filter(Boolean).join("\n");
+    data.notes = normalizeNotes(data.notes, data.noteText);
+    data.noteText = data.notes[0]?.text || "";
     data.diaries = data.diaries && typeof data.diaries === "object" ? data.diaries : {};
     Object.keys(data.diaries).forEach((dateKey) => {
       data.diaries[dateKey] = typeof data.diaries[dateKey] === "string" ? data.diaries[dateKey] : "";
     });
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger).filter((item) => item && typeof item === "object");
-    data.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...asArray(data.ledgerCategories)]);
+    data.ledgerCategories = Array.isArray(data.ledgerCategories)
+      ? uniqueStrings(data.ledgerCategories)
+      : [...DEFAULT_LEDGER_CATEGORIES];
     data.settings = { ...DEFAULT_SETTINGS, ...(data.settings && typeof data.settings === "object" ? data.settings : {}) };
     if (data.settings.welcomeTitle === OLD_WELCOME_TITLE) data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (data.settings.welcomeText === OLD_WELCOME_TEXT) data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
@@ -751,8 +818,9 @@
     merged.dateImportantReminders = dedupeBy([...merged.dateImportantReminders, ...extra.dateImportantReminders], (item) => item.text && `${item.date}|${item.text}`);
     merged.versionLog = dedupeBy([...merged.versionLog, ...extra.versionLog], (item) => `${item.at || ""}|${item.action || ""}|${item.text || item}`);
     merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
-    merged.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...extra.ledgerCategories, ...merged.ledgerCategories]);
-    merged.noteText = merged.noteText || extra.noteText;
+    merged.ledgerCategories = uniqueStrings([...extra.ledgerCategories, ...merged.ledgerCategories]);
+    merged.notes = dedupeBy([...extra.notes, ...merged.notes], (item) => item.id || `${item.title}|${item.text}`);
+    merged.noteText = merged.notes[0]?.text || merged.noteText || extra.noteText;
     merged.diaries = { ...extra.diaries, ...merged.diaries };
     merged.settings = { ...DEFAULT_SETTINGS, ...extra.settings, ...merged.settings };
 
@@ -770,28 +838,6 @@
     return JSON.parse(JSON.stringify(value || emptyData()));
   }
 
-  function hasMeaningfulData(data) {
-    const current = normalizeData(data);
-    return Boolean(
-      current.noteText ||
-      Object.values(current.diaries).some(Boolean) ||
-      current.ledger.length ||
-      current.versionLog.length ||
-      current.dailyImportantReminders.length ||
-      current.dailyReminders.length ||
-      current.weeklyReminders.length ||
-      current.monthlyReminders.length ||
-      current.oneTimeReminders.length ||
-      current.dateImportantReminders.length ||
-      Object.values(current.days).some((item) =>
-        asArray(item.pending).length ||
-        asArray(item.inProgress).length ||
-        asArray(item.completed).length ||
-        asArray(item.hidden).length
-      )
-    );
-  }
-
   async function loadUser() {
     const { data, error } = await state.supabase.auth.getUser();
     if (error || !data.user) {
@@ -807,7 +853,6 @@
 
   async function loadCloudData() {
     const local = localData();
-    const hadLocalData = hasMeaningfulData(local);
     const { data, error } = await state.supabase
       .from("todo_documents")
       .select("data")
@@ -818,7 +863,6 @@
     state.data = mergeData(data ? data.data : emptyData(), local);
     state.localReady = true;
     await saveNow();
-    if (hadLocalData) setStatus(tx("localMerged"));
   }
 
   function scheduleSave() {
@@ -856,6 +900,7 @@
     applyLanguage();
     if (state.user?.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
     render();
+    restorePwaWindowSize();
     showWelcomeIfNeeded();
     startAlarmLoop();
   }
@@ -972,6 +1017,54 @@
     if (!fullscreenButton) return;
     fullscreenButton.textContent = isFullscreen() ? tx("exitFullScreen") : tx("fullScreen");
     appPanel.classList.toggle("is-fullscreen", isFullscreen());
+  }
+
+  function isStandaloneApp() {
+    return Boolean(window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone);
+  }
+
+  function windowSizeFromStorage() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PWA_WINDOW_SIZE_KEY) || "null");
+      return saved && typeof saved === "object" ? saved : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clampWindowSize(width, height) {
+    const maxWidth = window.screen?.availWidth || width || 430;
+    const maxHeight = window.screen?.availHeight || height || 720;
+    return {
+      width: Math.min(Math.max(Math.round(Number(width) || 430), 360), maxWidth),
+      height: Math.min(Math.max(Math.round(Number(height) || 720), 520), maxHeight)
+    };
+  }
+
+  function restorePwaWindowSize() {
+    if (!isStandaloneApp() || typeof window.resizeTo !== "function") return;
+    const saved = windowSizeFromStorage();
+    const size = clampWindowSize(saved?.width || 430, saved?.height || 720);
+    if (Math.abs(window.outerWidth - size.width) < 8 && Math.abs(window.outerHeight - size.height) < 8) return;
+    setTimeout(() => {
+      try {
+        window.resizeTo(size.width, size.height);
+      } catch {
+        // Some browsers block scripted window resize even for installed apps.
+      }
+    }, 120);
+  }
+
+  function savePwaWindowSize() {
+    if (!isStandaloneApp() || isFullscreen()) return;
+    const size = clampWindowSize(window.outerWidth, window.outerHeight);
+    localStorage.setItem(PWA_WINDOW_SIZE_KEY, JSON.stringify(size));
+  }
+
+  function schedulePwaWindowSizeSave() {
+    if (!isStandaloneApp() || isFullscreen()) return;
+    clearTimeout(state.windowSizeTimer);
+    state.windowSizeTimer = setTimeout(savePwaWindowSize, 450);
   }
 
   async function toggleFullscreen() {
@@ -1122,7 +1215,9 @@
     rows.forEach((row, i) => {
       const index = row.index || startIndex + i;
       const time = row.time ? `<span class="time">${escapeHtml(row.time)}</span> ` : "";
-      const action = row.action ? `<button data-action="${row.action}" data-key="${escapeAttr(row.key)}">${row.label || tx("complete")}</button>` : "";
+      const action = row.action
+        ? `<button class="row-action ${row.action === "complete" ? "complete-action" : ""}" data-action="${row.action}" data-key="${escapeAttr(row.key)}" title="${escapeAttr(row.label || tx("complete"))}" aria-label="${escapeAttr(row.label || tx("complete"))}">${row.action === "complete" ? tx("completeIcon") : row.label || tx("complete")}</button>`
+        : "";
       const editAttrs = row.editable ? ` class="row-main editable-row" title="双击修改" data-edit-group="${escapeAttr(row.editGroup)}" data-edit-key="${escapeAttr(row.editKey)}"` : ' class="row-main"';
       parts.push(`<div class="row"><span class="idx">${index}.</span><span${editAttrs}>${time}${escapeHtml(row.text)}</span>${action}</div>`);
     });
@@ -1271,8 +1366,9 @@
   function renderTodos() {
     const rows = todoRows();
     const completed = day().completed;
+    const overdue = rows.filter((row) => row.group === "overdue" || row.group === "overdueSingle");
     let html = "";
-    html += section(tx("overdueTitle"), rows.filter((row) => row.group === "overdue" || row.group === "overdueSingle"), 1, tx("noOverdue"));
+    if (overdue.length) html += section(tx("overdueTitle"), overdue);
     html += section(tx("inProgressTitle"), rows.filter((row) => row.group === "ing"));
     html += section(tx("todosTitle"), rows.filter((row) => row.group === "todo" || row.group === "reminder" || row.group === "single"));
     html += `<div class="section-title completed-toggle" data-action="toggleCompleted">${tx("completedTitle")}${state.showCompleted ? tx("collapse") : tx("expand")}</div>`;
@@ -1403,8 +1499,44 @@
       .map((entry) => ({ time: entry.at || "", text: logText(entry) }));
   }
 
+  function allNotes() {
+    state.data.notes = normalizeNotes(state.data.notes, state.data.noteText || "");
+    if (!state.activeNoteId || !state.data.notes.some((note) => note.id === state.activeNoteId)) {
+      state.activeNoteId = state.data.notes[0].id;
+      localStorage.setItem(NOTE_ID_KEY, state.activeNoteId);
+    }
+    return state.data.notes;
+  }
+
+  function activeNote() {
+    return allNotes().find((note) => note.id === state.activeNoteId) || allNotes()[0];
+  }
+
+  function syncLegacyNoteText() {
+    state.data.noteText = allNotes()[0]?.text || "";
+  }
+
+  function renderNoteList() {
+    const notes = allNotes();
+    noteList.innerHTML = notes.map((note, index) => {
+      const title = note.title || defaultNoteTitle(index + 1);
+      const active = note.id === state.activeNoteId ? " active" : "";
+      return `<button class="note-list-item${active}" data-note-id="${escapeAttr(note.id)}" type="button">${escapeHtml(title)}</button>`;
+    }).join("");
+  }
+
   function renderNotes() {
-    noteInput.value = state.data.noteText || "";
+    const current = activeNote();
+    notePanel.classList.toggle("notes-collapsed", state.noteListCollapsed);
+    noteSidebar.classList.toggle("hidden", state.noteListCollapsed);
+    noteExpandButton.classList.toggle("hidden", !state.noteListCollapsed);
+    noteTitleInput.value = current.title || "";
+    noteInput.value = current.text || "";
+    noteAddButton.title = tx("noteAdd");
+    noteToggleButton.textContent = tx("noteCollapse");
+    noteToggleButton.title = tx("noteCollapse");
+    noteExpandButton.title = tx("noteExpand");
+    renderNoteList();
   }
 
   function renderDiary() {
@@ -1456,7 +1588,8 @@
   }
 
   function ledgerCategories() {
-    state.data.ledgerCategories = uniqueStrings([...DEFAULT_LEDGER_CATEGORIES, ...asArray(state.data.ledgerCategories)]);
+    if (!Array.isArray(state.data.ledgerCategories)) state.data.ledgerCategories = [...DEFAULT_LEDGER_CATEGORIES];
+    state.data.ledgerCategories = uniqueStrings(state.data.ledgerCategories);
     return state.data.ledgerCategories;
   }
 
@@ -1486,16 +1619,18 @@
       ["thisMonth", tx("periodThisMonth")],
       ["lastMonth", tx("periodLastMonth")]
     ].map(([key, label]) => `<button class="${range.key === key ? "active" : ""}" data-action="ledgerPeriod" data-period="${key}" type="button">${label}</button>`).join("");
-    const categoryOptions = ledgerCategories().map((category) => `<option value="${escapeAttr(category)}">${escapeHtml(category)}</option>`).join("");
-    const categoryChips = ledgerCategories().map((category) => {
-      const deletable = !DEFAULT_LEDGER_CATEGORIES.includes(category);
-      return `<button class="category-chip ${deletable ? "" : "locked"}" data-action="${deletable ? "deleteLedgerCategory" : ""}" data-category="${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>`;
+    const categories = ledgerCategories();
+    const categoryOptions = categories.map((category) => `<option value="${escapeAttr(category)}">${escapeHtml(category)}</option>`).join("");
+    const categoryChips = categories.map((category) => {
+      return `<button class="category-chip" data-action="deleteLedgerCategory" data-category="${escapeAttr(category)}" title="${tx("delete")}${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>`;
     }).join("");
     content.innerHTML = [
       '<div class="ledger-form">',
+      '<div class="ledger-main-row">',
       `<select data-ledger="type"><option value="expense">${tx("expense")}</option><option value="income">${tx("income")}</option></select>`,
-      `<select data-ledger="category" aria-label="${tx("category")}">${categoryOptions}</select>`,
+      `<select data-ledger="category" aria-label="${tx("category")}">${categoryOptions || `<option value="">${tx("category")}</option>`}</select>`,
       `<input data-ledger="amount" type="number" step="0.01" placeholder="${tx("amount")}">`,
+      "</div>",
       `<input data-ledger="note" type="text" placeholder="${tx("note")}">`,
       `<button data-action="addLedger" type="button">${tx("addLedger")}</button>`,
       "</div>",
@@ -1558,11 +1693,7 @@
 
   function deleteLedgerCategory(category) {
     category = String(category || "").trim();
-    if (!category || DEFAULT_LEDGER_CATEGORIES.includes(category)) return;
-    if (asArray(state.data.ledger).some((item) => item.category === category)) {
-      setStatus(tx("categoryInUse"), false);
-      return;
-    }
+    if (!category) return;
     state.data.ledgerCategories = ledgerCategories().filter((item) => item !== category);
     scheduleSave();
     setStatus(tx("categoryDeleted"));
@@ -1667,6 +1798,7 @@
         "<li>Future todo: <code>tomorrow xx</code> is supported in Chinese commands such as <code>明天xx</code>.</li>",
         "<li>Timed reminders: <code>每天17:00提醒我xx</code>, <code>明天14:30提醒我xx</code>, <code>每周三10:25提醒我xx</code>, <code>每月1号提醒我xx</code>.</li>",
         "<li>Edit: double-click a normal Today/In progress row.</li>",
+        "<li>Notes and diary auto-save while you type.</li>",
         "<li>Ledger commands: <code>支出25 xx</code>, <code>收入300 xx</code>.</li>",
         "</ul>"
       ].join("");
@@ -1682,6 +1814,7 @@
         "<li>未来のToDo：<code>明天xx</code> / <code>后天xx</code> / <code>大后天xx</code>。</li>",
         "<li>通知：<code>每天17:00提醒我xx</code> / <code>明天14:30提醒我xx</code> / <code>每周三10:25提醒我xx</code> / <code>每月1号提醒我xx</code>。</li>",
         "<li>編集：今日待办 / 进行中 の普通項目をダブルクリック。</li>",
+        "<li>メモと日記は入力中に自動保存されます。</li>",
         "<li>記帳：<code>支出25 xx</code> / <code>收入300 xx</code>。</li>",
         "</ul>"
       ].join("");
@@ -1696,6 +1829,7 @@
       "<li>未来待办：<code>明天xx</code>、<code>后天xx</code>、<code>大后天xx</code>。</li>",
       "<li>定时提醒：<code>每天17:00提醒我xx</code>、<code>明天14:30提醒我xx</code>、<code>每周三10:25提醒我xx</code>、<code>每月1号提醒我xx</code>。</li>",
       "<li>修改文字：双击“今日待办”或“进行中”的普通事项，输入新内容后回车。</li>",
+      "<li>便签和日记都会在输入时自动保存，不需要手动保存。</li>",
       "<li>记账：<code>支出25 xx</code>、<code>收入300 xx</code>；也可以在记账页选择分类后记录。</li>",
       "</ul>"
     ].join("");
@@ -1712,6 +1846,7 @@
     diaryPanel.classList.toggle("hidden", state.view !== "diary" || lockedDiary);
     content.classList.toggle("hidden", (state.view === "notes") || (state.view === "diary" && !lockedDiary));
     commandBar.classList.toggle("hidden", !["todos", "reminders"].includes(state.view));
+    commandBar.classList.toggle("reminder-mode", state.view === "reminders");
     commandTimerSelect.classList.toggle("hidden", state.view !== "todos");
     commandInput.placeholder = state.view === "reminders" ? tx("reminderInputPlaceholder") : tx("placeholder");
     localStorage.setItem(VIEW_KEY, state.view);
@@ -2292,7 +2427,6 @@
     }
     if (action === "ledgerPeriod") {
       state.ledgerPeriod = normalizeLedgerPeriod(event.target.dataset.period);
-      localStorage.setItem(LEDGER_PERIOD_KEY, state.ledgerPeriod);
       render();
     }
     if (action === "deleteLedger") {
@@ -2400,13 +2534,62 @@
     render();
   });
 
-  noteInput.addEventListener("input", () => {
+  noteTitleInput.addEventListener("input", () => {
+    const current = activeNote();
+    current.title = noteTitleInput.value.trim() || tx("noteDefaultTitle");
+    renderNoteList();
     clearTimeout(state.noteTimer);
     state.noteTimer = setTimeout(() => {
-      state.data.noteText = noteInput.value;
       scheduleSave();
-      setStatus("便签已自动保存 (｡･ω･｡)ﾉ");
     }, 3000);
+  });
+
+  noteInput.addEventListener("input", () => {
+    const current = activeNote();
+    current.text = noteInput.value;
+    syncLegacyNoteText();
+    clearTimeout(state.noteTimer);
+    state.noteTimer = setTimeout(() => {
+      scheduleSave();
+    }, 3000);
+  });
+
+  noteList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-note-id]");
+    if (!button) return;
+    state.activeNoteId = button.dataset.noteId;
+    localStorage.setItem(NOTE_ID_KEY, state.activeNoteId);
+    renderNotes();
+  });
+
+  noteAddButton.addEventListener("click", () => {
+    const notes = allNotes();
+    const nextIndex = notes.length + 1;
+    const note = {
+      id: `note-${Date.now()}`,
+      title: `${tx("noteDefaultTitle")}${nextIndex}`,
+      text: ""
+    };
+    notes.push(note);
+    state.activeNoteId = note.id;
+    state.noteListCollapsed = false;
+    localStorage.setItem(NOTE_ID_KEY, state.activeNoteId);
+    localStorage.setItem(NOTE_LIST_COLLAPSED_KEY, "0");
+    syncLegacyNoteText();
+    scheduleSave();
+    renderNotes();
+  });
+
+  noteToggleButton.addEventListener("click", () => {
+    state.noteListCollapsed = true;
+    localStorage.setItem(NOTE_LIST_COLLAPSED_KEY, "1");
+    renderNotes();
+  });
+
+  noteExpandButton.addEventListener("click", () => {
+    state.noteListCollapsed = false;
+    localStorage.setItem(NOTE_LIST_COLLAPSED_KEY, "0");
+    renderNotes();
   });
 
   diaryDateInput.addEventListener("change", () => {
@@ -2421,7 +2604,6 @@
       state.data.diaries ||= {};
       state.data.diaries[state.diaryDate] = diaryInput.value;
       scheduleSave();
-      setStatus("日记已自动保存 (｡･ω･｡)ﾉ");
     }, 3000);
   });
 
@@ -2430,6 +2612,8 @@
   localUseButton.addEventListener("click", useLocalMode);
   fullscreenButton.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", updateFullscreenButton);
+  window.addEventListener("resize", schedulePwaWindowSizeSave);
+  window.addEventListener("beforeunload", savePwaWindowSize);
   signOutButton.addEventListener("click", signOut);
   welcomeCloseButton.addEventListener("click", () => welcomeModal.classList.add("hidden"));
   alarmCloseButton.addEventListener("click", closeAlarm);
