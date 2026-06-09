@@ -50,6 +50,9 @@
       import: "导入",
       signOut: "退出",
       sync: "同步",
+      fullScreen: "全屏",
+      exitFullScreen: "还原",
+      fullScreenUnsupported: "当前浏览器不支持网页内全屏。",
       synced: "已同步",
       localMode: "本地模式：未登录",
       placeholder: PLACEHOLDER,
@@ -179,6 +182,9 @@
       import: "取込",
       signOut: "退出",
       sync: "同期",
+      fullScreen: "全画面",
+      exitFullScreen: "戻す",
+      fullScreenUnsupported: "このブラウザは全画面表示に対応していません。",
       synced: "同期済み",
       localMode: "ローカル：未ログイン",
       placeholder: "ここに書いてね (｡･ω･｡)ﾉ",
@@ -308,6 +314,9 @@
       import: "Import",
       signOut: "Sign out",
       sync: "Sync",
+      fullScreen: "Full",
+      exitFullScreen: "Restore",
+      fullScreenUnsupported: "This browser does not support in-app fullscreen.",
       synced: "Synced",
       localMode: "Local mode: not signed in",
       placeholder: "Write something (｡･ω･｡)ﾉ",
@@ -447,6 +456,7 @@
   const signInButton = $("#signInButton");
   const signUpButton = $("#signUpButton");
   const localUseButton = $("#localUseButton");
+  const fullscreenButton = $("#fullscreenButton");
   const signOutButton = $("#signOutButton");
   const userLabel = $("#userLabel");
   const content = $("#content");
@@ -950,7 +960,34 @@
     });
     userLabel.textContent = state.user?.email ? `${tx("synced")}：${state.user.email}` : tx("localMode");
     signOutButton.textContent = state.user ? tx("signOut") : tx("sync");
+    updateFullscreenButton();
     updateTimerSelectLabels();
+  }
+
+  function isFullscreen() {
+    return document.fullscreenElement === appPanel;
+  }
+
+  function updateFullscreenButton() {
+    if (!fullscreenButton) return;
+    fullscreenButton.textContent = isFullscreen() ? tx("exitFullScreen") : tx("fullScreen");
+    appPanel.classList.toggle("is-fullscreen", isFullscreen());
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (isFullscreen()) {
+        await document.exitFullscreen();
+      } else if (appPanel.requestFullscreen) {
+        await appPanel.requestFullscreen();
+      } else {
+        setStatus(tx("fullScreenUnsupported"), false);
+      }
+    } catch (error) {
+      setStatus(error.message || tx("fullScreenUnsupported"), false);
+    } finally {
+      updateFullscreenButton();
+    }
   }
 
   function updateTimerSelectLabels() {
@@ -2391,6 +2428,8 @@
   signInButton.addEventListener("click", signIn);
   signUpButton.addEventListener("click", signUp);
   localUseButton.addEventListener("click", useLocalMode);
+  fullscreenButton.addEventListener("click", toggleFullscreen);
+  document.addEventListener("fullscreenchange", updateFullscreenButton);
   signOutButton.addEventListener("click", signOut);
   welcomeCloseButton.addEventListener("click", () => welcomeModal.classList.add("hidden"));
   alarmCloseButton.addEventListener("click", closeAlarm);
