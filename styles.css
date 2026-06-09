@@ -676,17 +676,18 @@ button:disabled {
 
 .ledger-main-row {
   display: grid;
-  grid-template-columns: 74px 98px minmax(90px, 1fr);
+  grid-template-columns: 68px minmax(108px, 128px) minmax(82px, 1fr);
   gap: 8px;
   align-items: center;
 }
 
+.ledger-type-picker,
 .ledger-category-picker {
   position: relative;
   min-width: 0;
-  max-width: 98px;
 }
 
+.ledger-type-trigger,
 .ledger-category-trigger {
   width: 100%;
   display: grid;
@@ -696,6 +697,7 @@ button:disabled {
   text-align: left;
 }
 
+.ledger-type-trigger span:first-child,
 .ledger-category-trigger span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -707,13 +709,12 @@ button:disabled {
   font-size: 10px;
 }
 
+.ledger-type-menu,
 .ledger-category-menu {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   z-index: 20;
-  width: min(168px, calc(100vw - 36px));
-  max-height: 224px;
   display: grid;
   gap: 5px;
   padding: 7px;
@@ -723,11 +724,38 @@ button:disabled {
   box-shadow: 0 14px 32px rgba(44, 35, 26, 0.16);
 }
 
+.ledger-type-menu {
+  width: 100%;
+}
+
+.ledger-type-option {
+  min-height: 28px;
+  border: 1px solid #ead9c5;
+  border-radius: 9px;
+  background: #fffdf8;
+  color: #45505c;
+  text-align: left;
+}
+
+.ledger-type-option.active {
+  border-color: #e8c989;
+  background: var(--mark);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.ledger-category-menu {
+  width: min(232px, calc(100vw - 28px));
+  max-height: 252px;
+}
+
 .ledger-category-scroll {
   display: grid;
   gap: 4px;
-  max-height: 144px;
-  overflow: auto;
+  max-height: 174px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 
 .ledger-category-option {
@@ -747,9 +775,10 @@ button:disabled {
   border-radius: 9px;
   background: #fffdf8;
   text-align: left;
-  padding: 0 58px 0 10px;
+  padding: 0 10px;
   color: #45505c;
-  transition: padding 0.16s ease;
+  white-space: nowrap;
+  transition: transform 0.16s ease;
 }
 
 .ledger-category-option.active .ledger-category-pick {
@@ -763,7 +792,7 @@ button:disabled {
   position: absolute;
   top: 0;
   right: 0;
-  z-index: 2;
+  z-index: 0;
   width: 54px;
   height: 100%;
   border: 0;
@@ -778,7 +807,7 @@ button:disabled {
 }
 
 .ledger-category-option.show-delete .ledger-category-pick {
-  padding-right: 58px;
+  transform: translateX(-54px);
 }
 
 .ledger-category-option.show-delete .ledger-category-delete {
@@ -997,6 +1026,109 @@ button:disabled {
   text-align: center;
   font-size: 12px;
   font-weight: 700;
+}
+
+.recipe-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.recipe-form {
+  display: grid;
+  gap: 8px;
+}
+
+.recipe-form input,
+.recipe-form textarea,
+.recipe-search,
+.recipe-form-actions button,
+.recipe-actions button {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  color: var(--ink);
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.recipe-form input,
+.recipe-search {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.recipe-form textarea {
+  min-height: 72px;
+  resize: vertical;
+  padding: 8px 10px;
+  line-height: 1.5;
+}
+
+.recipe-form-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.recipe-form-actions button,
+.recipe-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.recipe-form-actions button:first-child {
+  background: var(--mark);
+  font-weight: 700;
+}
+
+.recipe-list {
+  display: grid;
+  gap: 8px;
+}
+
+.recipe-card {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #ead9c5;
+  border-radius: 10px;
+  background: #fffdf8;
+}
+
+.recipe-card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.recipe-card-head strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recipe-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.recipe-block {
+  display: grid;
+  gap: 2px;
+}
+
+.recipe-block span {
+  width: fit-content;
+  padding: 0 4px;
+  background: var(--mark);
+  font-weight: 700;
+}
+
+.recipe-block p {
+  margin: 0;
+  color: #4d5964;
+  white-space: pre-wrap;
 }
 
 .modal {

@@ -28,6 +28,7 @@
     showNotes: true,
     showDiary: true,
     showLedger: true,
+    showRecipes: true,
     ledgerLastCategory: "",
     diaryPinEnabled: false,
     diaryPin: ""
@@ -47,6 +48,7 @@
       tabNotes: "便签",
       tabDiary: "日记",
       tabLedger: "记账",
+      tabRecipes: "菜谱",
       tabHistory: "历史",
       tabSettings: "设置",
       export: "导出",
@@ -149,12 +151,26 @@
       categoryDeleted: "分类已删除。",
       categoryInUse: "这个分类已经有记录，先保留。",
       ledgerEmptyCategory: "分类不能为空。",
+      recipeName: "菜名",
+      recipeIngredients: "食材",
+      recipeSteps: "做法",
+      recipeSearch: "搜索菜谱，例如：西红柿",
+      recipeSave: "保存菜谱",
+      recipeUpdate: "更新菜谱",
+      recipeCancelEdit: "取消编辑",
+      recipeListTitle: "菜谱：",
+      noRecipes: "暂无菜谱",
+      recipeNeedName: "菜名不能为空。",
+      recipeSaved: "菜谱已保存 (｡•̀ᴗ-)و",
+      recipeDeleted: "菜谱已删除 (｡･ω･)ﾉﾞ",
+      recipeEdit: "编辑",
       dailyPopupSection: "每日弹窗：",
       dailyPopupEnabled: "每天首次打开显示自定义弹窗",
       featureSection: "功能显示：",
       showNotes: "显示便签",
       showDiary: "显示日记",
       showLedger: "显示记账",
+      showRecipes: "显示菜谱",
       diaryLockSection: "日记密码：",
       diaryPinEnabled: "开启四位数字密码",
       diaryPin: "四位数字密码",
@@ -191,6 +207,7 @@
       tabNotes: "メモ",
       tabDiary: "日記",
       tabLedger: "記帳",
+      tabRecipes: "レシピ",
       tabHistory: "履歴",
       tabSettings: "設定",
       export: "書き出し",
@@ -293,12 +310,26 @@
       categoryDeleted: "カテゴリを削除しました。",
       categoryInUse: "このカテゴリには記録があります。",
       ledgerEmptyCategory: "カテゴリを入力してください。",
+      recipeName: "料理名",
+      recipeIngredients: "材料",
+      recipeSteps: "作り方",
+      recipeSearch: "レシピ検索 例：トマト",
+      recipeSave: "レシピを保存",
+      recipeUpdate: "レシピを更新",
+      recipeCancelEdit: "編集をやめる",
+      recipeListTitle: "レシピ：",
+      noRecipes: "レシピはまだありません",
+      recipeNeedName: "料理名を入力してください。",
+      recipeSaved: "レシピを保存しました (｡•̀ᴗ-)و",
+      recipeDeleted: "レシピを削除しました (｡･ω･)ﾉﾞ",
+      recipeEdit: "編集",
       dailyPopupSection: "毎日のポップアップ：",
       dailyPopupEnabled: "毎日初回だけカスタム表示",
       featureSection: "表示する機能：",
       showNotes: "メモを表示",
       showDiary: "日記を表示",
       showLedger: "記帳を表示",
+      showRecipes: "レシピを表示",
       diaryLockSection: "日記ロック：",
       diaryPinEnabled: "4桁パスコードを有効にする",
       diaryPin: "新しい4桁パスコード",
@@ -335,6 +366,7 @@
       tabNotes: "Notes",
       tabDiary: "Diary",
       tabLedger: "Ledger",
+      tabRecipes: "Recipes",
       tabHistory: "History",
       tabSettings: "Settings",
       export: "Export",
@@ -437,12 +469,26 @@
       categoryDeleted: "Category deleted.",
       categoryInUse: "This category has records, keeping it.",
       ledgerEmptyCategory: "Category cannot be empty.",
+      recipeName: "Recipe name",
+      recipeIngredients: "Ingredients",
+      recipeSteps: "Steps",
+      recipeSearch: "Search recipes, e.g. tomato",
+      recipeSave: "Save recipe",
+      recipeUpdate: "Update recipe",
+      recipeCancelEdit: "Cancel edit",
+      recipeListTitle: "Recipes:",
+      noRecipes: "No recipes yet",
+      recipeNeedName: "Recipe name is required.",
+      recipeSaved: "Recipe saved (｡•̀ᴗ-)و",
+      recipeDeleted: "Recipe deleted (｡･ω･)ﾉﾞ",
+      recipeEdit: "Edit",
       dailyPopupSection: "Daily popup:",
       dailyPopupEnabled: "Show custom popup once per day",
       featureSection: "Feature visibility:",
       showNotes: "Show notes",
       showDiary: "Show diary",
       showLedger: "Show ledger",
+      showRecipes: "Show recipes",
       diaryLockSection: "Diary PIN:",
       diaryPinEnabled: "Enable 4-digit PIN",
       diaryPin: "New 4-digit PIN",
@@ -477,8 +523,11 @@
     diaryDate: localStorage.getItem(DIARY_DATE_KEY) || todayKey(),
     activeNoteId: localStorage.getItem(NOTE_ID_KEY) || "",
     noteListCollapsed: localStorage.getItem(NOTE_LIST_COLLAPSED_KEY) === "1",
+    recipeSearch: "",
+    editingRecipeId: "",
     ledgerPeriod: "day",
     ledgerAnchorDate: todayKey(),
+    ledgerType: "expense",
     ledgerCategory: null,
     categorySwipe: null,
     ledgerSwipe: null,
@@ -553,6 +602,7 @@
       noteText: "",
       notes: [],
       diaries: {},
+      recipes: [],
       versionLog: [],
       ledger: [],
       ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
@@ -616,6 +666,17 @@
     Object.keys(data.diaries).forEach((dateKey) => {
       data.diaries[dateKey] = typeof data.diaries[dateKey] === "string" ? data.diaries[dateKey] : "";
     });
+    data.recipes = asArray(data.recipes)
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({
+        id: String(item.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+        title: String(item.title || item.name || "").trim(),
+        ingredients: String(item.ingredients || "").trim(),
+        steps: String(item.steps || "").trim(),
+        createdAt: String(item.createdAt || nowStamp()),
+        updatedAt: String(item.updatedAt || item.createdAt || nowStamp())
+      }))
+      .filter((item) => item.title || item.ingredients || item.steps);
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger)
       .filter((item) => item && typeof item === "object")
@@ -979,6 +1040,7 @@
     merged.versionLog = dedupeBy([...merged.versionLog, ...extra.versionLog], (item) => `${item.at || ""}|${item.action || ""}|${item.text || item}`);
     merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
     merged.ledgerCategories = uniqueStrings([...extra.ledgerCategories, ...merged.ledgerCategories]);
+    merged.recipes = dedupeBy([...extra.recipes, ...merged.recipes], (item) => item.id || `${item.title}|${item.ingredients}|${item.steps}`);
     merged.notes = dedupeBy([...extra.notes, ...merged.notes], (item) => item.id || `${item.title}|${item.text}`);
     merged.noteText = merged.notes[0]?.text || merged.noteText || extra.noteText;
     merged.diaries = { ...extra.diaries, ...merged.diaries };
@@ -1327,6 +1389,7 @@
     if (view === "notes") return current.showNotes !== false;
     if (view === "diary") return current.showDiary !== false;
     if (view === "ledger") return current.showLedger !== false;
+    if (view === "recipes") return current.showRecipes !== false;
     return true;
   }
 
@@ -1338,6 +1401,7 @@
     document.querySelectorAll('.tab[data-view="notes"]').forEach((tab) => tab.classList.toggle("hidden", settings().showNotes === false));
     document.querySelectorAll('.tab[data-view="diary"]').forEach((tab) => tab.classList.toggle("hidden", settings().showDiary === false));
     document.querySelectorAll('.tab[data-view="ledger"]').forEach((tab) => tab.classList.toggle("hidden", settings().showLedger === false));
+    document.querySelectorAll('.tab[data-view="recipes"]').forEach((tab) => tab.classList.toggle("hidden", settings().showRecipes === false));
     if (settings().showDiary === false) state.diaryUnlocked = false;
   }
 
@@ -1828,6 +1892,10 @@
     const categories = ledgerCategories();
     if (state.ledgerCategory === null) state.ledgerCategory = settings().ledgerLastCategory || "";
     if (state.ledgerCategory && !categories.includes(state.ledgerCategory)) state.ledgerCategory = "";
+    if (!["expense", "income"].includes(state.ledgerType)) state.ledgerType = "expense";
+    const typeRows = ["expense", "income"].map((type) => `
+      <button class="ledger-type-option${state.ledgerType === type ? " active" : ""}" data-action="selectLedgerType" data-ledger-type="${type}" type="button">${tx(type)}</button>
+    `).join("");
     const categoryRows = [
       `<div class="ledger-category-option ledger-category-fixed${state.ledgerCategory ? "" : " active"}">
           <button class="ledger-category-pick" data-action="selectLedgerCategory" data-category="" type="button">${tx("noCategory")}</button>
@@ -1842,7 +1910,14 @@
     content.innerHTML = [
       '<div class="ledger-form">',
       '<div class="ledger-main-row">',
-      `<select data-ledger="type"><option value="expense">${tx("expense")}</option><option value="income">${tx("income")}</option></select>`,
+      `<div class="ledger-type-picker" data-type-picker>
+        <input data-ledger="type" type="hidden" value="${escapeAttr(state.ledgerType)}">
+        <button class="ledger-type-trigger" data-action="toggleLedgerTypeMenu" type="button">
+          <span data-type-label>${escapeHtml(tx(state.ledgerType))}</span>
+          <span class="category-caret">⌄</span>
+        </button>
+        <div class="ledger-type-menu hidden" data-type-menu>${typeRows}</div>
+      </div>`,
       `<div class="ledger-category-picker" data-category-picker>
         <input data-ledger="category" type="hidden" value="${escapeAttr(state.ledgerCategory)}">
         <button class="ledger-category-trigger" data-action="toggleLedgerCategoryMenu" type="button">
@@ -1876,6 +1951,51 @@
     ].join("");
   }
 
+  function filteredRecipes() {
+    const query = state.recipeSearch.trim().toLowerCase();
+    const items = asArray(state.data.recipes).slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+    if (!query) return items;
+    return items.filter((item) => [item.title, item.ingredients, item.steps].some((value) => String(value || "").toLowerCase().includes(query)));
+  }
+
+  function recipeListHtml() {
+    const recipes = filteredRecipes();
+    if (!recipes.length) return `<div class="section-title">${tx("recipeListTitle")}</div><div class="empty">${tx("noRecipes")}</div>`;
+    const cards = recipes.map((recipe) => `
+      <article class="recipe-card">
+        <div class="recipe-card-head">
+          <strong>${escapeHtml(recipe.title || tx("recipeName"))}</strong>
+          <div class="recipe-actions">
+            <button data-action="editRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("recipeEdit")}</button>
+            <button data-action="deleteRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("delete")}</button>
+          </div>
+        </div>
+        ${recipe.ingredients ? `<div class="recipe-block"><span>${tx("recipeIngredients")}</span><p>${escapeHtml(recipe.ingredients)}</p></div>` : ""}
+        ${recipe.steps ? `<div class="recipe-block"><span>${tx("recipeSteps")}</span><p>${escapeHtml(recipe.steps)}</p></div>` : ""}
+      </article>
+    `).join("");
+    return `<div class="section-title">${tx("recipeListTitle")}</div><div class="recipe-list">${cards}</div>`;
+  }
+
+  function renderRecipes() {
+    const editing = state.editingRecipeId ? state.data.recipes.find((item) => item.id === state.editingRecipeId) : null;
+    content.innerHTML = [
+      '<div class="recipe-panel">',
+      '<div class="recipe-form">',
+      `<input data-recipe="title" type="text" value="${escapeAttr(editing?.title || "")}" placeholder="${escapeAttr(tx("recipeName"))}">`,
+      `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(editing?.ingredients || "")}</textarea>`,
+      `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(editing?.steps || "")}</textarea>`,
+      '<div class="recipe-form-actions">',
+      `<button data-action="saveRecipe" type="button">${editing ? tx("recipeUpdate") : tx("recipeSave")}</button>`,
+      editing ? `<button data-action="cancelRecipeEdit" type="button">${tx("recipeCancelEdit")}</button>` : "",
+      "</div>",
+      "</div>",
+      `<input class="recipe-search" data-action="recipeSearch" type="search" value="${escapeAttr(state.recipeSearch)}" placeholder="${escapeAttr(tx("recipeSearch"))}">`,
+      `<div data-recipe-list>${recipeListHtml()}</div>`,
+      "</div>"
+    ].join("");
+  }
+
   function formatMoney(value) {
     return Number(value || 0).toFixed(2).replace(/\.00$/, "");
   }
@@ -1888,7 +2008,9 @@
     }
     note = String(note || "").trim();
     category = String(category || "").trim();
+    type = type === "income" ? "income" : "expense";
     if (category && !ledgerCategories().includes(category)) state.data.ledgerCategories.push(category);
+    state.ledgerType = type;
     state.ledgerCategory = category;
     settings().ledgerLastCategory = category;
     state.data.ledger.push({
@@ -1935,12 +2057,33 @@
   function toggleLedgerCategoryMenu() {
     const menu = content.querySelector("[data-category-menu]");
     if (!menu) return;
+    closeLedgerTypeMenu();
     menu.classList.toggle("hidden");
     content.querySelectorAll(".ledger-category-option.show-delete").forEach((row) => row.classList.remove("show-delete"));
   }
 
   function closeLedgerCategoryMenu() {
     content.querySelector("[data-category-menu]")?.classList.add("hidden");
+  }
+
+  function toggleLedgerTypeMenu() {
+    const menu = content.querySelector("[data-type-menu]");
+    if (!menu) return;
+    closeLedgerCategoryMenu();
+    menu.classList.toggle("hidden");
+  }
+
+  function closeLedgerTypeMenu() {
+    content.querySelector("[data-type-menu]")?.classList.add("hidden");
+  }
+
+  function selectLedgerType(type) {
+    state.ledgerType = type === "income" ? "income" : "expense";
+    const input = content.querySelector('[data-ledger="type"]');
+    const label = content.querySelector("[data-type-label]");
+    if (input) input.value = state.ledgerType;
+    if (label) label.textContent = tx(state.ledgerType);
+    closeLedgerTypeMenu();
   }
 
   function selectLedgerCategory(category) {
@@ -1986,6 +2129,58 @@
     if (item.category && !ledgerCategories().includes(item.category)) state.data.ledgerCategories.push(item.category);
     scheduleSave();
     setStatus(tx("editDone"));
+    render();
+  }
+
+  function saveRecipe() {
+    const title = String(content.querySelector('[data-recipe="title"]')?.value || "").trim();
+    const ingredients = String(content.querySelector('[data-recipe="ingredients"]')?.value || "").trim();
+    const steps = String(content.querySelector('[data-recipe="steps"]')?.value || "").trim();
+    if (!title) {
+      setStatus(tx("recipeNeedName"), false);
+      return;
+    }
+    const now = nowStamp();
+    const existing = state.editingRecipeId ? state.data.recipes.find((item) => item.id === state.editingRecipeId) : null;
+    if (existing) {
+      existing.title = title;
+      existing.ingredients = ingredients;
+      existing.steps = steps;
+      existing.updatedAt = now;
+    } else {
+      state.data.recipes.unshift({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        title,
+        ingredients,
+        steps,
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+    state.editingRecipeId = "";
+    scheduleSave();
+    setStatus(tx("recipeSaved"));
+    render();
+  }
+
+  function editRecipe(id) {
+    if (!state.data.recipes.some((item) => item.id === id)) return;
+    state.editingRecipeId = id;
+    render();
+  }
+
+  function deleteRecipe(id) {
+    const before = state.data.recipes.length;
+    state.data.recipes = state.data.recipes.filter((item) => item.id !== id);
+    if (state.data.recipes.length === before) return;
+    if (state.editingRecipeId === id) state.editingRecipeId = "";
+    scheduleSave();
+    setStatus(tx("recipeDeleted"));
+    render();
+  }
+
+  function cancelRecipeEdit() {
+    state.editingRecipeId = "";
     render();
   }
 
@@ -2039,6 +2234,7 @@
       settingCheckbox("showNotes", tx("showNotes"), current.showNotes !== false),
       settingCheckbox("showDiary", tx("showDiary"), current.showDiary !== false),
       settingCheckbox("showLedger", tx("showLedger"), current.showLedger !== false),
+      settingCheckbox("showRecipes", tx("showRecipes"), current.showRecipes !== false),
       '<div class="section-title">' + tx("diaryLockSection") + "</div>",
       settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled),
       current.diaryPinEnabled ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
@@ -2171,6 +2367,7 @@
     if (state.view === "notes") renderNotes();
     if (state.view === "diary") lockedDiary ? renderDiaryLock() : renderDiary();
     if (state.view === "ledger") renderLedger();
+    if (state.view === "recipes") renderRecipes();
     if (state.view === "settings") renderSettings();
   }
 
@@ -2823,6 +3020,7 @@
 
   content.addEventListener("click", (event) => {
     if (!event.target.closest("[data-category-picker]")) closeLedgerCategoryMenu();
+    if (!event.target.closest("[data-type-picker]")) closeLedgerTypeMenu();
     const actionTarget = event.target.closest("[data-action]");
     const action = actionTarget?.dataset.action;
     if (!action) return;
@@ -2858,6 +3056,12 @@
     if (action === "toggleLedgerCategoryMenu") {
       toggleLedgerCategoryMenu();
     }
+    if (action === "toggleLedgerTypeMenu") {
+      toggleLedgerTypeMenu();
+    }
+    if (action === "selectLedgerType") {
+      selectLedgerType(actionTarget.dataset.ledgerType);
+    }
     if (action === "selectLedgerCategory") {
       selectLedgerCategory(actionTarget.dataset.category);
     }
@@ -2870,6 +3074,18 @@
     }
     if (action === "deleteLedger") {
       deleteLedger(actionTarget.dataset.key);
+    }
+    if (action === "saveRecipe") {
+      saveRecipe();
+    }
+    if (action === "editRecipe") {
+      editRecipe(actionTarget.dataset.recipeId);
+    }
+    if (action === "deleteRecipe") {
+      deleteRecipe(actionTarget.dataset.recipeId);
+    }
+    if (action === "cancelRecipeEdit") {
+      cancelRecipeEdit();
     }
     if (action === "enableNotifications") {
       enableNotifications();
@@ -2958,6 +3174,12 @@
   });
 
   content.addEventListener("input", (event) => {
+    if (event.target.dataset.action === "recipeSearch") {
+      state.recipeSearch = event.target.value || "";
+      const list = content.querySelector("[data-recipe-list]");
+      if (list) list.innerHTML = recipeListHtml();
+      return;
+    }
     const key = event.target.dataset.setting;
     if (!key || event.target.type === "checkbox") return;
     if (key === "diaryPin") {
