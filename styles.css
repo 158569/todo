@@ -1131,6 +1131,157 @@ button:disabled {
   white-space: pre-wrap;
 }
 
+.period-panel {
+  display: grid;
+  gap: 12px;
+  white-space: normal;
+}
+
+.period-form,
+.period-card {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #ead9c5;
+  border-radius: 12px;
+  background: #fffdf8;
+}
+
+.period-date-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.period-date-row label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.period-date-row input,
+.period-form textarea,
+.period-form-actions button,
+.period-actions button {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  color: var(--ink);
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.period-date-row input {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.period-form textarea {
+  min-height: 66px;
+  resize: vertical;
+  padding: 8px 10px;
+  line-height: 1.5;
+}
+
+.period-form-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.period-form-actions button,
+.period-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.period-form-actions button:first-child {
+  background: var(--mark);
+  font-weight: 700;
+}
+
+.period-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.period-stat {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+}
+
+.period-stat span,
+.period-future-row small,
+.period-disclaimer {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.period-stat strong,
+.period-future-row strong {
+  overflow-wrap: anywhere;
+}
+
+.period-future-list,
+.period-record-list {
+  display: grid;
+  gap: 7px;
+}
+
+.period-future-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 6px;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 7px;
+  border-radius: 10px;
+  background: #fff8ea;
+}
+
+.period-disclaimer {
+  margin: 2px 0 0;
+  line-height: 1.45;
+}
+
+.period-record {
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid #ead9c5;
+  border-radius: 10px;
+  background: #fffdf8;
+}
+
+.period-record-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.period-record-head strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.period-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.period-record p {
+  margin: 0;
+  color: #4d5964;
+  white-space: pre-wrap;
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -1289,6 +1440,18 @@ button:disabled {
   .ledger-record-main {
     grid-column: 1 / -1;
   }
+
+  .period-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .period-future-row {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+
+  .period-future-row small {
+    grid-column: 2;
+  }
 }
 
 @media (max-width: 340px) {
@@ -1314,7 +1477,8 @@ button:disabled {
 
   .ledger-main-row,
   .ledger-rangebar,
-  .ledger-record-card {
+  .ledger-record-card,
+  .period-date-row {
     grid-template-columns: minmax(0, 1fr);
   }
 }

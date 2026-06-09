@@ -29,6 +29,7 @@
     showDiary: true,
     showLedger: true,
     showRecipes: true,
+    showPeriod: true,
     ledgerLastCategory: "",
     diaryPinEnabled: false,
     diaryPin: ""
@@ -49,6 +50,7 @@
       tabDiary: "日记",
       tabLedger: "记账",
       tabRecipes: "菜谱",
+      tabPeriod: "经期",
       tabHistory: "历史",
       tabSettings: "设置",
       export: "导出",
@@ -164,6 +166,39 @@
       recipeSaved: "菜谱已保存 (｡•̀ᴗ-)و",
       recipeDeleted: "菜谱已删除 (｡･ω･)ﾉﾞ",
       recipeEdit: "编辑",
+      periodStartDate: "开始日期",
+      periodEndDate: "结束日期",
+      periodNote: "症状/备注",
+      periodSave: "保存经期",
+      periodUpdate: "更新经期",
+      periodCancelEdit: "取消编辑",
+      periodPredictionTitle: "预测：",
+      periodHistoryTitle: "经期记录：",
+      periodUpcomingTitle: "未来预测：",
+      periodCycleAvg: "平均周期",
+      periodLengthAvg: "平均经期",
+      periodNextStart: "下次经期",
+      periodOvulation: "预计排卵日",
+      periodFertileWindow: "易孕期",
+      periodTodayStatus: "今日状态",
+      periodConfidence: "可信度",
+      periodHigh: "较高",
+      periodMedium: "中等",
+      periodLow: "基础",
+      periodRecordNeedStart: "请选择开始日期。",
+      periodEndInvalid: "结束日期不能早于开始日期。",
+      periodSaved: "经期记录已保存 (｡•̀ᴗ-)و",
+      periodDeleted: "经期记录已删除 (｡･ω･)ﾉﾞ",
+      periodEdit: "编辑",
+      periodNoRecords: "暂无经期记录",
+      periodDisclaimer: "预测只根据你的历史记录估算，不能用于避孕或医疗诊断。",
+      periodInPeriod: "预计经期中",
+      periodFertile: "预计易孕期",
+      periodBeforePeriod: "下次经期前",
+      periodNormalPhase: "周期中",
+      periodDelayed: "可能已延迟",
+      periodCycleDay: "周期第",
+      periodDays: "天",
       dailyPopupSection: "每日弹窗：",
       dailyPopupEnabled: "每天首次打开显示自定义弹窗",
       featureSection: "功能显示：",
@@ -171,6 +206,7 @@
       showDiary: "显示日记",
       showLedger: "显示记账",
       showRecipes: "显示菜谱",
+      showPeriod: "显示经期",
       diaryLockSection: "日记密码：",
       diaryPinEnabled: "开启四位数字密码",
       diaryPin: "四位数字密码",
@@ -208,6 +244,7 @@
       tabDiary: "日記",
       tabLedger: "記帳",
       tabRecipes: "レシピ",
+      tabPeriod: "周期",
       tabHistory: "履歴",
       tabSettings: "設定",
       export: "書き出し",
@@ -323,6 +360,39 @@
       recipeSaved: "レシピを保存しました (｡•̀ᴗ-)و",
       recipeDeleted: "レシピを削除しました (｡･ω･)ﾉﾞ",
       recipeEdit: "編集",
+      periodStartDate: "開始日",
+      periodEndDate: "終了日",
+      periodNote: "症状・メモ",
+      periodSave: "周期を保存",
+      periodUpdate: "周期を更新",
+      periodCancelEdit: "編集をやめる",
+      periodPredictionTitle: "予測：",
+      periodHistoryTitle: "周期記録：",
+      periodUpcomingTitle: "今後の予測：",
+      periodCycleAvg: "平均周期",
+      periodLengthAvg: "平均日数",
+      periodNextStart: "次の開始予測",
+      periodOvulation: "排卵日予測",
+      periodFertileWindow: "妊娠しやすい期間",
+      periodTodayStatus: "今日の状態",
+      periodConfidence: "信頼度",
+      periodHigh: "高め",
+      periodMedium: "ふつう",
+      periodLow: "参考",
+      periodRecordNeedStart: "開始日を選んでください。",
+      periodEndInvalid: "終了日は開始日より前にできません。",
+      periodSaved: "周期記録を保存しました (｡•̀ᴗ-)و",
+      periodDeleted: "周期記録を削除しました (｡･ω･)ﾉﾞ",
+      periodEdit: "編集",
+      periodNoRecords: "周期記録はまだありません",
+      periodDisclaimer: "予測は記録にもとづく目安です。避妊や医療判断には使えません。",
+      periodInPeriod: "生理期間の予測",
+      periodFertile: "妊娠しやすい期間の予測",
+      periodBeforePeriod: "次の生理まで",
+      periodNormalPhase: "周期中",
+      periodDelayed: "遅れている可能性",
+      periodCycleDay: "周期",
+      periodDays: "日",
       dailyPopupSection: "毎日のポップアップ：",
       dailyPopupEnabled: "毎日初回だけカスタム表示",
       featureSection: "表示する機能：",
@@ -330,6 +400,7 @@
       showDiary: "日記を表示",
       showLedger: "記帳を表示",
       showRecipes: "レシピを表示",
+      showPeriod: "周期を表示",
       diaryLockSection: "日記ロック：",
       diaryPinEnabled: "4桁パスコードを有効にする",
       diaryPin: "新しい4桁パスコード",
@@ -367,6 +438,7 @@
       tabDiary: "Diary",
       tabLedger: "Ledger",
       tabRecipes: "Recipes",
+      tabPeriod: "Cycle",
       tabHistory: "History",
       tabSettings: "Settings",
       export: "Export",
@@ -482,6 +554,39 @@
       recipeSaved: "Recipe saved (｡•̀ᴗ-)و",
       recipeDeleted: "Recipe deleted (｡･ω･)ﾉﾞ",
       recipeEdit: "Edit",
+      periodStartDate: "Start date",
+      periodEndDate: "End date",
+      periodNote: "Symptoms / note",
+      periodSave: "Save cycle",
+      periodUpdate: "Update cycle",
+      periodCancelEdit: "Cancel edit",
+      periodPredictionTitle: "Prediction:",
+      periodHistoryTitle: "Cycle records:",
+      periodUpcomingTitle: "Upcoming:",
+      periodCycleAvg: "Average cycle",
+      periodLengthAvg: "Average period",
+      periodNextStart: "Next period",
+      periodOvulation: "Estimated ovulation",
+      periodFertileWindow: "Fertile window",
+      periodTodayStatus: "Today",
+      periodConfidence: "Confidence",
+      periodHigh: "Higher",
+      periodMedium: "Medium",
+      periodLow: "Basic",
+      periodRecordNeedStart: "Choose a start date.",
+      periodEndInvalid: "End date cannot be before start date.",
+      periodSaved: "Cycle record saved (｡•̀ᴗ-)و",
+      periodDeleted: "Cycle record deleted (｡･ω･)ﾉﾞ",
+      periodEdit: "Edit",
+      periodNoRecords: "No cycle records yet",
+      periodDisclaimer: "Predictions are estimates from your records, not contraception or medical advice.",
+      periodInPeriod: "Estimated period",
+      periodFertile: "Estimated fertile window",
+      periodBeforePeriod: "Before next period",
+      periodNormalPhase: "In cycle",
+      periodDelayed: "May be delayed",
+      periodCycleDay: "Cycle day",
+      periodDays: "days",
       dailyPopupSection: "Daily popup:",
       dailyPopupEnabled: "Show custom popup once per day",
       featureSection: "Feature visibility:",
@@ -489,6 +594,7 @@
       showDiary: "Show diary",
       showLedger: "Show ledger",
       showRecipes: "Show recipes",
+      showPeriod: "Show cycle",
       diaryLockSection: "Diary PIN:",
       diaryPinEnabled: "Enable 4-digit PIN",
       diaryPin: "New 4-digit PIN",
@@ -525,6 +631,7 @@
     noteListCollapsed: localStorage.getItem(NOTE_LIST_COLLAPSED_KEY) === "1",
     recipeSearch: "",
     editingRecipeId: "",
+    editingPeriodId: "",
     ledgerPeriod: "day",
     ledgerAnchorDate: todayKey(),
     ledgerType: "expense",
@@ -603,6 +710,7 @@
       notes: [],
       diaries: {},
       recipes: [],
+      periodRecords: [],
       versionLog: [],
       ledger: [],
       ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
@@ -677,6 +785,21 @@
         updatedAt: String(item.updatedAt || item.createdAt || nowStamp())
       }))
       .filter((item) => item.title || item.ingredients || item.steps);
+    data.periodRecords = asArray(data.periodRecords)
+      .filter((item) => item && typeof item === "object")
+      .map((item) => {
+        const startDate = normalizeDateText(item.startDate || item.start || todayKey());
+        const endDate = item.endDate || item.end ? normalizeDateText(item.endDate || item.end) : "";
+        return {
+          id: String(item.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+          startDate,
+          endDate: endDate && endDate >= startDate ? endDate : "",
+          note: String(item.note || "").trim(),
+          createdAt: String(item.createdAt || nowStamp()),
+          updatedAt: String(item.updatedAt || item.createdAt || nowStamp())
+        };
+      })
+      .filter((item) => item.startDate);
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger)
       .filter((item) => item && typeof item === "object")
@@ -780,6 +903,18 @@
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
+  }
+
+  function addDaysKey(dateKey, days) {
+    return toDateKey(addDays(dateFromKey(dateKey), days));
+  }
+
+  function daysBetween(startKey, endKey) {
+    return Math.round((dateFromKey(endKey) - dateFromKey(startKey)) / 86400000);
+  }
+
+  function clampNumber(value, min, max) {
+    return Math.min(max, Math.max(min, value));
   }
 
   function shortDate(dateKey) {
@@ -1041,6 +1176,7 @@
     merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
     merged.ledgerCategories = uniqueStrings([...extra.ledgerCategories, ...merged.ledgerCategories]);
     merged.recipes = dedupeBy([...extra.recipes, ...merged.recipes], (item) => item.id || `${item.title}|${item.ingredients}|${item.steps}`);
+    merged.periodRecords = dedupeBy([...extra.periodRecords, ...merged.periodRecords], (item) => item.id || `${item.startDate}|${item.endDate}|${item.note}`);
     merged.notes = dedupeBy([...extra.notes, ...merged.notes], (item) => item.id || `${item.title}|${item.text}`);
     merged.noteText = merged.notes[0]?.text || merged.noteText || extra.noteText;
     merged.diaries = { ...extra.diaries, ...merged.diaries };
@@ -1390,6 +1526,7 @@
     if (view === "diary") return current.showDiary !== false;
     if (view === "ledger") return current.showLedger !== false;
     if (view === "recipes") return current.showRecipes !== false;
+    if (view === "period") return current.showPeriod !== false;
     return true;
   }
 
@@ -1402,6 +1539,7 @@
     document.querySelectorAll('.tab[data-view="diary"]').forEach((tab) => tab.classList.toggle("hidden", settings().showDiary === false));
     document.querySelectorAll('.tab[data-view="ledger"]').forEach((tab) => tab.classList.toggle("hidden", settings().showLedger === false));
     document.querySelectorAll('.tab[data-view="recipes"]').forEach((tab) => tab.classList.toggle("hidden", settings().showRecipes === false));
+    document.querySelectorAll('.tab[data-view="period"]').forEach((tab) => tab.classList.toggle("hidden", settings().showPeriod === false));
     if (settings().showDiary === false) state.diaryUnlocked = false;
   }
 
@@ -1996,6 +2134,195 @@
     ].join("");
   }
 
+  function periodRecordsSorted() {
+    return asArray(state.data.periodRecords)
+      .slice()
+      .sort((a, b) => String(a.startDate || "").localeCompare(String(b.startDate || "")));
+  }
+
+  function weightedAverage(values) {
+    const usable = values.filter((value) => Number.isFinite(value));
+    if (!usable.length) return null;
+    let sum = 0;
+    let weightSum = 0;
+    usable.forEach((value, index) => {
+      const weight = index + 1;
+      sum += value * weight;
+      weightSum += weight;
+    });
+    return sum / weightSum;
+  }
+
+  function periodDayText(value) {
+    const rounded = Math.max(0, Math.round(Number(value || 0)));
+    return language() === "en" ? `${rounded} ${tx("periodDays")}` : `${rounded}${tx("periodDays")}`;
+  }
+
+  function averagePeriodLength(records) {
+    const lengths = records
+      .map((record) => (record.endDate ? daysBetween(record.startDate, record.endDate) + 1 : null))
+      .filter((value) => Number.isFinite(value) && value >= 1 && value <= 12);
+    return Math.round(weightedAverage(lengths.slice(-6)) || 5);
+  }
+
+  function periodStats() {
+    const records = periodRecordsSorted();
+    const intervals = [];
+    for (let index = 1; index < records.length; index += 1) {
+      const diff = daysBetween(records[index - 1].startDate, records[index].startDate);
+      if (diff >= 15 && diff <= 60) intervals.push(diff);
+    }
+    const recent = intervals.slice(-6);
+    const avgCycle = clampNumber(Math.round(weightedAverage(recent) || 28), 21, 45);
+    const avgLength = clampNumber(averagePeriodLength(records), 2, 10);
+    const variance = recent.length > 1
+      ? Math.sqrt(recent.reduce((sum, value) => sum + (value - avgCycle) ** 2, 0) / recent.length)
+      : null;
+    let confidence = "low";
+    if (recent.length >= 3 && variance !== null && variance <= 3) confidence = "high";
+    else if (recent.length >= 2 && (variance === null || variance <= 7)) confidence = "medium";
+    return { records, avgCycle, avgLength, confidence, intervals: recent, variance };
+  }
+
+  function periodPredictions(count = 4) {
+    const summary = periodStats();
+    const last = summary.records[summary.records.length - 1];
+    if (!last) return { ...summary, predictions: [] };
+    let nextStart = addDaysKey(last.startDate, summary.avgCycle);
+    while (nextStart < todayKey()) nextStart = addDaysKey(nextStart, summary.avgCycle);
+    const predictions = [];
+    for (let index = 0; index < count; index += 1) {
+      const startDate = index === 0 ? nextStart : addDaysKey(predictions[index - 1].startDate, summary.avgCycle);
+      const endDate = addDaysKey(startDate, summary.avgLength - 1);
+      const ovulation = addDaysKey(startDate, -14);
+      predictions.push({
+        startDate,
+        endDate,
+        ovulation,
+        fertileStart: addDaysKey(ovulation, -5),
+        fertileEnd: addDaysKey(ovulation, 1)
+      });
+    }
+    return { ...summary, predictions };
+  }
+
+  function confidenceLabel(value) {
+    if (value === "high") return tx("periodHigh");
+    if (value === "medium") return tx("periodMedium");
+    return tx("periodLow");
+  }
+
+  function todayPeriodStatus(summary) {
+    if (!summary.records.length) return tx("periodNoRecords");
+    const today = todayKey();
+    const last = summary.records[summary.records.length - 1];
+    if (last.startDate > today) return `${tx("periodBeforePeriod")} ${periodDayText(daysBetween(today, last.startDate))}`;
+    const cycleDay = daysBetween(last.startDate, today) + 1;
+    const lastEnd = last.endDate || addDaysKey(last.startDate, summary.avgLength - 1);
+    if (today >= last.startDate && today <= lastEnd) {
+      return `${tx("periodInPeriod")}，${tx("periodCycleDay")} ${periodDayText(cycleDay)}`;
+    }
+    const next = summary.predictions[0];
+    if (next && today > next.startDate) return `${tx("periodDelayed")} ${periodDayText(daysBetween(next.startDate, today))}`;
+    const ovulation = addDaysKey(last.startDate, summary.avgCycle - 14);
+    const fertileStart = addDaysKey(ovulation, -5);
+    const fertileEnd = addDaysKey(ovulation, 1);
+    if (today >= fertileStart && today <= fertileEnd) {
+      return `${tx("periodFertile")}，${tx("periodCycleDay")} ${periodDayText(cycleDay)}`;
+    }
+    if (next) return `${tx("periodBeforePeriod")} ${periodDayText(daysBetween(today, next.startDate))}`;
+    return `${tx("periodNormalPhase")}，${tx("periodCycleDay")} ${periodDayText(cycleDay)}`;
+  }
+
+  function periodPredictionHtml(summary) {
+    if (!summary.records.length) {
+      return [
+        '<section class="period-card">',
+        `<div class="section-title">${tx("periodPredictionTitle")}</div>`,
+        `<div class="empty">${tx("periodNoRecords")}</div>`,
+        `<p class="period-disclaimer">${tx("periodDisclaimer")}</p>`,
+        "</section>"
+      ].join("");
+    }
+    const next = summary.predictions[0];
+    const detailRows = [
+      [tx("periodTodayStatus"), todayPeriodStatus(summary)],
+      [tx("periodCycleAvg"), periodDayText(summary.avgCycle)],
+      [tx("periodLengthAvg"), periodDayText(summary.avgLength)],
+      [tx("periodNextStart"), next ? `${shortDate(next.startDate)} - ${shortDate(next.endDate)}` : tx("none")],
+      [tx("periodOvulation"), next ? shortDate(next.ovulation) : tx("none")],
+      [tx("periodFertileWindow"), next ? `${shortDate(next.fertileStart)} - ${shortDate(next.fertileEnd)}` : tx("none")],
+      [tx("periodConfidence"), confidenceLabel(summary.confidence)]
+    ].map(([label, value]) => `
+      <div class="period-stat">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+      </div>
+    `).join("");
+    const futureRows = summary.predictions.map((item, index) => `
+      <div class="period-future-row">
+        <span>${index + 1}.</span>
+        <strong>${shortDate(item.startDate)} - ${shortDate(item.endDate)}</strong>
+        <small>${tx("periodOvulation")} ${shortDate(item.ovulation)}</small>
+      </div>
+    `).join("");
+    return [
+      '<section class="period-card">',
+      `<div class="section-title">${tx("periodPredictionTitle")}</div>`,
+      `<div class="period-stats">${detailRows}</div>`,
+      `<div class="section-title">${tx("periodUpcomingTitle")}</div>`,
+      `<div class="period-future-list">${futureRows}</div>`,
+      `<p class="period-disclaimer">${tx("periodDisclaimer")}</p>`,
+      "</section>"
+    ].join("");
+  }
+
+  function periodHistoryHtml(records) {
+    const sorted = records.slice().sort((a, b) => String(b.startDate || "").localeCompare(String(a.startDate || "")));
+    if (!sorted.length) {
+      return `<div class="section-title">${tx("periodHistoryTitle")}</div><div class="empty">${tx("periodNoRecords")}</div>`;
+    }
+    const cards = sorted.map((record) => {
+      const end = record.endDate ? ` - ${shortDate(record.endDate)}` : "";
+      const length = record.endDate ? ` · ${periodDayText(daysBetween(record.startDate, record.endDate) + 1)}` : "";
+      return `
+        <article class="period-record">
+          <div class="period-record-head">
+            <strong>${shortDate(record.startDate)}${end}${length}</strong>
+            <div class="period-actions">
+              <button data-action="editPeriod" data-period-id="${escapeAttr(record.id)}" type="button">${tx("periodEdit")}</button>
+              <button data-action="deletePeriod" data-period-id="${escapeAttr(record.id)}" type="button">${tx("delete")}</button>
+            </div>
+          </div>
+          ${record.note ? `<p>${escapeHtml(record.note)}</p>` : ""}
+        </article>
+      `;
+    }).join("");
+    return `<div class="section-title">${tx("periodHistoryTitle")}</div><div class="period-record-list">${cards}</div>`;
+  }
+
+  function renderPeriod() {
+    const editing = state.editingPeriodId ? state.data.periodRecords.find((item) => item.id === state.editingPeriodId) : null;
+    const summary = periodPredictions(4);
+    content.innerHTML = [
+      '<div class="period-panel">',
+      '<div class="period-form">',
+      '<div class="period-date-row">',
+      `<label><span>${tx("periodStartDate")}</span><input data-period="startDate" type="date" value="${escapeAttr(editing?.startDate || todayKey())}"></label>`,
+      `<label><span>${tx("periodEndDate")}</span><input data-period="endDate" type="date" value="${escapeAttr(editing?.endDate || "")}"></label>`,
+      "</div>",
+      `<textarea data-period="note" placeholder="${escapeAttr(tx("periodNote"))}">${escapeHtml(editing?.note || "")}</textarea>`,
+      '<div class="period-form-actions">',
+      `<button data-action="savePeriod" type="button">${editing ? tx("periodUpdate") : tx("periodSave")}</button>`,
+      editing ? `<button data-action="cancelPeriodEdit" type="button">${tx("periodCancelEdit")}</button>` : "",
+      "</div>",
+      "</div>",
+      periodPredictionHtml(summary),
+      periodHistoryHtml(summary.records),
+      "</div>"
+    ].join("");
+  }
+
   function formatMoney(value) {
     return Number(value || 0).toFixed(2).replace(/\.00$/, "");
   }
@@ -2184,6 +2511,63 @@
     render();
   }
 
+  function savePeriodRecord() {
+    const startDate = normalizeDateText(content.querySelector('[data-period="startDate"]')?.value || "");
+    const endDateRaw = content.querySelector('[data-period="endDate"]')?.value || "";
+    const endDate = endDateRaw ? normalizeDateText(endDateRaw) : "";
+    const note = String(content.querySelector('[data-period="note"]')?.value || "").trim();
+    if (!startDate) {
+      setStatus(tx("periodRecordNeedStart"), false);
+      return;
+    }
+    if (endDate && endDate < startDate) {
+      setStatus(tx("periodEndInvalid"), false);
+      return;
+    }
+    const now = nowStamp();
+    const existing = state.editingPeriodId ? state.data.periodRecords.find((item) => item.id === state.editingPeriodId) : null;
+    if (existing) {
+      existing.startDate = startDate;
+      existing.endDate = endDate;
+      existing.note = note;
+      existing.updatedAt = now;
+    } else {
+      state.data.periodRecords.unshift({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        startDate,
+        endDate,
+        note,
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+    state.editingPeriodId = "";
+    scheduleSave();
+    setStatus(tx("periodSaved"));
+    render();
+  }
+
+  function editPeriod(id) {
+    if (!state.data.periodRecords.some((item) => item.id === id)) return;
+    state.editingPeriodId = id;
+    render();
+  }
+
+  function deletePeriod(id) {
+    const before = state.data.periodRecords.length;
+    state.data.periodRecords = state.data.periodRecords.filter((item) => item.id !== id);
+    if (state.data.periodRecords.length === before) return;
+    if (state.editingPeriodId === id) state.editingPeriodId = "";
+    scheduleSave();
+    setStatus(tx("periodDeleted"));
+    render();
+  }
+
+  function cancelPeriodEdit() {
+    state.editingPeriodId = "";
+    render();
+  }
+
   function beginLedgerNoteEdit(target) {
     if (target.querySelector("input")) return;
     const id = target.dataset.ledgerId;
@@ -2235,6 +2619,7 @@
       settingCheckbox("showDiary", tx("showDiary"), current.showDiary !== false),
       settingCheckbox("showLedger", tx("showLedger"), current.showLedger !== false),
       settingCheckbox("showRecipes", tx("showRecipes"), current.showRecipes !== false),
+      settingCheckbox("showPeriod", tx("showPeriod"), current.showPeriod !== false),
       '<div class="section-title">' + tx("diaryLockSection") + "</div>",
       settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled),
       current.diaryPinEnabled ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
@@ -2309,6 +2694,7 @@
         "<li>Edit: double-click a normal Today/In progress row.</li>",
         "<li>Notes and diary auto-save while you type.</li>",
         "<li>Ledger commands: <code>支出25 xx</code>, <code>收入300 xx</code>.</li>",
+        "<li>Cycle: add start/end dates, then the app estimates upcoming periods from your history.</li>",
         "</ul>"
       ].join("");
     }
@@ -2326,6 +2712,7 @@
         "<li>編集：今日待办 / 进行中 の普通項目をダブルクリック。</li>",
         "<li>メモと日記は入力中に自動保存されます。</li>",
         "<li>記帳：<code>支出25 xx</code> / <code>收入300 xx</code>。</li>",
+        "<li>周期：開始日と終了日を記録すると、履歴から今後の周期を予測します。</li>",
         "</ul>"
       ].join("");
     }
@@ -2342,6 +2729,7 @@
       "<li>修改文字：双击“今日待办”或“进行中”的普通事项，输入新内容后回车。</li>",
       "<li>便签和日记都会在输入时自动保存，不需要手动保存。</li>",
       "<li>记账：<code>支出25 xx</code>、<code>收入300 xx</code>；也可以在记账页选择分类后记录。</li>",
+      "<li>经期：记录开始日期和结束日期后，会根据历史周期自动估算后续经期。</li>",
       "</ul>"
     ].join("");
   }
@@ -2368,6 +2756,7 @@
     if (state.view === "diary") lockedDiary ? renderDiaryLock() : renderDiary();
     if (state.view === "ledger") renderLedger();
     if (state.view === "recipes") renderRecipes();
+    if (state.view === "period") renderPeriod();
     if (state.view === "settings") renderSettings();
   }
 
@@ -3086,6 +3475,18 @@
     }
     if (action === "cancelRecipeEdit") {
       cancelRecipeEdit();
+    }
+    if (action === "savePeriod") {
+      savePeriodRecord();
+    }
+    if (action === "editPeriod") {
+      editPeriod(actionTarget.dataset.periodId);
+    }
+    if (action === "deletePeriod") {
+      deletePeriod(actionTarget.dataset.periodId);
+    }
+    if (action === "cancelPeriodEdit") {
+      cancelPeriodEdit();
     }
     if (action === "enableNotifications") {
       enableNotifications();
