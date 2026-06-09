@@ -3,3 +3,10 @@ workday-todos.backup-*.json
 workday-todos.json
 config.js
 *.zip
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
