@@ -168,11 +168,11 @@
       diaryLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
       wrongPin: "密码不对 (｡>﹏<｡)",
-      timerNone: "中途提醒：无",
-      timer1h: "中途提醒：1小时",
-      timer2h: "中途提醒：2小时",
-      timer4h: "中途提醒：4小时",
-      timer8h: "中途提醒：8小时",
+      timerNone: "中途：无",
+      timer1h: "1h",
+      timer2h: "2h",
+      timer4h: "4h",
+      timer8h: "8h",
       halfway: "中段",
       timerAlarmPrefix: "中途提醒",
       timerSet: "已添加待办，并设置中段提醒 (๑•̀᎑<๑)و"
@@ -312,11 +312,11 @@
       diaryLockedHint: "4桁のパスコードを入力してください。",
       unlock: "ロック解除",
       wrongPin: "パスコードが違います (｡>﹏<｡)",
-      timerNone: "途中リマインダー：なし",
-      timer1h: "途中リマインダー：1時間",
-      timer2h: "途中リマインダー：2時間",
-      timer4h: "途中リマインダー：4時間",
-      timer8h: "途中リマインダー：8時間",
+      timerNone: "途中：なし",
+      timer1h: "1h",
+      timer2h: "2h",
+      timer4h: "4h",
+      timer8h: "8h",
       halfway: "中間",
       timerAlarmPrefix: "途中リマインダー",
       timerSet: "ToDoを追加し、中間リマインダーを設定しました (๑•̀᎑<๑)و"
@@ -456,11 +456,11 @@
       diaryLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
       wrongPin: "Wrong PIN (｡>﹏<｡)",
-      timerNone: "Midpoint reminder: off",
-      timer1h: "Midpoint reminder: 1h",
-      timer2h: "Midpoint reminder: 2h",
-      timer4h: "Midpoint reminder: 4h",
-      timer8h: "Midpoint reminder: 8h",
+      timerNone: "Mid: off",
+      timer1h: "1h",
+      timer2h: "2h",
+      timer4h: "4h",
+      timer8h: "8h",
       halfway: "Midpoint",
       timerAlarmPrefix: "Midpoint reminder",
       timerSet: "Todo added with midpoint reminder (๑•̀᎑<๑)و"
@@ -482,6 +482,7 @@
     ledgerCategory: null,
     categorySwipe: null,
     ledgerSwipe: null,
+    completedSwipe: null,
     ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
@@ -727,6 +728,117 @@
 
   function normalizeTime(hour, minute = "00") {
     return `${String(hour).padStart(2, "0")}:${String(minute || "00").padStart(2, "0")}`;
+  }
+
+  function parseNaturalNumber(value) {
+    const text = String(value || "").trim();
+    if (!text) return NaN;
+    if (text === "半") return 0.5;
+    if (/^\d+(?:\.\d+)?$/.test(text)) return Number(text);
+    const digits = { 零: 0, 〇: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+    let total = 0;
+    let number = 0;
+    const units = { 十: 10, 百: 100 };
+    for (const char of text) {
+      if (digits[char] !== undefined) {
+        number = digits[char];
+        continue;
+      }
+      if (units[char]) {
+        total += (number || 1) * units[char];
+        number = 0;
+      }
+    }
+    return total + number || NaN;
+  }
+
+  function normalizeNaturalMinute(value) {
+    if (!value) return "00";
+    if (value === "半") return "30";
+    const minute = parseNaturalNumber(value);
+    return Number.isFinite(minute) ? String(Math.round(minute)).padStart(2, "0") : "00";
+  }
+
+  function addMinutesFromNow(minutes) {
+    const date = new Date();
+    date.setMinutes(date.getMinutes() + minutes);
+    return {
+      dateKey: toDateKey(date),
+      time: normalizeTime(date.getHours(), date.getMinutes())
+    };
+  }
+
+  function cleanScheduledText(value) {
+    return String(value || "").replace(/^(?:提醒我|提醒|设定|设置|叫我)\s*/, "").trim();
+  }
+
+  function dayOffsetFromText(value) {
+    const fixed = { 今天: 0, 今晚: 0, 明天: 1, 明晚: 1, 后天: 2, 大后天: 3 };
+    if (fixed[value] !== undefined) return fixed[value];
+    const match = String(value || "").match(/^([半\d.零〇一二两三四五六七八九十百]+)\s*(天|日|周|星期|礼拜)后$/);
+    if (!match) return null;
+    const amount = parseNaturalNumber(match[1]);
+    if (!Number.isFinite(amount)) return null;
+    return Math.round(amount * (["周", "星期", "礼拜"].includes(match[2]) ? 7 : 1));
+  }
+
+  function hourWithPeriod(period, hourText) {
+    let hour = parseNaturalNumber(hourText);
+    if (!Number.isFinite(hour)) return null;
+    hour = Math.round(hour);
+    if (/下午|晚上|傍晚|今晚|明晚/.test(period || "") && hour < 12) hour += 12;
+    if (/中午/.test(period || "") && hour < 11) hour += 12;
+    if (/凌晨|早上|上午|今早|明早/.test(period || "") && hour === 12) hour = 0;
+    return Math.max(0, Math.min(23, hour));
+  }
+
+  function scheduledDateTime(dayText, period, hourText, minuteText) {
+    const impliedDay = /明/.test(period || "") ? 1 : /今/.test(period || "") ? 0 : null;
+    const explicitDay = dayText ? dayOffsetFromText(dayText) : impliedDay;
+    const offset = explicitDay ?? 0;
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    const hour = hourWithPeriod(period, hourText);
+    if (hour === null) return null;
+    const minute = Number(normalizeNaturalMinute(minuteText));
+    date.setHours(hour, minute, 0, 0);
+    if (explicitDay === null && date.getTime() <= Date.now()) date.setDate(date.getDate() + 1);
+    return {
+      dateKey: toDateKey(date),
+      time: normalizeTime(date.getHours(), date.getMinutes())
+    };
+  }
+
+  function parseNaturalSchedule(text) {
+    const number = "[半\\d.零〇一二两三四五六七八九十百]+";
+    let match = text.match(new RegExp(`^(?:提醒我\\s*)?(${number})\\s*(?:个)?\\s*(小时|钟头|h|H|分钟|分|min|m)\\s*后\\s*(?:提醒我|提醒|设定|设置|叫我)?\\s*(.+)$`));
+    if (match) {
+      const amount = parseNaturalNumber(match[1]);
+      const unit = match[2].toLowerCase();
+      const textValue = cleanScheduledText(match[3]);
+      if (Number.isFinite(amount) && textValue) {
+        const minutes = /小时|钟头|h/.test(unit) ? amount * 60 : amount;
+        return { ...addMinutesFromNow(minutes), text: textValue, hasTime: true };
+      }
+    }
+
+    const dayPhrase = `(?:今天|明天|后天|大后天|${number}\\s*(?:天|日|周|星期|礼拜)后)`;
+    const period = "(?:凌晨|早上|上午|中午|下午|傍晚|晚上|今晚|明晚|今早|明早)?";
+    match = text.match(new RegExp(`^(${dayPhrase})?\\s*(${period})\\s*(${number})\\s*(?:[:：；点]\\s*(${number}|半)?)\\s*(?:提醒我|提醒|设定|设置|叫我)?\\s*(.+)$`));
+    if (match && (match[1] || match[2])) {
+      const time = scheduledDateTime(match[1], match[2], match[3], match[4]);
+      const textValue = cleanScheduledText(match[5]);
+      if (time && textValue) return { ...time, text: textValue, hasTime: true };
+    }
+
+    match = text.match(new RegExp(`^(?:提醒我\\s*)?(${number})\\s*(天|日|周|星期|礼拜)后\\s*(?:提醒我|提醒|设定|设置|叫我)?\\s*(.+)$`));
+    if (match) {
+      const offset = dayOffsetFromText(`${match[1]}${match[2]}后`);
+      const textValue = cleanScheduledText(match[3]);
+      if (offset !== null && textValue) return { dateKey: dateWithOffset(offset), text: textValue, hasTime: false };
+    }
+
+    return null;
   }
 
   function timeMinutes(time) {
@@ -1268,6 +1380,19 @@
     return parts.join("");
   }
 
+  function completedRowHtml(text, index) {
+    return [
+      `<div class="completed-row" data-completed-row data-completed-index="${index}">`,
+      `<button class="completed-row-delete" data-action="deleteCompleted" data-index="${index}" type="button">${tx("delete")}</button>`,
+      '<div class="row completed-row-card">',
+      `<span class="idx">${index + 1}.</span>`,
+      `<span class="row-main">${escapeHtml(text)}</span>`,
+      "<span></span>",
+      "</div>",
+      "</div>"
+    ].join("");
+  }
+
   function overdueRows() {
     const rows = [];
     const current = todayKey();
@@ -1418,7 +1543,7 @@
     html += `<div class="section-title completed-toggle" data-action="toggleCompleted">${tx("completedTitle")}${state.showCompleted ? tx("collapse") : tx("expand")}</div>`;
     if (state.showCompleted) {
       html += completed.length
-        ? completed.map((text, i) => `<div class="row"><span class="idx">${i + 1}.</span><span>${escapeHtml(text)}</span><span></span></div>`).join("")
+        ? completed.map((text, i) => completedRowHtml(text, i)).join("")
         : `<div class="empty">${tx("none")}</div>`;
     }
     content.innerHTML = html;
@@ -1984,6 +2109,7 @@
         "<li>Delete: <code>delete xx</code> or <code>xx delete</code>.</li>",
         "<li>Future todo: <code>tomorrow xx</code> is supported in Chinese commands such as <code>明天xx</code>.</li>",
         "<li>Timed reminders: <code>每天17:00提醒我xx</code>, <code>明天14:30提醒我xx</code>, <code>每周三10:25提醒我xx</code>, <code>每月1号提醒我xx</code>.</li>",
+        "<li>Natural time: Chinese commands such as <code>3小时后提醒我xx</code>, <code>今晚8点xx</code>, <code>10天后xx</code>.</li>",
         "<li>Edit: double-click a normal Today/In progress row.</li>",
         "<li>Notes and diary auto-save while you type.</li>",
         "<li>Ledger commands: <code>支出25 xx</code>, <code>收入300 xx</code>.</li>",
@@ -2000,6 +2126,7 @@
         "<li>削除：<code>删除xx</code> / <code>xx删除</code>。</li>",
         "<li>未来のToDo：<code>明天xx</code> / <code>后天xx</code> / <code>大后天xx</code>。</li>",
         "<li>通知：<code>每天17:00提醒我xx</code> / <code>明天14:30提醒我xx</code> / <code>每周三10:25提醒我xx</code> / <code>每月1号提醒我xx</code>。</li>",
+        "<li>自然な時間指定：<code>3小时后提醒我xx</code> / <code>今晚8点xx</code> / <code>10天后xx</code>。</li>",
         "<li>編集：今日待办 / 进行中 の普通項目をダブルクリック。</li>",
         "<li>メモと日記は入力中に自動保存されます。</li>",
         "<li>記帳：<code>支出25 xx</code> / <code>收入300 xx</code>。</li>",
@@ -2015,6 +2142,7 @@
       "<li>删除事项：<code>删除xx</code> 或 <code>xx删除</code>。</li>",
       "<li>未来待办：<code>明天xx</code>、<code>后天xx</code>、<code>大后天xx</code>。</li>",
       "<li>定时提醒：<code>每天17:00提醒我xx</code>、<code>明天14:30提醒我xx</code>、<code>每周三10:25提醒我xx</code>、<code>每月1号提醒我xx</code>。</li>",
+      "<li>自然时间：<code>3小时后提醒我xx</code>、<code>今晚8点xx</code>、<code>十天后xx</code>。</li>",
       "<li>修改文字：双击“今日待办”或“进行中”的普通事项，输入新内容后回车。</li>",
       "<li>便签和日记都会在输入时自动保存，不需要手动保存。</li>",
       "<li>记账：<code>支出25 xx</code>、<code>收入300 xx</code>；也可以在记账页选择分类后记录。</li>",
@@ -2406,6 +2534,19 @@
     return before - current.pending.length - current.inProgress.length;
   }
 
+  function deleteCompleted(index) {
+    const list = day().completed;
+    const position = Number(index);
+    if (!Number.isInteger(position) || position < 0 || position >= list.length) {
+      setStatus("没找到可删除的内容。", false);
+      return;
+    }
+    list.splice(position, 1);
+    scheduleSave();
+    setStatus("已删除记录 (｡･ω･)ﾉﾞ");
+    render();
+  }
+
   function removeDailyReminder(row) {
     let removed = 0;
     if (!row.time) {
@@ -2458,6 +2599,13 @@
     if (match) return addDailyReminder(normalizeTime(match[2], match[3] || "00"), match[4].trim());
     match = text.match(/^每月\s*(\d{1,2})\s*(?:号|日)?\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addMonthlyReminder(match[1], match[2].trim());
+
+    const naturalSchedule = parseNaturalSchedule(text);
+    if (naturalSchedule) {
+      return naturalSchedule.hasTime
+        ? addOneTimeReminder(naturalSchedule.dateKey, naturalSchedule.time, naturalSchedule.text)
+        : addTodoOnDate(naturalSchedule.dateKey, naturalSchedule.text);
+    }
 
     match = text.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})\s+(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addOneTimeReminder(normalizeDateText(match[1]), normalizeTime(match[2], match[3] || "00"), match[4]);
@@ -2599,6 +2747,16 @@
       };
       return;
     }
+    const completedRow = event.target.closest("[data-completed-row]");
+    if (completedRow && !event.target.closest(".completed-row-delete,button,input,select")) {
+      state.completedSwipe = {
+        row: completedRow,
+        startX: event.clientX,
+        startY: event.clientY,
+        swiped: false
+      };
+      return;
+    }
     const ledgerRow = event.target.closest("[data-ledger-row]");
     if (!ledgerRow || event.target.closest("button,input,select")) return;
     state.ledgerSwipe = {
@@ -2622,6 +2780,17 @@
       }
       return;
     }
+    const completedSwipe = state.completedSwipe;
+    if (completedSwipe) {
+      const dx = event.clientX - completedSwipe.startX;
+      const dy = event.clientY - completedSwipe.startY;
+      if (dx < -32 && Math.abs(dx) > Math.abs(dy) && !completedSwipe.swiped) {
+        completedSwipe.swiped = true;
+        content.querySelectorAll(".completed-row.show-delete").forEach((row) => row.classList.remove("show-delete"));
+        completedSwipe.row.classList.add("show-delete");
+      }
+      return;
+    }
     const ledgerSwipe = state.ledgerSwipe;
     if (!ledgerSwipe) return;
     const dx = event.clientX - ledgerSwipe.startX;
@@ -2637,6 +2806,7 @@
     const swiped = state.categorySwipe?.swiped;
     state.categorySwipe = null;
     state.ledgerSwipe = null;
+    state.completedSwipe = null;
     if (swiped) {
       window.setTimeout(() => {
         state.ignoreCategoryClick = false;
@@ -2647,6 +2817,7 @@
   content.addEventListener("pointercancel", () => {
     state.categorySwipe = null;
     state.ledgerSwipe = null;
+    state.completedSwipe = null;
     state.ignoreCategoryClick = false;
   });
 
@@ -2666,6 +2837,9 @@
     if (action === "complete") {
       const row = todoRows().find((item) => item.key === actionTarget.dataset.key);
       if (row) completeRow(row);
+    }
+    if (action === "deleteCompleted") {
+      deleteCompleted(actionTarget.dataset.index);
     }
     if (action === "addLedger") {
       addLedger(

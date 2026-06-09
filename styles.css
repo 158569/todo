@@ -327,6 +327,38 @@ button:disabled {
   cursor: pointer;
 }
 
+.completed-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.completed-row-card {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  background: var(--bg);
+  transition: transform 0.16s ease;
+}
+
+.completed-row-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 0;
+  width: 56px;
+  height: 100%;
+  border: 0;
+  border-radius: 0 8px 8px 0;
+  background: #e45757;
+  color: #fff;
+  font-weight: 700;
+}
+
+.completed-row.show-delete .completed-row-card {
+  transform: translateX(-56px);
+}
+
 .history-filter {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
@@ -553,10 +585,10 @@ button:disabled {
 }
 
 .command-timer {
-  width: 136px;
-  padding: 0 8px;
+  width: 92px;
+  padding: 0 6px;
   color: #596773;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .command-bar.reminder-mode {
