@@ -671,29 +671,29 @@ button:disabled {
   top: calc(100% + 6px);
   left: 0;
   z-index: 20;
-  width: min(190px, calc(100vw - 36px));
-  max-height: 236px;
+  width: min(168px, calc(100vw - 36px));
+  max-height: 224px;
   display: grid;
-  gap: 6px;
-  padding: 8px;
+  gap: 5px;
+  padding: 7px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 13px;
   background: #fffdf8;
   box-shadow: 0 14px 32px rgba(44, 35, 26, 0.16);
 }
 
 .ledger-category-scroll {
   display: grid;
-  gap: 5px;
-  max-height: 150px;
+  gap: 4px;
+  max-height: 144px;
   overflow: auto;
 }
 
 .ledger-category-option {
   position: relative;
   overflow: hidden;
-  border-radius: 10px;
-  background: var(--cream);
+  border-radius: 9px;
+  background: transparent;
   touch-action: pan-y;
 }
 
@@ -701,13 +701,21 @@ button:disabled {
   position: relative;
   z-index: 1;
   width: 100%;
-  min-height: 30px;
+  min-height: 27px;
   border: 1px solid #ead9c5;
-  border-radius: 10px;
-  background: var(--cream);
+  border-radius: 9px;
+  background: #fffdf8;
   text-align: left;
-  padding-right: 64px;
+  padding: 0 58px 0 10px;
+  color: #45505c;
   transition: padding 0.16s ease;
+}
+
+.ledger-category-option.active .ledger-category-pick {
+  border-color: #e8c989;
+  background: var(--mark);
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .ledger-category-delete {
@@ -715,21 +723,21 @@ button:disabled {
   top: 0;
   right: 0;
   z-index: 2;
-  width: 58px;
+  width: 54px;
   height: 100%;
   border: 0;
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 9px 9px 0;
   background: #e45757;
   color: #fff;
   font-weight: 700;
-  transform: translateX(58px);
+  transform: translateX(54px);
   opacity: 0;
   pointer-events: none;
   transition: transform 0.16s ease;
 }
 
 .ledger-category-option.show-delete .ledger-category-pick {
-  padding-right: 64px;
+  padding-right: 58px;
 }
 
 .ledger-category-option.show-delete .ledger-category-delete {
@@ -739,12 +747,12 @@ button:disabled {
 }
 
 .ledger-category-fixed .ledger-category-pick {
-  padding-right: 9px;
+  padding-right: 10px;
 }
 
 .ledger-category-add-toggle {
   width: 100%;
-  min-height: 30px;
+  min-height: 28px;
   border: 1px dashed #e0c59e;
   border-radius: 999px;
   background: #fff8df;
@@ -755,7 +763,7 @@ button:disabled {
 .ledger-category-add-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ledger-category-add-row input,

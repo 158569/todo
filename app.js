@@ -1708,11 +1708,11 @@
     if (state.ledgerCategory === null) state.ledgerCategory = settings().ledgerLastCategory || "";
     if (state.ledgerCategory && !categories.includes(state.ledgerCategory)) state.ledgerCategory = "";
     const categoryRows = [
-      `<div class="ledger-category-option ledger-category-fixed">
+      `<div class="ledger-category-option ledger-category-fixed${state.ledgerCategory ? "" : " active"}">
           <button class="ledger-category-pick" data-action="selectLedgerCategory" data-category="" type="button">${tx("noCategory")}</button>
         </div>`,
       ...categories.map((category) => `
-        <div class="ledger-category-option" data-category-row data-category="${escapeAttr(category)}">
+        <div class="ledger-category-option${category === state.ledgerCategory ? " active" : ""}" data-category-row data-category="${escapeAttr(category)}">
           <button class="ledger-category-pick" data-action="selectLedgerCategory" data-category="${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>
           <button class="ledger-category-delete" data-action="deleteLedgerCategory" data-category="${escapeAttr(category)}" type="button">${tx("delete")}</button>
         </div>
