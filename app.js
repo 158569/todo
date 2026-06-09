@@ -9,11 +9,11 @@
   const NOTE_LIST_COLLAPSED_KEY = "todoCloudNoteListCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
   const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSize";
-  const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ω･｡)ﾉ";
+  const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
   const OLD_WELCOME_TITLE = "待办提醒 顽张って！";
   const OLD_WELCOME_TEXT = "今天也从待办开始。";
-  const PLACEHOLDER = "写点什么吧 (｡･ω･｡)ﾉ";
+  const PLACEHOLDER = "写点什么吧 ( ・・)✎__";
   const DEFAULT_LEDGER_CATEGORIES = ["吃饭", "购物", "交通", "办公", "工资", "报销", "其他"];
   const DEFAULT_SETTINGS = {
     bgColor: "#fffefa",
@@ -28,12 +28,13 @@
     showNotes: true,
     showDiary: true,
     showLedger: true,
+    ledgerLastCategory: "",
     diaryPinEnabled: false,
     diaryPin: ""
   };
   const TEXT = {
     zh: {
-      appTitle: "待办提醒 顽张って！",
+      appTitle: "memo",
       authHint: "不登录也能本地使用；登录后可在电脑和手机之间同步。",
       email: "邮箱",
       password: "密码",
@@ -59,13 +60,17 @@
       localMode: "本地模式：未登录",
       placeholder: PLACEHOLDER,
       noteMeta: "便签每 3 秒自动保存",
+      notePlaceholder: "写点什么吧 ( ・・)✎__",
       noteTitlePlaceholder: "便签标题",
       noteDefaultTitle: "便签",
       noteAdd: "新建便签",
+      noteDelete: "删除",
+      noteDeleted: "便签已删除 (｡･ω･)ﾉﾞ",
+      noteCleared: "便签已清空 (｡･ω･)ﾉﾞ",
       noteCollapse: "收起",
       noteExpand: "展开便签列表",
       diaryMeta: "日记每 3 秒自动保存",
-      diaryPlaceholder: "今天想记录点什么 (｡･ω･｡)",
+      diaryPlaceholder: "今天想记录点什么 ( ・・)✎__",
       enterTodos: "进入待办",
       alarmBadge: "到点了",
       alarmTitle: "待办提醒",
@@ -78,7 +83,7 @@
       collapse: "▼ 点击收起",
       expand: "▶ 点击展开",
       none: "暂无",
-      noOverdue: "没有过期待办哦 (｡･ω･｡)ﾉ",
+      noOverdue: "没有过期待办哦 (｡•ᴗ•｡)",
       complete: "完成",
       completeIcon: "✓",
       delete: "删除",
@@ -98,13 +103,14 @@
       balance: "结余",
       amount: "金额",
       note: "备注",
-      addLedger: "记一笔 (｡･ω･｡)ﾉ",
+      addLedger: "记一笔 (๑•̀᎑<๑)و",
       ledgerRecords: "记录：",
       noLedger: "暂无记账",
-      periodToday: "今日",
-      periodYesterday: "昨日",
-      periodThisMonth: "本月",
-      periodLastMonth: "上月",
+      periodDay: "日",
+      periodWeek: "周",
+      periodMonth: "月",
+      periodYear: "年",
+      ledgerDate: "选择日期",
       uiLanguage: "语言",
       languageZh: "中文",
       languageJa: "日本語",
@@ -125,19 +131,20 @@
       topColor: "顶部色",
       accentColor: "强调色",
       markColor: "标题底色",
-      settingsResetDone: "默认设置已恢复 (｡･ω･｡)ﾉ",
+      settingsResetDone: "默认设置已恢复 (｡•̀ᴗ-)و",
       tutorialSection: "使用说明：",
       openTutorial: "打开使用说明",
       helpTitle: "待办使用说明",
       helpClose: "知道了",
-      reminderInputPlaceholder: "写个小提醒吧，例如：每天17:00提醒我xx",
+      reminderInputPlaceholder: "写提醒，例如：每天17:00提醒我xx",
       editPlaceholder: "修改内容",
-      editDone: "已修改待办 (｡･ω･｡)ﾉ",
+      editDone: "已修改待办 (｡•̀ᴗ-)و",
       editDuplicate: "已经有这条了，不能改成重复内容。",
       category: "分类",
+      noCategory: "不分类",
       addCategory: "添加分类",
       newCategoryPlaceholder: "新增分类",
-      categoryAdded: "分类已添加 (｡･ω･｡)ﾉ",
+      categoryAdded: "分类已添加 (｡•̀ᴗ-)و",
       categoryExists: "已经有这个分类了。",
       categoryDeleted: "分类已删除。",
       categoryInUse: "这个分类已经有记录，先保留。",
@@ -150,17 +157,17 @@
       showLedger: "显示记账",
       diaryLockSection: "日记密码：",
       diaryPinEnabled: "开启四位数字密码",
-      diaryPin: "新四位密码",
-      diaryPinPlaceholder: "不修改就留空",
+      diaryPin: "四位数字密码",
+      diaryPinPlaceholder: "不改可留空",
       diaryOldPinPrompt: "修改或关闭日记密码前，请先输入原密码。",
       diaryPinRequired: "请输入 4 位数字密码。",
-      diaryPinUpdated: "日记密码已更新 (｡･ω･｡)ﾉ",
+      diaryPinUpdated: "日记密码已更新 (｡•̀ᴗ-)و",
       diaryPinDisabled: "日记密码已关闭。",
       localMerged: "已合并本地旧数据并同步到当前账号。",
       diaryLockedTitle: "日记已锁定",
       diaryLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
-      wrongPin: "密码不对 (｡•́︿•̀｡)",
+      wrongPin: "密码不对 (｡>﹏<｡)",
       timerNone: "完成提醒：无",
       timer1h: "1 小时完成",
       timer2h: "2 小时完成",
@@ -168,46 +175,50 @@
       timer8h: "8 小时完成",
       halfway: "中段",
       timerAlarmPrefix: "完成提醒",
-      timerSet: "已添加待办，并设置中段提醒 (｡･ω･｡)ﾉ"
+      timerSet: "已添加待办，并设置中段提醒 (๑•̀᎑<๑)و"
     },
     ja: {
-      appTitle: "ToDoリマインダー 頑張って！",
+      appTitle: "memo",
       authHint: "ログインしなくてもローカルで使えます。ログインするとPCとスマホで同期できます。",
       email: "メール",
       password: "パスワード",
       passwordPlaceholder: "6文字以上",
       login: "ログイン",
       register: "登録",
-      localUse: "ローカルで使う",
-      tabTodos: "今日",
-      tabReminders: "通知",
+      localUse: "まずはローカルで使う",
+      tabTodos: "ToDo",
+      tabReminders: "リマインダー",
       tabNotes: "メモ",
       tabDiary: "日記",
-      tabLedger: "家計簿",
+      tabLedger: "記帳",
       tabHistory: "履歴",
       tabSettings: "設定",
-      export: "出力",
-      import: "取込",
-      signOut: "退出",
+      export: "書き出し",
+      import: "読み込み",
+      signOut: "ログアウト",
       sync: "同期",
       fullScreen: "全画面",
       exitFullScreen: "戻す",
       fullScreenUnsupported: "このブラウザは全画面表示に対応していません。",
       synced: "同期済み",
       localMode: "ローカル：未ログイン",
-      placeholder: "ここに書いてね (｡･ω･｡)ﾉ",
+      placeholder: "書いてみる ( ・・)✎__",
       noteMeta: "メモは3秒ごとに自動保存",
+      notePlaceholder: "メモを書いてみる ( ・・)✎__",
       noteTitlePlaceholder: "メモのタイトル",
       noteDefaultTitle: "メモ",
       noteAdd: "メモを追加",
+      noteDelete: "削除",
+      noteDeleted: "メモを削除しました (｡･ω･)ﾉﾞ",
+      noteCleared: "メモを空にしました (｡･ω･)ﾉﾞ",
       noteCollapse: "閉じる",
       noteExpand: "メモ一覧を開く",
       diaryMeta: "日記は3秒ごとに自動保存",
-      diaryPlaceholder: "今日のことを書いてね (｡･ω･｡)",
+      diaryPlaceholder: "今日のことを書いてね ( ・・)✎__",
       enterTodos: "始める",
       alarmBadge: "時間です",
-      alarmTitle: "ToDoリマインダー",
-      alarmDone: "今日完了",
+      alarmTitle: "memoリマインダー",
+      alarmDone: "今日完了にする",
       alarmClose: "OK",
       overdueTitle: "期限切れ：",
       inProgressTitle: "進行中：",
@@ -216,100 +227,102 @@
       collapse: "▼ 閉じる",
       expand: "▶ 開く",
       none: "なし",
-      noOverdue: "期限切れはありません (｡･ω･｡)ﾉ",
+      noOverdue: "期限切れはありません (｡•ᴗ•｡)",
       complete: "完了",
       completeIcon: "✓",
       delete: "削除",
-      futureTodos: "今後のToDo：",
-      dailyReminders: "毎日の通知：",
-      weeklyReminders: "毎週の通知：",
-      monthlyReminders: "毎月の通知：",
+      futureTodos: "これからのToDo：",
+      dailyReminders: "毎日のリマインダー：",
+      weeklyReminders: "毎週のリマインダー：",
+      monthlyReminders: "毎月のリマインダー：",
       date: "日付",
       today: "今日",
       all: "全部",
-      completedAll: "完了：全部",
-      updateAll: "更新履歴：全部",
-      noCompleted: "完了なし",
-      noUpdate: "更新なし",
+      completedAll: "完了：すべて",
+      updateAll: "更新履歴：すべて",
+      noCompleted: "完了した項目はありません",
+      noUpdate: "更新履歴はありません",
       income: "収入",
       expense: "支出",
       balance: "残高",
       amount: "金額",
-      note: "メモ",
-      addLedger: "記録する (｡･ω･｡)ﾉ",
+      note: "備考",
+      addLedger: "記録する (๑•̀᎑<๑)و",
       ledgerRecords: "記録：",
       noLedger: "記録なし",
-      periodToday: "今日",
-      periodYesterday: "昨日",
-      periodThisMonth: "今月",
-      periodLastMonth: "先月",
-      uiLanguage: "言語",
+      periodDay: "日",
+      periodWeek: "週",
+      periodMonth: "月",
+      periodYear: "年",
+      ledgerDate: "日付を選択",
+      uiLanguage: "表示言語",
       languageZh: "中文",
       languageJa: "日本語",
       languageEn: "English",
-      colorSection: "画面の色：",
+      colorSection: "画面カラー：",
       resetSettings: "初期設定に戻す",
-      welcomeSection: "ウェルカム：",
+      welcomeSection: "ウェルカム画面：",
       welcomeEnabled: "毎日初回だけ表示",
       welcomeTitle: "タイトル",
       welcomeText: "本文",
-      alarmSection: "通知ポップアップ：",
+      alarmSection: "リマインダー通知：",
       notifyUnsupported: "このブラウザは通知に対応していません",
       notifyAllowed: "通知は許可済み",
       notifyDenied: "通知はブラウザでブロックされています",
       notifyEnable: "通知を有効にする",
-      notifyNote: "Web Appを開いている時は、時間になると画面内で強めに通知します。システム通知を許可すると追加で通知します。Appを完全に閉じた時やOSに停止された時は、常駐を保証できません。",
+      notifyNote: "Web Appを開いている間は、時間になると画面内に強めのポップアップを表示します。システム通知を許可すると、ブラウザ通知も届きます。アプリを完全に閉じた場合やOSに停止された場合、Web Appでは常駐を保証できません。",
       bgColor: "背景色",
       topColor: "上部色",
       accentColor: "強調色",
       markColor: "見出し色",
-      settingsResetDone: "初期設定に戻しました (｡･ω･｡)ﾉ",
+      settingsResetDone: "初期設定に戻しました (｡•̀ᴗ-)و",
       tutorialSection: "使い方：",
       openTutorial: "使い方を開く",
       helpTitle: "ToDoの使い方",
       helpClose: "OK",
-      reminderInputPlaceholder: "小さな通知を書く：毎日17:00にxxを通知",
+      reminderInputPlaceholder: "リマインダーを書く：毎日17:00にxx",
       editPlaceholder: "内容を編集",
-      editDone: "ToDoを編集しました (｡･ω･｡)ﾉ",
+      editDone: "ToDoを編集しました (｡•̀ᴗ-)و",
       editDuplicate: "同じ内容がすでにあります。",
-      category: "分類",
-      addCategory: "分類を追加",
-      newCategoryPlaceholder: "新しい分類",
-      categoryAdded: "分類を追加しました (｡･ω･｡)ﾉ",
-      categoryExists: "この分類はすでにあります。",
-      categoryDeleted: "分類を削除しました。",
-      categoryInUse: "記録がある分類なので残します。",
-      ledgerEmptyCategory: "分類を入力してください。",
+      category: "カテゴリ",
+      noCategory: "カテゴリなし",
+      addCategory: "追加",
+      newCategoryPlaceholder: "新しいカテゴリ",
+      categoryAdded: "カテゴリを追加しました (｡•̀ᴗ-)و",
+      categoryExists: "このカテゴリはすでにあります。",
+      categoryDeleted: "カテゴリを削除しました。",
+      categoryInUse: "このカテゴリには記録があります。",
+      ledgerEmptyCategory: "カテゴリを入力してください。",
       dailyPopupSection: "毎日のポップアップ：",
       dailyPopupEnabled: "毎日初回だけカスタム表示",
-      featureSection: "機能表示：",
+      featureSection: "表示する機能：",
       showNotes: "メモを表示",
       showDiary: "日記を表示",
-      showLedger: "家計簿を表示",
-      diaryLockSection: "日記パスコード：",
+      showLedger: "記帳を表示",
+      diaryLockSection: "日記ロック：",
       diaryPinEnabled: "4桁パスコードを有効にする",
       diaryPin: "新しい4桁パスコード",
       diaryPinPlaceholder: "変更しない場合は空欄",
       diaryOldPinPrompt: "日記パスコードを変更または無効化する前に、現在のパスコードを入力してください。",
       diaryPinRequired: "4桁の数字を入力してください。",
-      diaryPinUpdated: "日記パスコードを更新しました (｡･ω･｡)ﾉ",
+      diaryPinUpdated: "日記パスコードを更新しました (｡•̀ᴗ-)و",
       diaryPinDisabled: "日記パスコードを無効にしました。",
       localMerged: "ローカルの旧データを統合して同期しました。",
       diaryLockedTitle: "日記はロックされています",
       diaryLockedHint: "4桁のパスコードを入力してください。",
-      unlock: "解除",
-      wrongPin: "パスコードが違います (｡•́︿•̀｡)",
-      timerNone: "完了通知：なし",
+      unlock: "ロック解除",
+      wrongPin: "パスコードが違います (｡>﹏<｡)",
+      timerNone: "完了リマインダー：なし",
       timer1h: "1時間で完了",
       timer2h: "2時間で完了",
       timer4h: "4時間で完了",
       timer8h: "8時間で完了",
       halfway: "中間",
-      timerAlarmPrefix: "完了通知",
-      timerSet: "ToDoを追加し、中間通知を設定しました (｡･ω･｡)ﾉ"
+      timerAlarmPrefix: "完了リマインダー",
+      timerSet: "ToDoを追加し、中間リマインダーを設定しました (๑•̀᎑<๑)و"
     },
     en: {
-      appTitle: "Todo Reminder",
+      appTitle: "memo",
       authHint: "Use it locally without signing in. Sign in to sync between desktop and mobile.",
       email: "Email",
       password: "Password",
@@ -333,15 +346,19 @@
       fullScreenUnsupported: "This browser does not support in-app fullscreen.",
       synced: "Synced",
       localMode: "Local mode: not signed in",
-      placeholder: "Write something (｡･ω･｡)ﾉ",
+      placeholder: "Write something ( ・・)✎__",
       noteMeta: "Notes auto-save every 3 seconds",
+      notePlaceholder: "Write a note ( ・・)✎__",
       noteTitlePlaceholder: "Note title",
       noteDefaultTitle: "Note",
       noteAdd: "New note",
+      noteDelete: "Delete",
+      noteDeleted: "Note deleted (｡･ω･)ﾉﾞ",
+      noteCleared: "Note cleared (｡･ω･)ﾉﾞ",
       noteCollapse: "Collapse",
       noteExpand: "Open note list",
       diaryMeta: "Diary auto-saves every 3 seconds",
-      diaryPlaceholder: "Write today's diary (｡･ω･｡)",
+      diaryPlaceholder: "Write today's diary ( ・・)✎__",
       enterTodos: "Enter todo",
       alarmBadge: "Due now",
       alarmTitle: "Todo reminder",
@@ -354,7 +371,7 @@
       collapse: "▼ Collapse",
       expand: "▶ Expand",
       none: "None",
-      noOverdue: "No overdue todos (｡･ω･｡)ﾉ",
+      noOverdue: "No overdue todos (｡•ᴗ•｡)",
       complete: "Done",
       completeIcon: "✓",
       delete: "Delete",
@@ -374,13 +391,14 @@
       balance: "Balance",
       amount: "Amount",
       note: "Note",
-      addLedger: "Add entry (｡･ω･｡)ﾉ",
+      addLedger: "Add entry (๑•̀᎑<๑)و",
       ledgerRecords: "Records:",
       noLedger: "No ledger entries",
-      periodToday: "Today",
-      periodYesterday: "Yesterday",
-      periodThisMonth: "This month",
-      periodLastMonth: "Last month",
+      periodDay: "Day",
+      periodWeek: "Week",
+      periodMonth: "Month",
+      periodYear: "Year",
+      ledgerDate: "Pick date",
       uiLanguage: "Language",
       languageZh: "中文",
       languageJa: "日本語",
@@ -401,19 +419,20 @@
       topColor: "Top bar",
       accentColor: "Accent",
       markColor: "Highlight",
-      settingsResetDone: "Default settings restored (｡･ω･｡)ﾉ",
+      settingsResetDone: "Default settings restored (｡•̀ᴗ-)و",
       tutorialSection: "Guide:",
       openTutorial: "Open guide",
       helpTitle: "Todo guide",
       helpClose: "Got it",
-      reminderInputPlaceholder: "Write a tiny reminder: daily 17:00 xx",
+      reminderInputPlaceholder: "Write a reminder: daily 17:00 xx",
       editPlaceholder: "Edit text",
-      editDone: "Todo updated (｡･ω･｡)ﾉ",
+      editDone: "Todo updated (｡•̀ᴗ-)و",
       editDuplicate: "That item already exists.",
       category: "Category",
+      noCategory: "No category",
       addCategory: "Add category",
       newCategoryPlaceholder: "New category",
-      categoryAdded: "Category added (｡･ω･｡)ﾉ",
+      categoryAdded: "Category added (｡•̀ᴗ-)و",
       categoryExists: "This category already exists.",
       categoryDeleted: "Category deleted.",
       categoryInUse: "This category has records, keeping it.",
@@ -430,13 +449,13 @@
       diaryPinPlaceholder: "Leave blank to keep current",
       diaryOldPinPrompt: "Enter the current diary PIN before changing or disabling it.",
       diaryPinRequired: "Enter a 4-digit PIN.",
-      diaryPinUpdated: "Diary PIN updated (｡･ω･｡)ﾉ",
+      diaryPinUpdated: "Diary PIN updated (｡•̀ᴗ-)و",
       diaryPinDisabled: "Diary PIN disabled.",
       localMerged: "Merged local old data and synced it to this account.",
       diaryLockedTitle: "Diary locked",
       diaryLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
-      wrongPin: "Wrong PIN (｡•́︿•̀｡)",
+      wrongPin: "Wrong PIN (｡>﹏<｡)",
       timerNone: "Completion reminder: off",
       timer1h: "Finish in 1h",
       timer2h: "Finish in 2h",
@@ -444,7 +463,7 @@
       timer8h: "Finish in 8h",
       halfway: "Midpoint",
       timerAlarmPrefix: "Completion reminder",
-      timerSet: "Todo added with midpoint reminder (｡･ω･｡)ﾉ"
+      timerSet: "Todo added with midpoint reminder (๑•̀᎑<๑)و"
     }
   };
 
@@ -458,9 +477,11 @@
     diaryDate: localStorage.getItem(DIARY_DATE_KEY) || todayKey(),
     activeNoteId: localStorage.getItem(NOTE_ID_KEY) || "",
     noteListCollapsed: localStorage.getItem(NOTE_LIST_COLLAPSED_KEY) === "1",
-    ledgerPeriod: "today",
-    ledgerCategory: "",
+    ledgerPeriod: "day",
+    ledgerAnchorDate: todayKey(),
+    ledgerCategory: null,
     categorySwipe: null,
+    ledgerSwipe: null,
     ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
@@ -492,6 +513,7 @@
   const noteSidebar = $("#noteSidebar");
   const noteList = $("#noteList");
   const noteAddButton = $("#noteAddButton");
+  const noteDeleteButton = $("#noteDeleteButton");
   const noteToggleButton = $("#noteToggleButton");
   const noteExpandButton = $("#noteExpandButton");
   const diaryPanel = $("#diaryPanel");
@@ -593,7 +615,16 @@
       data.diaries[dateKey] = typeof data.diaries[dateKey] === "string" ? data.diaries[dateKey] : "";
     });
     data.versionLog = asArray(data.versionLog).filter(Boolean);
-    data.ledger = asArray(data.ledger).filter((item) => item && typeof item === "object");
+    data.ledger = asArray(data.ledger)
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({
+        id: String(item.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+        date: normalizeDateText(item.date || todayKey()),
+        type: item.type === "income" ? "income" : "expense",
+        amount: Number(item.amount || 0),
+        category: String(item.category || "").trim(),
+        note: String(item.note || "").trim()
+      }));
     data.ledgerCategories = Array.isArray(data.ledgerCategories)
       ? uniqueStrings(data.ledgerCategories)
       : [...DEFAULT_LEDGER_CATEGORIES];
@@ -604,6 +635,7 @@
     if (data.settings.notesPinEnabled && data.settings.diaryPinEnabled === DEFAULT_SETTINGS.diaryPinEnabled) data.settings.diaryPinEnabled = true;
     if (!TEXT[data.settings.language]) data.settings.language = DEFAULT_SETTINGS.language;
     data.settings.diaryPin = String(data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
+    data.settings.ledgerLastCategory = data.ledgerCategories.includes(data.settings.ledgerLastCategory) ? data.settings.ledgerLastCategory : "";
     Object.keys(data.days).forEach((dateKey) => {
       const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
       current.pending = uniqueStrings(current.pending);
@@ -628,7 +660,7 @@
   }
 
   function normalizeLedgerPeriod(value) {
-    return ["today", "yesterday", "thisMonth", "lastMonth"].includes(value) ? value : "today";
+    return ["day", "week", "month", "year"].includes(value) ? value : "day";
   }
 
   function uniqueStrings(value) {
@@ -673,6 +705,18 @@
     const date = new Date();
     date.setDate(date.getDate() + offset);
     return toDateKey(date);
+  }
+
+  function dateFromKey(dateKey) {
+    const [year, month, day] = String(dateKey || todayKey()).split("-").map(Number);
+    if (!year || !month || !day) return new Date();
+    return new Date(year, month - 1, day);
+  }
+
+  function addDays(date, days) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
   }
 
   function shortDate(dateKey) {
@@ -984,6 +1028,7 @@
     if (state.data.settings.welcomeText === OLD_WELCOME_TEXT) state.data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
     if (!TEXT[state.data.settings.language]) state.data.settings.language = DEFAULT_SETTINGS.language;
     state.data.settings.diaryPin = String(state.data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
+    state.data.settings.ledgerLastCategory = ledgerCategories().includes(state.data.settings.ledgerLastCategory) ? state.data.settings.ledgerLastCategory : "";
     return state.data.settings;
   }
 
@@ -1536,6 +1581,8 @@
     noteTitleInput.value = current.title || "";
     noteInput.value = current.text || "";
     noteAddButton.title = tx("noteAdd");
+    noteDeleteButton.textContent = tx("noteDelete");
+    noteDeleteButton.title = tx("noteDelete");
     noteToggleButton.textContent = tx("noteCollapse");
     noteToggleButton.title = tx("noteCollapse");
     noteExpandButton.title = tx("noteExpand");
@@ -1566,28 +1613,42 @@
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
   }
 
-  function lastMonthKey() {
-    const date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    return monthKey(date);
+  function ledgerRangeTitle(period, start, end) {
+    const startKey = toDateKey(start);
+    const endKey = toDateKey(end);
+    if (period === "day") return startKey;
+    if (period === "week") return `${shortDate(startKey)}-${shortDate(endKey)}`;
+    if (period === "month") return monthKey(start);
+    return String(start.getFullYear());
   }
 
   function ledgerRange(period) {
     const current = normalizeLedgerPeriod(period);
-    if (current === "today") {
-      const date = todayKey();
-      return { key: current, title: tx("periodToday"), match: (item) => item.date === date };
+    const anchor = dateFromKey(state.ledgerAnchorDate);
+    let start = new Date(anchor);
+    let end = new Date(anchor);
+    if (current === "week") {
+      const day = anchor.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      start = addDays(anchor, mondayOffset);
+      end = addDays(start, 6);
+    } else if (current === "month") {
+      start = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+      end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+    } else if (current === "year") {
+      start = new Date(anchor.getFullYear(), 0, 1);
+      end = new Date(anchor.getFullYear(), 11, 31);
     }
-    if (current === "yesterday") {
-      const date = dateWithOffset(-1);
-      return { key: current, title: tx("periodYesterday"), match: (item) => item.date === date };
-    }
-    if (current === "lastMonth") {
-      const month = lastMonthKey();
-      return { key: current, title: tx("periodLastMonth"), match: (item) => String(item.date || "").startsWith(month) };
-    }
-    const month = monthKey(new Date());
-    return { key: "thisMonth", title: tx("periodThisMonth"), match: (item) => String(item.date || "").startsWith(month) };
+    const startKey = toDateKey(start);
+    const endKey = toDateKey(end);
+    return {
+      key: current,
+      title: ledgerRangeTitle(current, start, end),
+      match: (item) => {
+        const date = String(item.date || "");
+        return date >= startKey && date <= endKey;
+      }
+    };
   }
 
   function ledgerCategories() {
@@ -1596,40 +1657,67 @@
     return state.data.ledgerCategories;
   }
 
-  function defaultLedgerCategory(type, note = "") {
-    if (type === "income") return "工资";
-    if (/饭|餐|奶茶|咖啡|吃|外卖|水果/.test(note)) return "吃饭";
-    if (/买|购物|衣|鞋|日用/.test(note)) return "购物";
-    if (/车|打车|地铁|公交|油|高铁/.test(note)) return "交通";
-    return "其他";
+  function ledgerCategoryLabel(category) {
+    return String(category || "").trim() || tx("noCategory");
+  }
+
+  function ledgerCategoryOptions(selected = "") {
+    const current = String(selected || "").trim();
+    return [
+      `<option value="" ${current ? "" : "selected"}>${tx("noCategory")}</option>`,
+      ...ledgerCategories().map((category) => `<option value="${escapeAttr(category)}" ${category === current ? "selected" : ""}>${escapeHtml(category)}</option>`)
+    ].join("");
+  }
+
+  function renderLedgerRecords(items, title) {
+    if (!items.length) {
+      return `<div class="section-title">${escapeHtml(title)}</div><div class="empty">${tx("noLedger")}</div>`;
+    }
+    const rows = items.map((item) => {
+      const category = String(item.category || "").trim();
+      return `
+        <div class="ledger-record" data-ledger-row data-ledger-id="${escapeAttr(item.id)}">
+          <div class="ledger-record-card">
+            <input data-action="editLedgerRecordDate" data-ledger-id="${escapeAttr(item.id)}" type="date" value="${escapeAttr(item.date || todayKey())}">
+            <select data-action="editLedgerRecordCategory" data-ledger-id="${escapeAttr(item.id)}">${ledgerCategoryOptions(category)}</select>
+            <div class="ledger-record-main" data-ledger-note data-ledger-id="${escapeAttr(item.id)}" title="${escapeAttr(tx("editPlaceholder"))}">
+              <span class="ledger-record-type">${item.type === "income" ? tx("income") : tx("expense")}</span>
+              <span class="ledger-record-amount">${formatMoney(item.amount)}</span>
+              <span class="ledger-record-note">${escapeHtml(item.note || tx("note"))}</span>
+            </div>
+          </div>
+          <button class="ledger-record-delete" data-action="deleteLedger" data-key="${escapeAttr(item.id)}" type="button">${tx("delete")}</button>
+        </div>
+      `;
+    }).join("");
+    return `<div class="section-title">${escapeHtml(title)}</div><div class="ledger-record-list">${rows}</div>`;
   }
 
   function renderLedger() {
     const range = ledgerRange(state.ledgerPeriod);
-    const items = asArray(state.data.ledger).filter(range.match);
+    const items = asArray(state.data.ledger).filter(range.match).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
     const income = items.filter((item) => item.type === "income").reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const expense = items.filter((item) => item.type !== "income").reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const rows = [...items].sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).map((item) => ({
-      time: item.date || "",
-      text: `${item.category || "其他"} ${item.type === "income" ? tx("income") : tx("expense")} ${formatMoney(item.amount)} ${item.note || ""}`.trim(),
-      key: item.id,
-      action: "deleteLedger",
-      label: tx("delete")
-    }));
     const periodButtons = [
-      ["today", tx("periodToday")],
-      ["yesterday", tx("periodYesterday")],
-      ["thisMonth", tx("periodThisMonth")],
-      ["lastMonth", tx("periodLastMonth")]
+      ["day", tx("periodDay")],
+      ["week", tx("periodWeek")],
+      ["month", tx("periodMonth")],
+      ["year", tx("periodYear")]
     ].map(([key, label]) => `<button class="${range.key === key ? "active" : ""}" data-action="ledgerPeriod" data-period="${key}" type="button">${label}</button>`).join("");
     const categories = ledgerCategories();
-    if (!state.ledgerCategory || !categories.includes(state.ledgerCategory)) state.ledgerCategory = categories[0] || "";
-    const categoryRows = categories.map((category) => `
+    if (state.ledgerCategory === null) state.ledgerCategory = settings().ledgerLastCategory || "";
+    if (state.ledgerCategory && !categories.includes(state.ledgerCategory)) state.ledgerCategory = "";
+    const categoryRows = [
+      `<div class="ledger-category-option ledger-category-fixed">
+          <button class="ledger-category-pick" data-action="selectLedgerCategory" data-category="" type="button">${tx("noCategory")}</button>
+        </div>`,
+      ...categories.map((category) => `
         <div class="ledger-category-option" data-category-row data-category="${escapeAttr(category)}">
           <button class="ledger-category-pick" data-action="selectLedgerCategory" data-category="${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>
           <button class="ledger-category-delete" data-action="deleteLedgerCategory" data-category="${escapeAttr(category)}" type="button">${tx("delete")}</button>
         </div>
-      `).join("");
+      `)
+    ].join("");
     content.innerHTML = [
       '<div class="ledger-form">',
       '<div class="ledger-main-row">',
@@ -1637,7 +1725,7 @@
       `<div class="ledger-category-picker" data-category-picker>
         <input data-ledger="category" type="hidden" value="${escapeAttr(state.ledgerCategory)}">
         <button class="ledger-category-trigger" data-action="toggleLedgerCategoryMenu" type="button">
-          <span data-category-label>${escapeHtml(state.ledgerCategory || tx("category"))}</span>
+          <span data-category-label>${escapeHtml(ledgerCategoryLabel(state.ledgerCategory))}</span>
           <span class="category-caret">⌄</span>
         </button>
         <div class="ledger-category-menu hidden" data-category-menu>
@@ -1652,15 +1740,18 @@
       `<input data-ledger="amount" type="number" step="0.01" placeholder="${tx("amount")}">`,
       "</div>",
       `<input data-ledger="note" type="text" placeholder="${tx("note")}">`,
-      `<button data-action="addLedger" type="button">${tx("addLedger")}</button>`,
       "</div>",
+      '<div class="ledger-rangebar">',
+      `<input data-action="ledgerDate" type="date" value="${escapeAttr(state.ledgerAnchorDate)}" aria-label="${tx("ledgerDate")}">`,
       `<div class="ledger-periods" role="radiogroup" aria-label="${tx("date")}">${periodButtons}</div>`,
+      `<button class="ledger-save-button" data-action="addLedger" type="button">${tx("addLedger")}</button>`,
+      "</div>",
       '<div class="ledger-summary">',
       `<span>${tx("income")} ${formatMoney(income)}</span>`,
       `<span>${tx("expense")} ${formatMoney(expense)}</span>`,
       `<span>${tx("balance")} ${formatMoney(income - expense)}</span>`,
       "</div>",
-      section(`${range.title}${tx("ledgerRecords")}`, rows, 1, tx("noLedger"))
+      renderLedgerRecords(items, `${range.title}${tx("ledgerRecords")}`)
     ].join("");
   }
 
@@ -1675,8 +1766,10 @@
       return;
     }
     note = String(note || "").trim();
-    category = String(category || "").trim() || defaultLedgerCategory(type, note);
-    if (!ledgerCategories().includes(category)) state.data.ledgerCategories.push(category);
+    category = String(category || "").trim();
+    if (category && !ledgerCategories().includes(category)) state.data.ledgerCategories.push(category);
+    state.ledgerCategory = category;
+    settings().ledgerLastCategory = category;
     state.data.ledger.push({
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       date: todayKey(),
@@ -1686,7 +1779,7 @@
       note
     });
     scheduleSave();
-    setStatus("已记账 (｡･ω･｡)ﾉ");
+    setStatus("已记账 (｡•̀ᴗ-)و");
     render();
   }
 
@@ -1711,7 +1804,8 @@
     category = String(category || "").trim();
     if (!category) return;
     state.data.ledgerCategories = ledgerCategories().filter((item) => item !== category);
-    if (state.ledgerCategory === category) state.ledgerCategory = state.data.ledgerCategories[0] || "";
+    if (state.ledgerCategory === category) state.ledgerCategory = "";
+    if (settings().ledgerLastCategory === category) settings().ledgerLastCategory = "";
     scheduleSave();
     setStatus(tx("categoryDeleted"));
     render();
@@ -1731,10 +1825,12 @@
   function selectLedgerCategory(category) {
     category = String(category || "").trim();
     state.ledgerCategory = category;
+    settings().ledgerLastCategory = category;
     const input = content.querySelector('[data-ledger="category"]');
     const label = content.querySelector("[data-category-label]");
     if (input) input.value = category;
-    if (label) label.textContent = category || tx("category");
+    if (label) label.textContent = ledgerCategoryLabel(category);
+    scheduleSave();
     closeLedgerCategoryMenu();
   }
 
@@ -1753,8 +1849,58 @@
       return;
     }
     scheduleSave();
-    setStatus("已删除记账 (｡･ω･｡)ﾉ");
+    setStatus("已删除记账 (｡･-･)ﾉ");
     render();
+  }
+
+  function updateLedgerRecord(id, changes) {
+    const item = state.data.ledger.find((entry) => entry.id === id);
+    if (!item) {
+      setStatus("没找到这条记账。", false);
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, "date")) item.date = normalizeDateText(changes.date || todayKey());
+    if (Object.prototype.hasOwnProperty.call(changes, "category")) item.category = String(changes.category || "").trim();
+    if (Object.prototype.hasOwnProperty.call(changes, "note")) item.note = String(changes.note || "").trim();
+    if (item.category && !ledgerCategories().includes(item.category)) state.data.ledgerCategories.push(item.category);
+    scheduleSave();
+    setStatus(tx("editDone"));
+    render();
+  }
+
+  function beginLedgerNoteEdit(target) {
+    if (target.querySelector("input")) return;
+    const id = target.dataset.ledgerId;
+    const item = state.data.ledger.find((entry) => entry.id === id);
+    if (!item) return;
+    const input = document.createElement("input");
+    input.className = "inline-edit ledger-note-edit";
+    input.type = "text";
+    input.value = item.note || "";
+    input.placeholder = tx("note");
+    target.replaceChildren(input);
+    input.focus();
+    input.select();
+
+    let closed = false;
+    const close = (shouldSave) => {
+      if (closed) return;
+      closed = true;
+      if (shouldSave) updateLedgerRecord(id, { note: input.value });
+      else render();
+    };
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        close(true);
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(false);
+      }
+    });
+    input.addEventListener("blur", () => close(true));
   }
 
   function renderSettings() {
@@ -1909,13 +2055,13 @@
     if (!text) return;
     const current = day();
     if (current.pending.includes(text) || current.completed.includes(text)) {
-      setStatus("已经有这条待办了，不重复添加 (｡･ω･｡)ﾉ");
+      setStatus("已经有这条待办了，不重复添加。");
       return;
     }
     current.pending.push(text);
     if (durationMinutes > 0) scheduleTaskTimer(text, durationMinutes);
     scheduleSave();
-    setStatus(durationMinutes > 0 ? tx("timerSet") : "已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus(durationMinutes > 0 ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
   function scheduleTaskTimer(text, durationMinutes) {
@@ -1941,13 +2087,13 @@
     if (!text) return;
     const current = day(dateKey);
     if (current.pending.includes(text) || current.completed.includes(text)) {
-      setStatus("已经有这条待办了，不重复添加 (｡･ω･｡)ﾉ");
+      setStatus("已经有这条待办了，不重复添加。");
       return;
     }
     current.pending.push(text);
     if (dateKey !== todayKey()) logUpdate("增加", `${shortDate(dateKey)} ${text}`);
     scheduleSave();
-    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
   function addDailyReminder(time, text) {
@@ -1955,13 +2101,13 @@
     if (!text) return;
     const exists = state.data.dailyReminders.some((item) => item.text === text && reminderTimes(item).includes(time));
     if (exists) {
-      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      setStatus("已经有这条提醒了，不重复添加。");
       return;
     }
     state.data.dailyReminders.push({ times: [time], text });
     logUpdate("增加", `${time} ${text}`);
     scheduleSave();
-    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
   function addDailyImportant(text, startDate = dateWithOffset(1)) {
@@ -1969,13 +2115,13 @@
     if (!text) return;
     const exists = state.data.dailyImportantReminders.some((item) => item.text === text && (!item.startDate || item.startDate <= startDate));
     if (exists) {
-      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      setStatus("已经有这条提醒了，不重复添加。");
       return;
     }
     state.data.dailyImportantReminders.push({ startDate, text });
     logUpdate("增加", `每天 ${text}`);
     scheduleSave();
-    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
   function addOneTimeReminder(dateKey, time, text) {
@@ -1984,13 +2130,13 @@
     const at = `${dateKey} ${time}`;
     const exists = state.data.oneTimeReminders.some((item) => item.at === at && item.text === text);
     if (exists) {
-      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      setStatus("已经有这条提醒了，不重复添加。");
       return;
     }
     state.data.oneTimeReminders.push({ at, text });
     logUpdate("增加", `${shortDate(dateKey)} ${time} ${text}`);
     scheduleSave();
-    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
   function addWeeklyReminder(dayText, time, text) {
@@ -1999,13 +2145,13 @@
     const day = weekName(dayText);
     const exists = state.data.weeklyReminders.some((item) => asArray(item.days).includes(day) && item.time === time && item.text === text);
     if (exists) {
-      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      setStatus("已经有这条提醒了，不重复添加。");
       return;
     }
     state.data.weeklyReminders.push({ days: [day], time, text });
     logUpdate("增加", `${dayName(day)} ${time} ${text}`);
     scheduleSave();
-    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
   function addMonthlyReminder(dayNumber, text) {
@@ -2013,13 +2159,13 @@
     if (!text) return;
     const exists = state.data.monthlyReminders.some((item) => Number(item.day) === Number(dayNumber) && item.text === text);
     if (exists) {
-      setStatus("已经有这条提醒了，不重复添加 (｡･ω･｡)ﾉ");
+      setStatus("已经有这条提醒了，不重复添加。");
       return;
     }
     state.data.monthlyReminders.push({ day: Number(dayNumber), text });
     logUpdate("增加", `每月${Number(dayNumber)}号 ${text}`);
     scheduleSave();
-    setStatus("已成功记录 (๑•̀ㅂ•́)و✧");
+    setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
   function weekName(text) {
@@ -2068,7 +2214,7 @@
       current.completed.push(row.key);
     }
     scheduleSave();
-    setStatus("已完成记录 (｡･ω･｡)ﾉ");
+    setStatus("已完成记录 (๑•̀᎑<๑)و");
     render();
   }
 
@@ -2092,7 +2238,7 @@
     const rows = todoRows();
     let target = /^\d+$/.test(query) ? rows.find((row) => row.index === Number(query)) : rows.find((row) => row.text.includes(query) || row.key.includes(query));
     if (!target) {
-      setStatus("没找到这条待办 (｡•́︿•̀｡)", false);
+      setStatus("没找到这条待办。", false);
       return;
     }
     completeRow(target);
@@ -2102,7 +2248,7 @@
     const rows = todoRows();
     const target = /^\d+$/.test(query) ? rows.find((row) => row.index === Number(query)) : rows.find((row) => row.text.includes(query));
     if (!target) {
-      setStatus("没找到这条待办 (｡•́︿•̀｡)", false);
+      setStatus("没找到这条待办。", false);
       return;
     }
     const current = day();
@@ -2124,7 +2270,7 @@
     }
     if (!current.inProgress.includes(text)) current.inProgress.push(text);
     scheduleSave();
-    setStatus("已标记进行中 (｡･ω･｡)ﾉ");
+    setStatus("已标记进行中 (๑•̀᎑<๑)و");
     render();
   }
 
@@ -2179,7 +2325,7 @@
     }
     const index = current[listName].indexOf(oldText);
     if (index === -1) {
-      setStatus("没找到这条待办 (｡•́︿•̀｡)", false);
+      setStatus("没找到这条待办。", false);
       render();
       return;
     }
@@ -2231,11 +2377,11 @@
     }
 
     if (!removed) {
-      setStatus("没找到可删除的内容 (｡•́︿•̀｡)", false);
+      setStatus("没找到可删除的内容。", false);
       return;
     }
     scheduleSave();
-    setStatus("已删除记录 (｡･ω･｡)ﾉ");
+    setStatus("已删除记录 (｡･ω･)ﾉﾞ");
     render();
   }
 
@@ -2431,7 +2577,7 @@
         state.data = normalizeData(JSON.parse(reader.result));
         await saveNow();
         render();
-        setStatus("导入成功，已保存到当前账号 (｡･ω･｡)ﾉ");
+        setStatus("导入成功，已保存到当前账号 (｡•̀ᴗ-)و");
       } catch (error) {
         setStatus(`导入失败：${error.message}`, false);
       }
@@ -2448,9 +2594,19 @@
 
   content.addEventListener("pointerdown", (event) => {
     const row = event.target.closest("[data-category-row]");
-    if (!row || event.target.closest(".ledger-category-delete")) return;
-    state.categorySwipe = {
-      row,
+    if (row && !event.target.closest(".ledger-category-delete")) {
+      state.categorySwipe = {
+        row,
+        startX: event.clientX,
+        startY: event.clientY,
+        swiped: false
+      };
+      return;
+    }
+    const ledgerRow = event.target.closest("[data-ledger-row]");
+    if (!ledgerRow || event.target.closest("button,input,select")) return;
+    state.ledgerSwipe = {
+      row: ledgerRow,
       startX: event.clientX,
       startY: event.clientY,
       swiped: false
@@ -2459,20 +2615,32 @@
 
   content.addEventListener("pointermove", (event) => {
     const swipe = state.categorySwipe;
-    if (!swipe) return;
-    const dx = event.clientX - swipe.startX;
-    const dy = event.clientY - swipe.startY;
-    if (Math.abs(dx) > 32 && Math.abs(dx) > Math.abs(dy) && !swipe.swiped) {
-      swipe.swiped = true;
-      state.ignoreCategoryClick = true;
-      content.querySelectorAll(".ledger-category-option.show-delete").forEach((row) => row.classList.remove("show-delete"));
-      swipe.row.classList.add("show-delete");
+    if (swipe) {
+      const dx = event.clientX - swipe.startX;
+      const dy = event.clientY - swipe.startY;
+      if (Math.abs(dx) > 32 && Math.abs(dx) > Math.abs(dy) && !swipe.swiped) {
+        swipe.swiped = true;
+        state.ignoreCategoryClick = true;
+        content.querySelectorAll(".ledger-category-option.show-delete").forEach((row) => row.classList.remove("show-delete"));
+        swipe.row.classList.add("show-delete");
+      }
+      return;
+    }
+    const ledgerSwipe = state.ledgerSwipe;
+    if (!ledgerSwipe) return;
+    const dx = event.clientX - ledgerSwipe.startX;
+    const dy = event.clientY - ledgerSwipe.startY;
+    if (dx < -32 && Math.abs(dx) > Math.abs(dy) && !ledgerSwipe.swiped) {
+      ledgerSwipe.swiped = true;
+      content.querySelectorAll(".ledger-record.show-delete").forEach((row) => row.classList.remove("show-delete"));
+      ledgerSwipe.row.classList.add("show-delete");
     }
   });
 
   content.addEventListener("pointerup", () => {
     const swiped = state.categorySwipe?.swiped;
     state.categorySwipe = null;
+    state.ledgerSwipe = null;
     if (swiped) {
       window.setTimeout(() => {
         state.ignoreCategoryClick = false;
@@ -2482,6 +2650,7 @@
 
   content.addEventListener("pointercancel", () => {
     state.categorySwipe = null;
+    state.ledgerSwipe = null;
     state.ignoreCategoryClick = false;
   });
 
@@ -2569,12 +2738,30 @@
   });
 
   content.addEventListener("dblclick", (event) => {
+    const ledgerNote = event.target.closest("[data-ledger-note]");
+    if (ledgerNote && content.contains(ledgerNote)) {
+      beginLedgerNoteEdit(ledgerNote);
+      return;
+    }
     const editable = event.target.closest(".editable-row");
     if (!editable || !content.contains(editable)) return;
     beginInlineEdit(editable);
   });
 
   content.addEventListener("change", (event) => {
+    if (event.target.dataset.action === "editLedgerRecordDate") {
+      updateLedgerRecord(event.target.dataset.ledgerId, { date: event.target.value });
+      return;
+    }
+    if (event.target.dataset.action === "editLedgerRecordCategory") {
+      updateLedgerRecord(event.target.dataset.ledgerId, { category: event.target.value });
+      return;
+    }
+    if (event.target.dataset.action === "ledgerDate") {
+      state.ledgerAnchorDate = event.target.value || todayKey();
+      render();
+      return;
+    }
     if (event.target.dataset.action === "historyDate") {
       state.historyDate = event.target.value || "";
       localStorage.setItem(HISTORY_DATE_KEY, state.historyDate);
@@ -2677,6 +2864,32 @@
     localStorage.setItem(NOTE_LIST_COLLAPSED_KEY, "0");
     syncLegacyNoteText();
     scheduleSave();
+    renderNotes();
+  });
+
+  noteDeleteButton.addEventListener("click", () => {
+    const notes = allNotes();
+    const index = notes.findIndex((note) => note.id === state.activeNoteId);
+    if (notes.length <= 1) {
+      const current = notes[0];
+      current.title = tx("noteDefaultTitle");
+      current.text = "";
+      state.activeNoteId = current.id;
+      localStorage.setItem(NOTE_ID_KEY, state.activeNoteId);
+      syncLegacyNoteText();
+      scheduleSave();
+      setStatus(tx("noteCleared"));
+      renderNotes();
+      return;
+    }
+    const removeIndex = index >= 0 ? index : 0;
+    notes.splice(removeIndex, 1);
+    const next = notes[Math.min(removeIndex, notes.length - 1)];
+    state.activeNoteId = next.id;
+    localStorage.setItem(NOTE_ID_KEY, state.activeNoteId);
+    syncLegacyNoteText();
+    scheduleSave();
+    setStatus(tx("noteDeleted"));
     renderNotes();
   });
 

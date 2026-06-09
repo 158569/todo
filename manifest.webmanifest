@@ -1,6 +1,6 @@
 {
-  "name": "待办提醒 顽张って！",
-  "short_name": "待办提醒",
+  "name": "memo",
+  "short_name": "memo",
   "description": "工作待办、提醒、便签、日记、记账和历史记录。",
   "start_url": "./",
   "scope": "./",

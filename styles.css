@@ -350,8 +350,7 @@ button:disabled {
 }
 
 .note-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 118px;
+  display: flex;
   gap: 10px;
   min-height: 0;
   padding: 12px 16px;
@@ -359,6 +358,7 @@ button:disabled {
 }
 
 .note-editor {
+  flex: 1 1 auto;
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 8px;
@@ -390,12 +390,14 @@ button:disabled {
 }
 
 .note-sidebar {
+  flex: 0 0 150px;
   display: grid;
-  grid-template-rows: 1fr auto auto;
+  grid-template-rows: 1fr auto auto auto;
   gap: 8px;
   min-height: 0;
-  padding-left: 8px;
-  border-left: 1px dashed #ead9c5;
+  order: -1;
+  padding-right: 8px;
+  border-right: 1px dashed #ead9c5;
 }
 
 .note-list {
@@ -436,9 +438,13 @@ button:disabled {
   text-align: center;
 }
 
+.note-delete-button {
+  color: #8a4b4b;
+}
+
 .note-expand {
   position: absolute;
-  right: 16px;
+  left: 16px;
   bottom: 10px;
   width: 34px;
   min-height: 26px;
@@ -448,12 +454,18 @@ button:disabled {
 }
 
 .note-panel.notes-collapsed {
+  display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
 
+.note-panel.notes-collapsed .note-editor {
+  grid-column: 1;
+}
+
 .diary-panel {
+  display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -617,6 +629,8 @@ button:disabled {
 .ledger-form {
   grid-template-columns: minmax(0, 1fr);
   gap: 10px;
+  align-content: start;
+  white-space: normal;
 }
 
 .ledger-main-row {
@@ -692,13 +706,15 @@ button:disabled {
   border-radius: 10px;
   background: var(--cream);
   text-align: left;
-  transition: transform 0.16s ease;
+  padding-right: 64px;
+  transition: padding 0.16s ease;
 }
 
 .ledger-category-delete {
   position: absolute;
   top: 0;
   right: 0;
+  z-index: 2;
   width: 58px;
   height: 100%;
   border: 0;
@@ -706,10 +722,24 @@ button:disabled {
   background: #e45757;
   color: #fff;
   font-weight: 700;
+  transform: translateX(58px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.16s ease;
 }
 
 .ledger-category-option.show-delete .ledger-category-pick {
-  transform: translateX(-58px);
+  padding-right: 64px;
+}
+
+.ledger-category-option.show-delete .ledger-category-delete {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ledger-category-fixed .ledger-category-pick {
+  padding-right: 9px;
 }
 
 .ledger-category-add-toggle {
@@ -747,6 +777,31 @@ button:disabled {
   width: 100%;
 }
 
+.ledger-rangebar {
+  display: grid;
+  grid-template-columns: 132px auto minmax(180px, 1fr);
+  gap: 8px;
+  align-items: center;
+  white-space: normal;
+}
+
+.ledger-rangebar input[type="date"],
+.ledger-save-button {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fffdf8;
+  padding: 0 10px;
+  color: var(--ink);
+  font: 12px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.ledger-save-button {
+  background: var(--mark);
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .ledger-category-tools {
   grid-template-columns: 1fr auto;
 }
@@ -781,8 +836,9 @@ button:disabled {
 
 .ledger-periods {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(4, minmax(34px, 46px));
+  gap: 4px;
+  justify-content: start;
 }
 
 .ledger-periods button {
@@ -793,12 +849,96 @@ button:disabled {
   color: #45505c;
   font: 700 12px SimSun, "Microsoft YaHei", sans-serif;
   cursor: pointer;
+  padding: 0 6px;
 }
 
 .ledger-periods button.active {
   border-color: #e0c59e;
   background: var(--mark);
   color: var(--ink);
+}
+
+.ledger-record-list {
+  display: grid;
+  gap: 7px;
+  white-space: normal;
+}
+
+.ledger-record {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  touch-action: pan-y;
+}
+
+.ledger-record-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 116px 96px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid #f0dfc8;
+  border-radius: 12px;
+  background: #fffdf8;
+  padding: 4px 8px;
+  transition: transform 0.16s ease;
+}
+
+.ledger-record-card input,
+.ledger-record-card select,
+.ledger-note-edit {
+  min-height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf8;
+  padding: 0 7px;
+  color: var(--ink);
+  font: 12px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.ledger-record-main {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  cursor: text;
+}
+
+.ledger-record-type {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ledger-record-amount {
+  font-weight: 700;
+}
+
+.ledger-record-note {
+  min-width: 0;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-record-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 0;
+  width: 64px;
+  height: 100%;
+  border: 0;
+  border-radius: 0 12px 12px 0;
+  background: #e45757;
+  color: #fff;
+  font-weight: 700;
+}
+
+.ledger-record.show-delete .ledger-record-card {
+  transform: translateX(-64px);
 }
 
 .ledger-summary span {
@@ -951,6 +1091,14 @@ button:disabled {
     border-radius: 0;
     box-shadow: none;
   }
+
+  .ledger-rangebar {
+    grid-template-columns: 126px auto minmax(120px, 1fr);
+  }
+
+  .ledger-record-card {
+    grid-template-columns: 108px 86px minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 340px) {
@@ -972,5 +1120,11 @@ button:disabled {
   .mini-button {
     min-width: 38px;
     padding: 0 7px;
+  }
+
+  .ledger-main-row,
+  .ledger-rangebar,
+  .ledger-record-card {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fff7ef">
-  <title>待办提醒 顽张って！</title>
+  <title>memo</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main id="authPanel" class="auth-panel hidden">
-    <h1 data-i18n="appTitle">待办提醒 顽张って！</h1>
+    <h1 data-i18n="appTitle">memo</h1>
     <p data-i18n="authHint">不登录也能本地使用；登录后可在电脑和手机之间同步。</p>
     <label>
       <span data-i18n="email">邮箱</span>
@@ -59,11 +59,12 @@
     <section id="notePanel" class="note-panel hidden">
       <div class="note-editor">
         <input id="noteTitleInput" class="note-title-input" type="text" data-i18n-placeholder="noteTitlePlaceholder" placeholder="便签标题">
-        <textarea id="noteInput" spellcheck="false" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ"></textarea>
+        <textarea id="noteInput" spellcheck="false" data-i18n-placeholder="notePlaceholder" placeholder="写点什么吧 ( ・・)✎__"></textarea>
       </div>
       <aside id="noteSidebar" class="note-sidebar">
         <div id="noteList" class="note-list"></div>
         <button id="noteAddButton" class="note-tool-button" type="button">＋</button>
+        <button id="noteDeleteButton" class="note-tool-button note-delete-button" type="button">删除</button>
         <button id="noteToggleButton" class="note-tool-button" type="button">收起</button>
       </aside>
       <button id="noteExpandButton" class="note-expand hidden" type="button">⌃</button>
@@ -73,11 +74,11 @@
       <div class="diary-toolbar">
         <input id="diaryDateInput" type="date">
       </div>
-      <textarea id="diaryInput" spellcheck="false" data-i18n-placeholder="diaryPlaceholder" placeholder="今天想记录点什么 (｡･ω･｡)"></textarea>
+      <textarea id="diaryInput" spellcheck="false" data-i18n-placeholder="diaryPlaceholder" placeholder="今天想记录点什么 ( ・・)✎__"></textarea>
     </section>
 
     <footer id="commandBar" class="command-bar">
-      <input id="commandInput" type="text" autocomplete="off" data-i18n-placeholder="placeholder" placeholder="写点什么吧 (｡･ω･｡)ﾉ">
+      <input id="commandInput" type="text" autocomplete="off" data-i18n-placeholder="placeholder" placeholder="写点什么吧 ( ・・)✎__">
       <select id="commandTimerSelect" class="command-timer" aria-label="完成提醒">
         <option value="0">完成提醒：无</option>
         <option value="60">1 小时完成</option>
