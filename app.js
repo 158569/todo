@@ -7,6 +7,8 @@
   const DIARY_DATE_KEY = "todoCloudDiaryDate";
   const NOTE_ID_KEY = "todoCloudActiveNoteId";
   const NOTE_LIST_COLLAPSED_KEY = "todoCloudNoteListCollapsed";
+  const RECIPE_CATEGORY_KEY = "todoCloudRecipeCategory";
+  const RECIPE_CATEGORY_COLLAPSED_KEY = "todoCloudRecipeCategoryCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
   const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSize";
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
@@ -159,6 +161,15 @@
       recipeIngredients: "食材",
       recipeSteps: "做法",
       recipeSearch: "搜索菜谱，例如：西红柿",
+      recipeAllCategories: "全部菜谱",
+      recipeCategory: "菜谱分类",
+      recipeCategoryPlaceholder: "新增分类",
+      recipeCategoryAdded: "菜谱分类已添加。",
+      recipeCategoryDeleted: "菜谱分类已删除。",
+      recipeCategoryExists: "已经有这个菜谱分类了。",
+      recipeNoCategory: "未分类",
+      recipeCollapse: "收起",
+      recipeExpand: "展开",
       recipeSave: "保存菜谱",
       recipeUpdate: "更新菜谱",
       recipeCancelEdit: "取消编辑",
@@ -364,6 +375,15 @@
       recipeIngredients: "材料",
       recipeSteps: "作り方",
       recipeSearch: "レシピ検索 例：トマト",
+      recipeAllCategories: "すべて",
+      recipeCategory: "レシピ分類",
+      recipeCategoryPlaceholder: "分類を追加",
+      recipeCategoryAdded: "分類を追加しました。",
+      recipeCategoryDeleted: "分類を削除しました。",
+      recipeCategoryExists: "この分類はすでにあります。",
+      recipeNoCategory: "未分類",
+      recipeCollapse: "閉じる",
+      recipeExpand: "開く",
       recipeSave: "レシピを保存",
       recipeUpdate: "レシピを更新",
       recipeCancelEdit: "編集をやめる",
@@ -569,6 +589,15 @@
       recipeIngredients: "Ingredients",
       recipeSteps: "Steps",
       recipeSearch: "Search recipes, e.g. tomato",
+      recipeAllCategories: "All recipes",
+      recipeCategory: "Recipe category",
+      recipeCategoryPlaceholder: "New category",
+      recipeCategoryAdded: "Recipe category added.",
+      recipeCategoryDeleted: "Recipe category deleted.",
+      recipeCategoryExists: "This recipe category already exists.",
+      recipeNoCategory: "Uncategorized",
+      recipeCollapse: "Collapse",
+      recipeExpand: "Expand",
       recipeSave: "Save recipe",
       recipeUpdate: "Update recipe",
       recipeCancelEdit: "Cancel edit",
@@ -665,7 +694,10 @@
     activeNoteId: localStorage.getItem(NOTE_ID_KEY) || "",
     noteListCollapsed: localStorage.getItem(NOTE_LIST_COLLAPSED_KEY) === "1",
     recipeSearch: "",
+    recipeCategory: localStorage.getItem(RECIPE_CATEGORY_KEY) || "",
+    recipeCategoryCollapsed: localStorage.getItem(RECIPE_CATEGORY_COLLAPSED_KEY) === "1",
     editingRecipeId: "",
+    recipeDraft: null,
     editingPeriodId: "",
     ledgerPeriod: "day",
     ledgerAnchorDate: todayKey(),
@@ -755,6 +787,7 @@
       notes: [],
       diaries: {},
       recipes: [],
+      recipeCategories: [],
       periodRecords: [],
       versionLog: [],
       ledger: [],
@@ -826,10 +859,16 @@
         title: String(item.title || item.name || "").trim(),
         ingredients: String(item.ingredients || "").trim(),
         steps: String(item.steps || "").trim(),
+        category: String(item.category || "").trim(),
+        collapsed: item.collapsed !== false,
         createdAt: String(item.createdAt || nowStamp()),
         updatedAt: String(item.updatedAt || item.createdAt || nowStamp())
       }))
       .filter((item) => item.title || item.ingredients || item.steps);
+    data.recipeCategories = uniqueStrings([
+      ...asArray(data.recipeCategories),
+      ...data.recipes.map((item) => item.category)
+    ]);
     data.periodRecords = asArray(data.periodRecords)
       .filter((item) => item && typeof item === "object")
       .map((item) => {
@@ -1254,6 +1293,7 @@
     merged.versionLog = dedupeBy([...merged.versionLog, ...extra.versionLog], (item) => `${item.at || ""}|${item.action || ""}|${item.text || item}`);
     merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
     merged.ledgerCategories = uniqueStrings([...extra.ledgerCategories, ...merged.ledgerCategories]);
+    merged.recipeCategories = uniqueStrings([...extra.recipeCategories, ...merged.recipeCategories]);
     merged.recipes = dedupeBy([...extra.recipes, ...merged.recipes], (item) => item.id || `${item.title}|${item.ingredients}|${item.steps}`);
     merged.periodRecords = dedupeBy([...extra.periodRecords, ...merged.periodRecords], (item) => item.id || `${item.startDate}|${item.endDate}|${item.note}`);
     merged.notes = dedupeBy([...extra.notes, ...merged.notes], (item) => item.id || `${item.title}|${item.text}`);
@@ -2379,25 +2419,74 @@
 
   function filteredRecipes() {
     const query = state.recipeSearch.trim().toLowerCase();
+    const category = String(state.recipeCategory || "").trim();
     const items = asArray(state.data.recipes).slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
-    if (!query) return items;
-    return items.filter((item) => [item.title, item.ingredients, item.steps].some((value) => String(value || "").toLowerCase().includes(query)));
+    return items.filter((item) => {
+      if (category && String(item.category || "").trim() !== category) return false;
+      if (!query) return true;
+      return [item.title, item.ingredients, item.steps, item.category].some((value) => String(value || "").toLowerCase().includes(query));
+    });
+  }
+
+  function recipeCategories() {
+    state.data.recipeCategories = uniqueStrings([
+      ...asArray(state.data.recipeCategories),
+      ...asArray(state.data.recipes).map((item) => item.category)
+    ]);
+    return state.data.recipeCategories;
+  }
+
+  function recipeCategoryOptions(current) {
+    const options = [
+      `<option value="" ${current ? "" : "selected"}>${escapeHtml(tx("recipeNoCategory"))}</option>`,
+      ...recipeCategories().map((category) => `<option value="${escapeAttr(category)}" ${category === current ? "selected" : ""}>${escapeHtml(category)}</option>`)
+    ];
+    return options.join("");
+  }
+
+  function recipeCategorySidebarHtml() {
+    const categories = recipeCategories();
+    const rows = [
+      `<button class="recipe-category-item${state.recipeCategory ? "" : " active"}" data-action="selectRecipeCategory" data-recipe-category="" type="button">${tx("recipeAllCategories")}</button>`,
+      ...categories.map((category) => `
+        <div class="recipe-category-row${category === state.recipeCategory ? " active" : ""}">
+          <button class="recipe-category-item" data-action="selectRecipeCategory" data-recipe-category="${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>
+          <button class="recipe-category-delete" data-action="deleteRecipeCategory" data-recipe-category="${escapeAttr(category)}" type="button">${tx("delete")}</button>
+        </div>
+      `)
+    ].join("");
+    return `
+      <aside class="recipe-sidebar${state.recipeCategoryCollapsed ? " collapsed" : ""}">
+        <button class="recipe-sidebar-toggle" data-action="toggleRecipeCategoryPanel" type="button">${state.recipeCategoryCollapsed ? "›" : "‹"}</button>
+        <div class="recipe-sidebar-inner">
+          <div class="recipe-sidebar-title">${tx("recipeCategory")}</div>
+          <div class="recipe-category-list">${rows}</div>
+          <div class="recipe-category-add">
+            <input data-recipe-category-input type="text" placeholder="${escapeAttr(tx("recipeCategoryPlaceholder"))}">
+            <button data-action="addRecipeCategory" type="button">＋</button>
+          </div>
+        </div>
+      </aside>
+    `;
   }
 
   function recipeListHtml() {
     const recipes = filteredRecipes();
     if (!recipes.length) return `<div class="section-title">${tx("recipeListTitle")}</div><div class="empty">${tx("noRecipes")}</div>`;
     const cards = recipes.map((recipe) => `
-      <article class="recipe-card">
+      <article class="recipe-card${recipe.collapsed !== false ? " collapsed" : ""}">
         <div class="recipe-card-head">
           <strong>${escapeHtml(recipe.title || tx("recipeName"))}</strong>
           <div class="recipe-actions">
+            <button data-action="toggleRecipeCollapse" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${recipe.collapsed !== false ? tx("recipeExpand") : tx("recipeCollapse")}</button>
             <button data-action="editRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("recipeEdit")}</button>
             <button data-action="deleteRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("delete")}</button>
           </div>
         </div>
-        ${recipe.ingredients ? `<div class="recipe-block"><span>${tx("recipeIngredients")}</span><p>${escapeHtml(recipe.ingredients)}</p></div>` : ""}
-        ${recipe.steps ? `<div class="recipe-block"><span>${tx("recipeSteps")}</span><p>${escapeHtml(recipe.steps)}</p></div>` : ""}
+        <div class="recipe-card-body">
+          ${recipe.ingredients ? `<div class="recipe-block"><span>${tx("recipeIngredients")}</span><p>${escapeHtml(recipe.ingredients)}</p></div>` : ""}
+          ${recipe.steps ? `<div class="recipe-block"><span>${tx("recipeSteps")}</span><p>${escapeHtml(recipe.steps)}</p></div>` : ""}
+        </div>
       </article>
     `).join("");
     return `<div class="section-title">${tx("recipeListTitle")}</div><div class="recipe-list">${cards}</div>`;
@@ -2405,19 +2494,30 @@
 
   function renderRecipes() {
     const editing = state.editingRecipeId ? state.data.recipes.find((item) => item.id === state.editingRecipeId) : null;
+    const draft = state.recipeDraft && state.recipeDraft.editingId === (state.editingRecipeId || "") ? state.recipeDraft : null;
+    const form = {
+      title: draft ? draft.title : (editing?.title || ""),
+      category: draft ? draft.category : String(editing?.category || ""),
+      ingredients: draft ? draft.ingredients : (editing?.ingredients || ""),
+      steps: draft ? draft.steps : (editing?.steps || "")
+    };
     content.innerHTML = [
       '<div class="recipe-panel">',
       '<div class="recipe-form">',
-      `<input data-recipe="title" type="text" value="${escapeAttr(editing?.title || "")}" placeholder="${escapeAttr(tx("recipeName"))}">`,
-      `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(editing?.ingredients || "")}</textarea>`,
-      `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(editing?.steps || "")}</textarea>`,
+      `<input data-recipe="title" type="text" value="${escapeAttr(form.title)}" placeholder="${escapeAttr(tx("recipeName"))}">`,
+      `<select data-recipe="category">${recipeCategoryOptions(String(form.category || ""))}</select>`,
+      `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
+      `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
       '<div class="recipe-form-actions">',
       `<button data-action="saveRecipe" type="button">${editing ? tx("recipeUpdate") : tx("recipeSave")}</button>`,
       editing ? `<button data-action="cancelRecipeEdit" type="button">${tx("recipeCancelEdit")}</button>` : "",
       "</div>",
       "</div>",
       `<input class="recipe-search" data-action="recipeSearch" type="search" value="${escapeAttr(state.recipeSearch)}" placeholder="${escapeAttr(tx("recipeSearch"))}">`,
-      `<div data-recipe-list>${recipeListHtml()}</div>`,
+      `<div class="recipe-workspace${state.recipeCategoryCollapsed ? " recipe-categories-collapsed" : ""}">`,
+      recipeCategorySidebarHtml(),
+      `<div class="recipe-main" data-recipe-list>${recipeListHtml()}</div>`,
+      "</div>",
       "</div>"
     ].join("");
   }
@@ -2747,8 +2847,26 @@
     render();
   }
 
+  function captureRecipeDraft() {
+    if (state.view !== "recipes") return;
+    const titleInput = content.querySelector('[data-recipe="title"]');
+    const categoryInput = content.querySelector('[data-recipe="category"]');
+    const ingredientsInput = content.querySelector('[data-recipe="ingredients"]');
+    const stepsInput = content.querySelector('[data-recipe="steps"]');
+    if (!titleInput && !categoryInput && !ingredientsInput && !stepsInput) return;
+    state.recipeDraft = {
+      editingId: state.editingRecipeId || "",
+      title: String(titleInput?.value || ""),
+      category: String(categoryInput?.value || ""),
+      ingredients: String(ingredientsInput?.value || ""),
+      steps: String(stepsInput?.value || "")
+    };
+  }
+
   function saveRecipe() {
+    captureRecipeDraft();
     const title = String(content.querySelector('[data-recipe="title"]')?.value || "").trim();
+    const category = String(content.querySelector('[data-recipe="category"]')?.value || "").trim();
     const ingredients = String(content.querySelector('[data-recipe="ingredients"]')?.value || "").trim();
     const steps = String(content.querySelector('[data-recipe="steps"]')?.value || "").trim();
     if (!title) {
@@ -2759,6 +2877,7 @@
     const existing = state.editingRecipeId ? state.data.recipes.find((item) => item.id === state.editingRecipeId) : null;
     if (existing) {
       existing.title = title;
+      existing.category = category;
       existing.ingredients = ingredients;
       existing.steps = steps;
       existing.updatedAt = now;
@@ -2766,21 +2885,86 @@
       state.data.recipes.unshift({
         id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
         title,
+        category,
         ingredients,
         steps,
+        collapsed: true,
         createdAt: now,
         updatedAt: now
       });
     }
+    if (category && !recipeCategories().includes(category)) state.data.recipeCategories.push(category);
+    state.recipeCategory = category;
+    localStorage.setItem(RECIPE_CATEGORY_KEY, state.recipeCategory);
     state.editingRecipeId = "";
+    state.recipeDraft = null;
     scheduleSave();
     setStatus(tx("recipeSaved"));
     render();
   }
 
+  function addRecipeCategory(value) {
+    const category = String(value || "").trim();
+    if (!category) return;
+    if (recipeCategories().includes(category)) {
+      setStatus(tx("recipeCategoryExists"));
+      return;
+    }
+    state.data.recipeCategories.push(category);
+    state.recipeCategory = category;
+    localStorage.setItem(RECIPE_CATEGORY_KEY, state.recipeCategory);
+    scheduleSave();
+    setStatus(tx("recipeCategoryAdded"));
+    render();
+  }
+
+  function deleteRecipeCategory(category) {
+    category = String(category || "").trim();
+    if (!category) return;
+    state.data.recipeCategories = recipeCategories().filter((item) => item !== category);
+    state.data.recipes.forEach((recipe) => {
+      if (recipe.category === category) recipe.category = "";
+    });
+    if (state.recipeCategory === category) state.recipeCategory = "";
+    localStorage.setItem(RECIPE_CATEGORY_KEY, state.recipeCategory);
+    scheduleSave();
+    setStatus(tx("recipeCategoryDeleted"));
+    render();
+  }
+
+  function selectRecipeCategory(category) {
+    state.recipeCategory = String(category || "").trim();
+    localStorage.setItem(RECIPE_CATEGORY_KEY, state.recipeCategory);
+    render();
+  }
+
+  function toggleRecipeCategoryPanel() {
+    state.recipeCategoryCollapsed = !state.recipeCategoryCollapsed;
+    localStorage.setItem(RECIPE_CATEGORY_COLLAPSED_KEY, state.recipeCategoryCollapsed ? "1" : "0");
+    render();
+  }
+
+  function toggleRecipeCollapse(id) {
+    const recipe = state.data.recipes.find((item) => item.id === id);
+    if (!recipe) return;
+    recipe.collapsed = recipe.collapsed === false;
+    recipe.updatedAt = nowStamp();
+    scheduleSave();
+    const list = content.querySelector("[data-recipe-list]");
+    if (list) list.innerHTML = recipeListHtml();
+  }
+
   function editRecipe(id) {
     if (!state.data.recipes.some((item) => item.id === id)) return;
     state.editingRecipeId = id;
+    const recipe = state.data.recipes.find((item) => item.id === id);
+    state.recipeDraft = recipe ? {
+      editingId: id,
+      title: recipe.title || "",
+      category: recipe.category || "",
+      ingredients: recipe.ingredients || "",
+      steps: recipe.steps || ""
+    } : null;
     render();
   }
 
@@ -2796,6 +2980,7 @@
 
   function cancelRecipeEdit() {
     state.editingRecipeId = "";
+    state.recipeDraft = null;
     render();
   }
 
@@ -3823,6 +4008,21 @@
     if (action === "saveRecipe") {
       saveRecipe();
     }
+    if (action === "addRecipeCategory") {
+      addRecipeCategory(content.querySelector("[data-recipe-category-input]")?.value);
+    }
+    if (action === "deleteRecipeCategory") {
+      deleteRecipeCategory(actionTarget.dataset.recipeCategory);
+    }
+    if (action === "selectRecipeCategory") {
+      selectRecipeCategory(actionTarget.dataset.recipeCategory);
+    }
+    if (action === "toggleRecipeCategoryPanel") {
+      toggleRecipeCategoryPanel();
+    }
+    if (action === "toggleRecipeCollapse") {
+      toggleRecipeCollapse(actionTarget.dataset.recipeId);
+    }
     if (action === "editRecipe") {
       editRecipe(actionTarget.dataset.recipeId);
     }
@@ -3911,6 +4111,10 @@
       render();
       return;
     }
+    if (event.target.dataset.recipe) {
+      captureRecipeDraft();
+      return;
+    }
     const key = event.target.dataset.setting;
     if (!key) return;
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
@@ -3924,6 +4128,8 @@
       if (!changed) {
         event.target.checked = settings().diaryPinEnabled;
         window.setTimeout(render, 0);
+      } else {
+        render();
       }
       return;
     }
@@ -3935,6 +4141,10 @@
   });
 
   content.addEventListener("input", (event) => {
+    if (event.target.dataset.recipe) {
+      captureRecipeDraft();
+      return;
+    }
     if (event.target.dataset.action === "recipeSearch") {
       state.recipeSearch = event.target.value || "";
       const list = content.querySelector("[data-recipe-list]");
@@ -3953,6 +4163,11 @@
   });
 
   content.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && event.target.matches("[data-recipe-category-input]")) {
+      event.preventDefault();
+      addRecipeCategory(event.target.value);
+      return;
+    }
     if (event.key !== "Enter" || !event.target.matches("[data-diary-pin]")) return;
     event.preventDefault();
     const value = event.target.value || "";
