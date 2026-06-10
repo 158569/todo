@@ -3869,7 +3869,11 @@
       return;
     }
     if (key === "diaryPinEnabled") {
-      toggleDiaryPin(value);
+      const changed = toggleDiaryPin(value);
+      if (!changed) {
+        event.target.checked = settings().diaryPinEnabled;
+        window.setTimeout(render, 0);
+      }
       return;
     }
     settings()[key] = value;
