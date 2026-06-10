@@ -1124,9 +1124,24 @@ button:disabled {
   gap: 10px;
 }
 
+.recipe-panel-form {
+  min-height: calc(100dvh - 174px);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
 .recipe-form {
   display: grid;
   gap: 8px;
+}
+
+.recipe-panel-form .recipe-form-card {
+  min-height: 0;
+}
+
+.recipe-panel-form .recipe-form {
+  min-height: 0;
+  height: 100%;
+  grid-template-rows: auto auto minmax(118px, 1fr) minmax(220px, 2fr) auto;
 }
 
 .recipe-form input,
@@ -1252,6 +1267,15 @@ button:disabled {
   resize: vertical;
   padding: 8px 10px;
   line-height: 1.5;
+}
+
+.recipe-panel-form .recipe-form textarea {
+  min-height: 0;
+  height: 100%;
+}
+
+.recipe-steps-input {
+  min-height: 150px;
 }
 
 .recipe-form-actions {

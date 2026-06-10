@@ -798,6 +798,7 @@
       diaries: {},
       recipes: [],
       recipeCategories: [],
+      deletedRecipes: [],
       periodRecords: [],
       versionLog: [],
       ledger: [],
@@ -875,6 +876,11 @@
         updatedAt: String(item.updatedAt || item.createdAt || nowStamp())
       }))
       .filter((item) => item.title || item.ingredients || item.steps);
+    data.deletedRecipes = uniqueStrings(data.deletedRecipes);
+    if (data.deletedRecipes.length) {
+      const deletedRecipeIds = new Set(data.deletedRecipes);
+      data.recipes = data.recipes.filter((item) => !deletedRecipeIds.has(item.id));
+    }
     data.recipeCategories = uniqueStrings([
       ...asArray(data.recipeCategories),
       ...data.recipes.map((item) => item.category)
@@ -917,6 +923,7 @@
     if (!["none", "last"].includes(data.settings.todoReminderDefault)) data.settings.todoReminderDefault = DEFAULT_SETTINGS.todoReminderDefault;
     data.settings.lastTodoReminderConfig = normalizeTodoReminderConfig(data.settings.lastTodoReminderConfig);
     data.settings.diaryPin = String(data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
+    data.settings.diaryPinEnabled = data.settings.diaryPinEnabled === true && /^\d{4}$/.test(data.settings.diaryPin);
     data.settings.ledgerLastCategory = data.ledgerCategories.includes(data.settings.ledgerLastCategory) ? data.settings.ledgerLastCategory : "";
     Object.keys(data.days).forEach((dateKey) => {
       const current = data.days[dateKey] && typeof data.days[dateKey] === "object" ? data.days[dateKey] : {};
@@ -1304,7 +1311,12 @@
     merged.ledger = dedupeBy([...merged.ledger, ...extra.ledger], (item) => `${item.id || ""}|${item.date || ""}|${item.type || ""}|${item.amount || ""}|${item.note || ""}`);
     merged.ledgerCategories = uniqueStrings([...extra.ledgerCategories, ...merged.ledgerCategories]);
     merged.recipeCategories = uniqueStrings([...extra.recipeCategories, ...merged.recipeCategories]);
-    merged.recipes = dedupeBy([...extra.recipes, ...merged.recipes], (item) => item.id || `${item.title}|${item.ingredients}|${item.steps}`);
+    merged.deletedRecipes = uniqueStrings([...merged.deletedRecipes, ...extra.deletedRecipes]);
+    {
+      const deletedRecipeIds = new Set(merged.deletedRecipes);
+      merged.recipes = dedupeBy([...extra.recipes, ...merged.recipes], (item) => item.id || `${item.title}|${item.ingredients}|${item.steps}`)
+        .filter((item) => !deletedRecipeIds.has(item.id));
+    }
     merged.periodRecords = dedupeBy([...extra.periodRecords, ...merged.periodRecords], (item) => item.id || `${item.startDate}|${item.endDate}|${item.note}`);
     merged.notes = dedupeBy([...extra.notes, ...merged.notes], (item) => item.id || `${item.title}|${item.text}`);
     merged.noteText = merged.notes[0]?.text || merged.noteText || extra.noteText;
@@ -1365,6 +1377,16 @@
     if (!state.user) return;
     state.saving = true;
     try {
+      const { data: cloudRow, error: readError } = await state.supabase
+        .from("todo_documents")
+        .select("data")
+        .eq("user_id", state.user.id)
+        .maybeSingle();
+      if (readError) throw readError;
+      if (cloudRow?.data) {
+        state.data = mergeCloudRecipesForSave(state.data, cloudRow.data);
+        saveLocalData();
+      }
       const { error } = await state.supabase
         .from("todo_documents")
         .upsert({
@@ -1378,6 +1400,18 @@
     } finally {
       state.saving = false;
     }
+  }
+
+  function mergeCloudRecipesForSave(currentData, cloudData) {
+    const current = normalizeData(structuredCloneSafe(currentData));
+    const cloud = normalizeData(structuredCloneSafe(cloudData));
+    const deletedRecipeIds = new Set(uniqueStrings([...current.deletedRecipes, ...cloud.deletedRecipes]));
+    current.deletedRecipes = [...deletedRecipeIds];
+    current.recipeCategories = uniqueStrings([...cloud.recipeCategories, ...current.recipeCategories]);
+    const recipes = dedupeBy([...current.recipes, ...cloud.recipes], (item) => item.id || `${item.title}|${item.ingredients}|${item.steps}`)
+      .filter((item) => !deletedRecipeIds.has(item.id));
+    current.recipes = recipes;
+    return normalizeData(current);
   }
 
   async function refreshCloudData({ silent = true } = {}) {
@@ -2561,7 +2595,7 @@
       steps: draft ? draft.steps : (editing?.steps || "")
     };
     content.innerHTML = [
-      '<div class="recipe-panel">',
+      `<div class="recipe-panel ${formVisible ? "recipe-panel-form" : "recipe-panel-browse"}">`,
       '<div class="recipe-modebar">',
       `<button class="${formVisible ? "active" : ""}" data-action="startRecipeAdd" type="button">${tx("recipeAdd")}</button>`,
       `<button class="${formVisible ? "" : "active"}" data-action="showRecipeBrowse" type="button">${tx("recipeBrowse")}</button>`,
@@ -2572,8 +2606,8 @@
         '<div class="recipe-form">',
         `<input data-recipe="title" type="text" value="${escapeAttr(form.title)}" placeholder="${escapeAttr(tx("recipeName"))}">`,
         recipeFormCategoryPickerHtml(form.category),
-        `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
-        `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
+        `<textarea class="recipe-ingredients-input" data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
+        `<textarea class="recipe-steps-input" data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
         '<div class="recipe-form-actions">',
         `<button data-action="saveRecipe" type="button">${editing ? tx("recipeUpdate") : tx("recipeSave")}</button>`,
         `<button data-action="cancelRecipeEdit" type="button">${tx("recipeCancelEdit")}</button>`,
@@ -3229,8 +3263,8 @@
       settingCheckbox("showPeriod", tx("showPeriod"), current.showPeriod !== false),
       "</div>",
       '<div class="section-title">' + tx("diaryLockSection") + "</div>",
-      settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled),
-      current.diaryPinEnabled ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
+      settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled === true),
+      current.diaryPinEnabled === true ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
       '<div class="section-title">' + tx("tutorialSection") + "</div>",
       `<button class="setting-button" data-action="openHelp" type="button">${tx("openTutorial")}</button>`,
       '<div class="section-title">' + tx("colorSection") + "</div>",
@@ -3359,10 +3393,10 @@
     diaryPanel.classList.toggle("hidden", state.view !== "diary" || lockedDiary);
     content.classList.toggle("hidden", (state.view === "notes") || (state.view === "diary" && !lockedDiary));
     commandBar.classList.toggle("hidden", !["todos", "reminders"].includes(state.view));
-    commandBar.classList.toggle("reminder-mode", state.view === "reminders");
-    commandReminderControl.classList.toggle("hidden", state.view !== "todos");
-    if (state.view !== "todos") commandReminderPanel.classList.add("hidden");
-    commandInput.placeholder = state.view === "reminders" ? tx("reminderInputPlaceholder") : tx("placeholder");
+    commandBar.classList.toggle("reminder-mode", false);
+    commandReminderControl.classList.toggle("hidden", !["todos", "reminders"].includes(state.view));
+    if (!["todos", "reminders"].includes(state.view)) commandReminderPanel.classList.add("hidden");
+    commandInput.placeholder = tx("placeholder");
     localStorage.setItem(VIEW_KEY, state.view);
     if (state.view === "todos") renderTodos();
     if (state.view === "reminders") renderReminders();
@@ -3869,7 +3903,6 @@
     if (match) return addDatedTodo({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]], match[2].trim());
     match = text.match(/^加入\s*(.+)$/);
     if (match) return addToday(match[1].trim(), reminderConfig);
-    if (state.view === "reminders") return addDailyImportant(text);
     return addToday(text, reminderConfig);
   }
 
@@ -4276,8 +4309,8 @@
     }
     if (key === "diaryPinEnabled") {
       const changed = toggleDiaryPin(value);
+      event.target.checked = settings().diaryPinEnabled === true;
       if (!changed) {
-        event.target.checked = settings().diaryPinEnabled;
         window.setTimeout(render, 0);
       } else {
         render();
@@ -4333,10 +4366,10 @@
 
   function submitCommand(event) {
     event?.preventDefault();
-    const reminderConfig = state.view === "todos" ? currentTodoReminderConfig() : null;
+    const reminderConfig = ["todos", "reminders"].includes(state.view) ? currentTodoReminderConfig() : null;
     parseCommand(commandInput.value, reminderConfig);
     commandInput.value = "";
-    if (state.view === "todos") {
+    if (["todos", "reminders"].includes(state.view)) {
       const current = settings();
       current.lastTodoReminderConfig = normalizeTodoReminderConfig(reminderConfig);
       if (current.todoReminderDefault === "none") applyTodoReminderConfig(null);
