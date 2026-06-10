@@ -682,6 +682,9 @@
     alarmTitleOn: false,
     activeAlarm: null,
     firedAlarmKeys: new Set(),
+    syncTimer: null,
+    syncBusy: false,
+    saving: false,
     diaryUnlocked: false,
     statusTimer: null,
     noteTimer: null,
@@ -1289,14 +1292,16 @@
     const local = localData();
     const { data, error } = await state.supabase
       .from("todo_documents")
-      .select("data")
+      .select("data,updated_at")
       .eq("user_id", state.user.id)
       .maybeSingle();
 
     if (error) throw error;
-    state.data = mergeData(data ? data.data : emptyData(), local);
+    const cloudData = data?.data ? normalizeData(data.data) : null;
+    state.data = cloudData || mergeData(emptyData(), local);
     state.localReady = true;
-    await saveNow();
+    saveLocalData();
+    if (!cloudData) await saveNow();
   }
 
   function scheduleSave() {
@@ -1308,16 +1313,58 @@
     if (!state.data) return;
     saveLocalData();
     if (!state.user) return;
-    const { error } = await state.supabase
-      .from("todo_documents")
-      .upsert({
-        user_id: state.user.id,
-        data: state.data,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-    if (error) {
-      setStatus(`保存失败：${error.message}`, false);
+    state.saving = true;
+    try {
+      const { error } = await state.supabase
+        .from("todo_documents")
+        .upsert({
+          user_id: state.user.id,
+          data: state.data,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+      if (error) {
+        setStatus(`保存失败：${error.message}`, false);
+      }
+    } finally {
+      state.saving = false;
     }
+  }
+
+  async function refreshCloudData({ silent = true } = {}) {
+    if (!state.user || !state.supabase || state.syncBusy || state.saving || state.saveTimer || state.noteTimer || state.diaryTimer) return false;
+    state.syncBusy = true;
+    try {
+      const { data, error } = await state.supabase
+        .from("todo_documents")
+        .select("data,updated_at")
+        .eq("user_id", state.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data?.data) return false;
+      const next = normalizeData(data.data);
+      if (JSON.stringify(next) === JSON.stringify(state.data)) return false;
+      state.data = next;
+      saveLocalData();
+      applySettings();
+      applyLanguage();
+      render();
+      if (!silent) setStatus("已同步最新数据。");
+      return true;
+    } catch (error) {
+      if (!silent) setStatus(`同步失败：${error.message}`, false);
+      return false;
+    } finally {
+      state.syncBusy = false;
+    }
+  }
+
+  function startSyncLoop() {
+    clearInterval(state.syncTimer);
+    if (!state.user) return;
+    refreshCloudData({ silent: true });
+    state.syncTimer = setInterval(() => {
+      if (document.visibilityState === "visible") refreshCloudData({ silent: true });
+    }, 15000);
   }
 
   function showAuth() {
@@ -1338,6 +1385,7 @@
     restorePwaWindowSize();
     showWelcomeIfNeeded();
     startAlarmLoop();
+    startSyncLoop();
   }
 
   function showWelcomeIfNeeded() {
@@ -3560,6 +3608,7 @@
 
   function useLocalMode() {
     state.user = null;
+    clearInterval(state.syncTimer);
     if (!state.data) loadLocalData();
     showApp();
   }
@@ -3579,6 +3628,7 @@
     }
     await state.supabase.auth.signOut();
     state.user = null;
+    clearInterval(state.syncTimer);
     loadLocalData();
     showApp();
     setStatus("已退出，当前使用本地模式。");
@@ -4058,6 +4108,11 @@
   document.addEventListener("fullscreenchange", updateFullscreenButton);
   window.addEventListener("resize", schedulePwaWindowSizeSave);
   window.addEventListener("beforeunload", savePwaWindowSize);
+  window.addEventListener("focus", () => refreshCloudData({ silent: true }));
+  window.addEventListener("online", () => refreshCloudData({ silent: false }));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshCloudData({ silent: true });
+  });
   signOutButton.addEventListener("click", signOut);
   welcomeCloseButton.addEventListener("click", () => welcomeModal.classList.add("hidden"));
   alarmCloseButton.addEventListener("click", closeAlarm);
