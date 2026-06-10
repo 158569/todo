@@ -88,13 +88,19 @@
       <form id="commandForm" class="command-form" autocomplete="off">
         <input id="commandInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" enterkeyhint="send" data-i18n-placeholder="placeholder" placeholder="写点什么吧 ( ・・)✎__">
       </form>
-      <select id="commandTimerSelect" class="command-timer" tabindex="-1" aria-label="中途提醒">
-        <option value="0">中途：无</option>
-        <option value="60">1h</option>
-        <option value="120">2h</option>
-        <option value="240">4h</option>
-        <option value="480">8h</option>
-      </select>
+      <div id="commandReminderControl" class="command-reminder-control">
+        <button id="commandReminderButton" class="command-reminder-button" type="button">提醒：无</button>
+        <div id="commandReminderPanel" class="command-reminder-panel hidden">
+          <label>
+            <span data-i18n="advanceReminder">提前提醒</span>
+            <select id="advanceReminderSelect" tabindex="-1"></select>
+          </label>
+          <label>
+            <span data-i18n="followReminder">后续提醒</span>
+            <select id="followReminderSelect" tabindex="-1"></select>
+          </label>
+        </div>
+      </div>
     </footer>
 
   </main>

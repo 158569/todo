@@ -31,6 +31,8 @@
     showRecipes: true,
     showPeriod: true,
     ledgerLastCategory: "",
+    todoReminderDefault: "none",
+    lastTodoReminderConfig: { advanceMinutes: 0, followMode: "once", followMinutes: 0 },
     diaryPinEnabled: false,
     diaryPin: ""
   };
@@ -220,14 +222,25 @@
       diaryLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
       wrongPin: "密码不对 (｡>﹏<｡)",
-      timerNone: "中途：无",
+      reminderButtonNone: "提醒：无",
+      reminderButtonPrefix: "提醒",
+      advanceReminder: "提前提醒",
+      followReminder: "后续提醒",
+      advanceNone: "提前：无",
+      followOnce: "提醒一次",
+      followEvery: "持续：每",
+      todoReminderDefaultLabel: "待办提醒默认",
+      todoReminderDefaultNone: "默认无",
+      todoReminderDefaultLast: "沿用上次选择",
+      timer10m: "10m",
+      timer30m: "30m",
       timer1h: "1h",
       timer2h: "2h",
       timer4h: "4h",
       timer8h: "8h",
-      halfway: "中段",
-      timerAlarmPrefix: "中途提醒",
-      timerSet: "已添加待办，并设置中段提醒 (๑•̀᎑<๑)و"
+      halfway: "提醒",
+      timerAlarmPrefix: "待办提醒",
+      timerSet: "已添加待办，并设置提醒 (๑•̀᎑<๑)و"
     },
     ja: {
       appTitle: "memo",
@@ -414,14 +427,25 @@
       diaryLockedHint: "4桁のパスコードを入力してください。",
       unlock: "ロック解除",
       wrongPin: "パスコードが違います (｡>﹏<｡)",
-      timerNone: "途中：なし",
+      reminderButtonNone: "通知：なし",
+      reminderButtonPrefix: "通知",
+      advanceReminder: "事前通知",
+      followReminder: "後続通知",
+      advanceNone: "事前：なし",
+      followOnce: "1回だけ",
+      followEvery: "継続：",
+      todoReminderDefaultLabel: "ToDo通知の初期値",
+      todoReminderDefaultNone: "毎回なし",
+      todoReminderDefaultLast: "前回の選択を使う",
+      timer10m: "10m",
+      timer30m: "30m",
       timer1h: "1h",
       timer2h: "2h",
       timer4h: "4h",
       timer8h: "8h",
-      halfway: "中間",
-      timerAlarmPrefix: "途中リマインダー",
-      timerSet: "ToDoを追加し、中間リマインダーを設定しました (๑•̀᎑<๑)و"
+      halfway: "通知",
+      timerAlarmPrefix: "ToDo通知",
+      timerSet: "ToDoを追加し、通知を設定しました (๑•̀᎑<๑)و"
     },
     en: {
       appTitle: "memo",
@@ -608,14 +632,25 @@
       diaryLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
       wrongPin: "Wrong PIN (｡>﹏<｡)",
-      timerNone: "Mid: off",
+      reminderButtonNone: "Reminder: off",
+      reminderButtonPrefix: "Reminder",
+      advanceReminder: "Advance reminder",
+      followReminder: "Follow-up reminder",
+      advanceNone: "Advance: off",
+      followOnce: "Once",
+      followEvery: "Repeat every",
+      todoReminderDefaultLabel: "Todo reminder default",
+      todoReminderDefaultNone: "Off by default",
+      todoReminderDefaultLast: "Use last choice",
+      timer10m: "10m",
+      timer30m: "30m",
       timer1h: "1h",
       timer2h: "2h",
       timer4h: "4h",
       timer8h: "8h",
-      halfway: "Midpoint",
-      timerAlarmPrefix: "Midpoint reminder",
-      timerSet: "Todo added with midpoint reminder (๑•̀᎑<๑)و"
+      halfway: "Reminder",
+      timerAlarmPrefix: "Todo reminder",
+      timerSet: "Todo added with reminder (๑•̀᎑<๑)و"
     }
   };
 
@@ -682,7 +717,11 @@
   const commandBar = $("#commandBar");
   const commandForm = $("#commandForm");
   const commandInput = $("#commandInput");
-  const commandTimerSelect = $("#commandTimerSelect");
+  const commandReminderControl = $("#commandReminderControl");
+  const commandReminderButton = $("#commandReminderButton");
+  const commandReminderPanel = $("#commandReminderPanel");
+  const advanceReminderSelect = $("#advanceReminderSelect");
+  const followReminderSelect = $("#followReminderSelect");
   const statusEl = $("#status");
   const dateLabel = $("#dateLabel");
   const exportButton = $("#exportButton");
@@ -823,6 +862,8 @@
     if (data.settings.notesPin && !data.settings.diaryPin) data.settings.diaryPin = data.settings.notesPin;
     if (data.settings.notesPinEnabled && data.settings.diaryPinEnabled === DEFAULT_SETTINGS.diaryPinEnabled) data.settings.diaryPinEnabled = true;
     if (!TEXT[data.settings.language]) data.settings.language = DEFAULT_SETTINGS.language;
+    if (!["none", "last"].includes(data.settings.todoReminderDefault)) data.settings.todoReminderDefault = DEFAULT_SETTINGS.todoReminderDefault;
+    data.settings.lastTodoReminderConfig = normalizeTodoReminderConfig(data.settings.lastTodoReminderConfig);
     data.settings.diaryPin = String(data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
     data.settings.ledgerLastCategory = data.ledgerCategories.includes(data.settings.ledgerLastCategory) ? data.settings.ledgerLastCategory : "";
     Object.keys(data.days).forEach((dateKey) => {
@@ -1291,6 +1332,7 @@
     appPanel.classList.remove("hidden");
     applySettings();
     applyLanguage();
+    applyTodoReminderConfig(settings().todoReminderDefault === "last" ? settings().lastTodoReminderConfig : null);
     if (state.user?.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
     render();
     restorePwaWindowSize();
@@ -1444,6 +1486,8 @@
     if (state.data.settings.welcomeTitle === OLD_WELCOME_TITLE) state.data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (state.data.settings.welcomeText === OLD_WELCOME_TEXT) state.data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
     if (!TEXT[state.data.settings.language]) state.data.settings.language = DEFAULT_SETTINGS.language;
+    if (!["none", "last"].includes(state.data.settings.todoReminderDefault)) state.data.settings.todoReminderDefault = DEFAULT_SETTINGS.todoReminderDefault;
+    state.data.settings.lastTodoReminderConfig = normalizeTodoReminderConfig(state.data.settings.lastTodoReminderConfig);
     state.data.settings.diaryPin = String(state.data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
     state.data.settings.ledgerLastCategory = ledgerCategories().includes(state.data.settings.ledgerLastCategory) ? state.data.settings.ledgerLastCategory : "";
     return state.data.settings;
@@ -1549,19 +1593,78 @@
   }
 
   function updateTimerSelectLabels() {
-    if (!commandTimerSelect) return;
-    const labels = [
-      ["0", tx("timerNone")],
-      ["60", tx("timer1h")],
-      ["120", tx("timer2h")],
-      ["240", tx("timer4h")],
-      ["480", tx("timer8h")]
+    if (!advanceReminderSelect || !followReminderSelect) return;
+    const advance = [
+      [0, tx("advanceNone")],
+      [10, tx("timer10m")],
+      [30, tx("timer30m")],
+      [60, tx("timer1h")],
+      [120, tx("timer2h")],
+      [240, tx("timer4h")],
+      [480, tx("timer8h")]
     ];
-    labels.forEach(([value, label], index) => {
-      if (!commandTimerSelect.options[index]) return;
-      commandTimerSelect.options[index].value = value;
-      commandTimerSelect.options[index].textContent = label;
-    });
+    const follow = [
+      ["once", tx("followOnce")],
+      ["10", `${tx("followEvery")} ${tx("timer10m")}`],
+      ["30", `${tx("followEvery")} ${tx("timer30m")}`],
+      ["60", `${tx("followEvery")} ${tx("timer1h")}`],
+      ["120", `${tx("followEvery")} ${tx("timer2h")}`]
+    ];
+    renderSelectOptions(advanceReminderSelect, advance);
+    renderSelectOptions(followReminderSelect, follow);
+    applyTodoReminderConfig(currentTodoReminderConfig());
+  }
+
+  function renderSelectOptions(select, options) {
+    const value = select.value;
+    select.innerHTML = options.map(([optionValue, label]) => `<option value="${escapeAttr(optionValue)}">${escapeHtml(label)}</option>`).join("");
+    if ([...select.options].some((option) => option.value === value)) select.value = value;
+  }
+
+  function normalizeTodoReminderConfig(config) {
+    const value = config && typeof config === "object" ? config : {};
+    const advanceMinutes = [0, 10, 30, 60, 120, 240, 480].includes(Number(value.advanceMinutes)) ? Number(value.advanceMinutes) : 0;
+    const rawFollow = String(value.followMode || value.followMinutes || "once");
+    const followMinutes = [10, 30, 60, 120].includes(Number(value.followMinutes || rawFollow)) ? Number(value.followMinutes || rawFollow) : 0;
+    return {
+      advanceMinutes,
+      followMode: followMinutes > 0 ? "repeat" : "once",
+      followMinutes
+    };
+  }
+
+  function currentTodoReminderConfig() {
+    if (advanceReminderSelect && followReminderSelect) {
+      return normalizeTodoReminderConfig({
+        advanceMinutes: Number(advanceReminderSelect.value || 0),
+        followMinutes: followReminderSelect.value === "once" ? 0 : Number(followReminderSelect.value || 0)
+      });
+    }
+    return normalizeTodoReminderConfig(settings().todoReminderDefault === "last" ? settings().lastTodoReminderConfig : null);
+  }
+
+  function applyTodoReminderConfig(config) {
+    const current = normalizeTodoReminderConfig(config);
+    if (advanceReminderSelect) advanceReminderSelect.value = String(current.advanceMinutes);
+    if (followReminderSelect) followReminderSelect.value = current.followMinutes > 0 ? String(current.followMinutes) : "once";
+    updateCommandReminderButton(current);
+  }
+
+  function updateCommandReminderButton(config = currentTodoReminderConfig()) {
+    if (!commandReminderButton) return;
+    const current = normalizeTodoReminderConfig(config);
+    if (!current.advanceMinutes) {
+      commandReminderButton.textContent = tx("reminderButtonNone");
+      return;
+    }
+    const follow = current.followMinutes > 0 ? ` / ${formatReminderMinutes(current.followMinutes)}` : "";
+    commandReminderButton.textContent = `${tx("reminderButtonPrefix")}：${formatReminderMinutes(current.advanceMinutes)}${follow}`;
+  }
+
+  function formatReminderMinutes(minutes) {
+    const value = Number(minutes);
+    if (!value) return "";
+    return value % 60 === 0 ? `${value / 60}h` : `${value}m`;
   }
 
   function diaryLocked() {
@@ -1799,7 +1902,7 @@
           taskText: text,
           time,
           text: `${tx("timerAlarmPrefix")}：${text}`,
-          key: `timer|${dateKey}|${text}`,
+          key: `timer|${dateKey}|${dueAt}|${text}`,
           sortTime: timeMinutes(time)
         });
       });
@@ -1808,11 +1911,21 @@
   }
 
   function markTaskTimerFired(key) {
-    const [, dateKey, ...parts] = String(key || "").split("|");
-    const text = parts.join("|");
+    const [, dateKey, maybeDueAt, ...parts] = String(key || "").split("|");
+    const dueAt = Number(maybeDueAt);
+    const isNewKey = Number.isFinite(dueAt) && parts.length > 0;
+    const text = (isNewKey ? parts : [maybeDueAt, ...parts]).join("|");
     const timer = state.data.days?.[dateKey]?.timers?.[text];
     if (!timer) return;
-    timer.fired = true;
+    const repeatMinutes = Number(timer.repeatMinutes || 0);
+    if (repeatMinutes > 0) {
+      const next = new Date(Date.now() + repeatMinutes * 60 * 1000);
+      timer.remindAt = next.toISOString();
+      timer.lastFiredAt = new Date().toISOString();
+      timer.fired = false;
+    } else {
+      timer.fired = true;
+    }
     scheduleSave();
   }
 
@@ -1837,7 +1950,8 @@
   function taskTimerLabel(text, dateKey = todayKey()) {
     const timer = state.data.days?.[dateKey]?.timers?.[text];
     if (!timer || !timer.remindAt || timer.fired) return "";
-    return `${tx("halfway")} ${clockFromIso(timer.remindAt)}`;
+    const repeat = Number(timer.repeatMinutes || 0) > 0 ? ` / ${formatReminderMinutes(timer.repeatMinutes)}` : "";
+    return `${tx("halfway")} ${clockFromIso(timer.remindAt)}${repeat}`;
   }
 
   function renderTodos() {
@@ -2746,6 +2860,10 @@
       '<div class="section-title">' + tx("alarmSection") + "</div>",
       `<button class="setting-button" data-action="enableNotifications" type="button">${escapeHtml(notificationText)}</button>`,
       `<div class="setting-note">${tx("notifyNote")}</div>`,
+      settingSelect("todoReminderDefault", tx("todoReminderDefaultLabel"), current.todoReminderDefault, [
+        ["none", tx("todoReminderDefaultNone")],
+        ["last", tx("todoReminderDefaultLast")]
+      ]),
       settingSelect("language", tx("uiLanguage"), current.language, [
         ["zh", tx("languageZh")],
         ["ja", tx("languageJa")],
@@ -2854,7 +2972,8 @@
     content.classList.toggle("hidden", (state.view === "notes") || (state.view === "diary" && !lockedDiary));
     commandBar.classList.toggle("hidden", !["todos", "reminders"].includes(state.view));
     commandBar.classList.toggle("reminder-mode", state.view === "reminders");
-    commandTimerSelect.classList.toggle("hidden", state.view !== "todos");
+    commandReminderControl.classList.toggle("hidden", state.view !== "todos");
+    if (state.view !== "todos") commandReminderPanel.classList.add("hidden");
     commandInput.placeholder = state.view === "reminders" ? tx("reminderInputPlaceholder") : tx("placeholder");
     localStorage.setItem(VIEW_KEY, state.view);
     if (state.view === "todos") renderTodos();
@@ -2868,7 +2987,7 @@
     if (state.view === "settings") renderSettings();
   }
 
-  function addToday(text, durationMinutes = 0) {
+  function addToday(text, reminderConfig = null) {
     text = text.trim();
     if (!text) return;
     const current = day();
@@ -2877,19 +2996,22 @@
       return;
     }
     current.pending.push(text);
-    if (durationMinutes > 0) scheduleTaskTimer(text, durationMinutes);
+    const config = normalizeTodoReminderConfig(reminderConfig);
+    if (config.advanceMinutes > 0) scheduleTaskTimer(text, config);
     scheduleSave();
-    setStatus(durationMinutes > 0 ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
+    setStatus(config.advanceMinutes > 0 ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
-  function scheduleTaskTimer(text, durationMinutes) {
-    const minutes = Number(durationMinutes);
-    if (!minutes || minutes <= 0) return;
+  function scheduleTaskTimer(text, reminderConfig) {
+    const config = normalizeTodoReminderConfig(reminderConfig);
+    if (!config.advanceMinutes || config.advanceMinutes <= 0) return;
     const current = day();
     const start = new Date();
-    const remind = new Date(start.getTime() + (minutes * 60 * 1000) / 2);
+    const remind = new Date(start.getTime() + config.advanceMinutes * 60 * 1000);
     current.timers[text] = {
-      durationMinutes: minutes,
+      advanceMinutes: config.advanceMinutes,
+      repeatMinutes: config.followMinutes,
+      followMode: config.followMode,
       startedAt: start.toISOString(),
       remindAt: remind.toISOString(),
       fired: false
@@ -3275,7 +3397,7 @@
     return before - state.data[field].length;
   }
 
-  function parseCommand(raw, durationMinutes = 0) {
+  function parseCommand(raw, reminderConfig = null) {
     const text = raw.trim();
     if (!text) return;
     let match = text.match(/^删除\s*(.+)$/) || text.match(/^(.+?)\s*删除$/);
@@ -3315,9 +3437,9 @@
     match = text.match(/^(明天|后天|大后天)\s*(.+)$/);
     if (match) return addDatedTodo({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]], match[2].trim());
     match = text.match(/^加入\s*(.+)$/);
-    if (match) return addToday(match[1].trim(), durationMinutes);
+    if (match) return addToday(match[1].trim(), reminderConfig);
     if (state.view === "reminders") return addDailyImportant(text);
-    return addToday(text, durationMinutes);
+    return addToday(text, reminderConfig);
   }
 
   async function signIn() {
@@ -3727,14 +3849,35 @@
 
   function submitCommand(event) {
     event?.preventDefault();
-    const duration = state.view === "todos" ? Number(commandTimerSelect.value || 0) : 0;
-    parseCommand(commandInput.value, duration);
+    const reminderConfig = state.view === "todos" ? currentTodoReminderConfig() : null;
+    parseCommand(commandInput.value, reminderConfig);
     commandInput.value = "";
-    commandTimerSelect.value = "0";
+    if (state.view === "todos") {
+      const current = settings();
+      current.lastTodoReminderConfig = normalizeTodoReminderConfig(reminderConfig);
+      if (current.todoReminderDefault === "none") applyTodoReminderConfig(null);
+      else applyTodoReminderConfig(current.lastTodoReminderConfig);
+      scheduleSave();
+    }
     render();
   }
 
   commandForm.addEventListener("submit", submitCommand);
+
+  commandReminderButton?.addEventListener("click", () => {
+    commandReminderPanel.classList.toggle("hidden");
+  });
+
+  [advanceReminderSelect, followReminderSelect].forEach((select) => {
+    select?.addEventListener("change", () => {
+      updateCommandReminderButton();
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!commandReminderControl || commandReminderControl.contains(event.target)) return;
+    commandReminderPanel?.classList.add("hidden");
+  });
 
   commandInput.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" || event.isComposing) return;

@@ -583,7 +583,8 @@ button:disabled {
 }
 
 .command-bar input,
-.command-timer {
+.command-reminder-button,
+.command-reminder-panel select {
   width: 100%;
   height: 38px;
   border: 2px solid #d4c0a6;
@@ -594,11 +595,46 @@ button:disabled {
   font: 15px SimSun, "Microsoft YaHei", sans-serif;
 }
 
-.command-timer {
-  width: 92px;
+.command-reminder-control {
+  position: relative;
+  width: 98px;
+}
+
+.command-reminder-button {
+  width: 98px;
   padding: 0 6px;
   color: #596773;
   font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.command-reminder-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  width: 208px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fffdf8;
+  box-shadow: 0 16px 36px rgba(44, 35, 26, 0.16);
+}
+
+.command-reminder-panel label {
+  display: grid;
+  gap: 5px;
+  color: #596773;
+  font-size: 12px;
+}
+
+.command-reminder-panel select {
+  height: 34px;
+  border-width: 1px;
+  font-size: 13px;
 }
 
 .command-bar.reminder-mode {
@@ -607,7 +643,7 @@ button:disabled {
   background: linear-gradient(180deg, #fffaf3, var(--bg));
 }
 
-.command-bar.reminder-mode .command-timer {
+.command-bar.reminder-mode .command-reminder-control {
   display: none;
 }
 
