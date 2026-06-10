@@ -161,6 +161,9 @@
       recipeIngredients: "食材",
       recipeSteps: "做法",
       recipeSearch: "搜索菜谱，例如：西红柿",
+      recipeAdd: "新增菜谱",
+      recipeBrowse: "浏览菜谱",
+      recipeFormTitle: "写菜谱",
       recipeAllCategories: "全部菜谱",
       recipeCategory: "菜谱分类",
       recipeCategoryPlaceholder: "新增分类",
@@ -375,6 +378,9 @@
       recipeIngredients: "材料",
       recipeSteps: "作り方",
       recipeSearch: "レシピ検索 例：トマト",
+      recipeAdd: "レシピ追加",
+      recipeBrowse: "レシピ一覧",
+      recipeFormTitle: "レシピを書く",
       recipeAllCategories: "すべて",
       recipeCategory: "レシピ分類",
       recipeCategoryPlaceholder: "分類を追加",
@@ -589,6 +595,9 @@
       recipeIngredients: "Ingredients",
       recipeSteps: "Steps",
       recipeSearch: "Search recipes, e.g. tomato",
+      recipeAdd: "Add recipe",
+      recipeBrowse: "Browse",
+      recipeFormTitle: "Write recipe",
       recipeAllCategories: "All recipes",
       recipeCategory: "Recipe category",
       recipeCategoryPlaceholder: "New category",
@@ -696,6 +705,7 @@
     recipeSearch: "",
     recipeCategory: localStorage.getItem(RECIPE_CATEGORY_KEY) || "",
     recipeCategoryCollapsed: localStorage.getItem(RECIPE_CATEGORY_COLLAPSED_KEY) === "1",
+    recipeMode: "browse",
     editingRecipeId: "",
     recipeDraft: null,
     editingPeriodId: "",
@@ -2456,7 +2466,7 @@
       `)
     ].join("");
     return `
-      <aside class="recipe-sidebar${state.recipeCategoryCollapsed ? " collapsed" : ""}">
+      <section class="recipe-sidebar${state.recipeCategoryCollapsed ? " collapsed" : ""}">
         <button class="recipe-sidebar-toggle" data-action="toggleRecipeCategoryPanel" type="button">${state.recipeCategoryCollapsed ? "›" : "‹"}</button>
         <div class="recipe-sidebar-inner">
           <div class="recipe-sidebar-title">${tx("recipeCategory")}</div>
@@ -2466,7 +2476,32 @@
             <button data-action="addRecipeCategory" type="button">＋</button>
           </div>
         </div>
-      </aside>
+      </section>
+    `;
+  }
+
+  function recipeCategoryPanelHtml() {
+    const categories = recipeCategories();
+    const rows = [
+      `<button class="recipe-category-item${state.recipeCategory ? "" : " active"}" data-action="selectRecipeCategory" data-recipe-category="" type="button">${tx("recipeAllCategories")}</button>`,
+      ...categories.map((category) => `
+        <div class="recipe-category-row${category === state.recipeCategory ? " active" : ""}">
+          <button class="recipe-category-item" data-action="selectRecipeCategory" data-recipe-category="${escapeAttr(category)}" type="button">${escapeHtml(category)}</button>
+          <button class="recipe-category-delete" data-action="deleteRecipeCategory" data-recipe-category="${escapeAttr(category)}" type="button">${tx("delete")}</button>
+        </div>
+      `)
+    ].join("");
+    return `
+      <section class="recipe-sidebar${state.recipeCategoryCollapsed ? " collapsed" : ""}">
+        <button class="recipe-sidebar-toggle" data-action="toggleRecipeCategoryPanel" type="button">${state.recipeCategoryCollapsed ? tx("recipeCategory") : tx("recipeCollapse")}</button>
+        <div class="recipe-sidebar-inner">
+          <div class="recipe-category-list">${rows}</div>
+          <div class="recipe-category-add">
+            <input data-recipe-category-input type="text" placeholder="${escapeAttr(tx("recipeCategoryPlaceholder"))}">
+            <button data-action="addRecipeCategory" type="button">+</button>
+          </div>
+        </div>
+      </section>
     `;
   }
 
@@ -2495,6 +2530,7 @@
   function renderRecipes() {
     const editing = state.editingRecipeId ? state.data.recipes.find((item) => item.id === state.editingRecipeId) : null;
     const draft = state.recipeDraft && state.recipeDraft.editingId === (state.editingRecipeId || "") ? state.recipeDraft : null;
+    const formVisible = state.recipeMode === "form" || Boolean(editing);
     const form = {
       title: draft ? draft.title : (editing?.title || ""),
       category: draft ? draft.category : String(editing?.category || ""),
@@ -2503,19 +2539,28 @@
     };
     content.innerHTML = [
       '<div class="recipe-panel">',
-      '<div class="recipe-form">',
-      `<input data-recipe="title" type="text" value="${escapeAttr(form.title)}" placeholder="${escapeAttr(tx("recipeName"))}">`,
-      `<select data-recipe="category">${recipeCategoryOptions(String(form.category || ""))}</select>`,
-      `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
-      `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
-      '<div class="recipe-form-actions">',
-      `<button data-action="saveRecipe" type="button">${editing ? tx("recipeUpdate") : tx("recipeSave")}</button>`,
-      editing ? `<button data-action="cancelRecipeEdit" type="button">${tx("recipeCancelEdit")}</button>` : "",
+      '<div class="recipe-modebar">',
+      `<button class="${formVisible ? "active" : ""}" data-action="startRecipeAdd" type="button">${tx("recipeAdd")}</button>`,
+      `<button class="${formVisible ? "" : "active"}" data-action="showRecipeBrowse" type="button">${tx("recipeBrowse")}</button>`,
       "</div>",
-      "</div>",
+      formVisible ? [
+        '<div class="recipe-form-card">',
+        `<div class="section-title">${tx("recipeFormTitle")}</div>`,
+        '<div class="recipe-form">',
+        `<input data-recipe="title" type="text" value="${escapeAttr(form.title)}" placeholder="${escapeAttr(tx("recipeName"))}">`,
+        `<select data-recipe="category">${recipeCategoryOptions(String(form.category || ""))}</select>`,
+        `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
+        `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
+        '<div class="recipe-form-actions">',
+        `<button data-action="saveRecipe" type="button">${editing ? tx("recipeUpdate") : tx("recipeSave")}</button>`,
+        `<button data-action="cancelRecipeEdit" type="button">${tx("recipeCancelEdit")}</button>`,
+        "</div>",
+        "</div>",
+        "</div>"
+      ].join("") : "",
       `<input class="recipe-search" data-action="recipeSearch" type="search" value="${escapeAttr(state.recipeSearch)}" placeholder="${escapeAttr(tx("recipeSearch"))}">`,
       `<div class="recipe-workspace${state.recipeCategoryCollapsed ? " recipe-categories-collapsed" : ""}">`,
-      recipeCategorySidebarHtml(),
+      recipeCategoryPanelHtml(),
       `<div class="recipe-main" data-recipe-list>${recipeListHtml()}</div>`,
       "</div>",
       "</div>"
@@ -2898,6 +2943,7 @@
     localStorage.setItem(RECIPE_CATEGORY_KEY, state.recipeCategory);
     state.editingRecipeId = "";
     state.recipeDraft = null;
+    state.recipeMode = "browse";
     scheduleSave();
     setStatus(tx("recipeSaved"));
     render();
@@ -2957,6 +3003,7 @@
   function editRecipe(id) {
     if (!state.data.recipes.some((item) => item.id === id)) return;
     state.editingRecipeId = id;
+    state.recipeMode = "form";
     const recipe = state.data.recipes.find((item) => item.id === id);
     state.recipeDraft = recipe ? {
       editingId: id,
@@ -2981,6 +3028,31 @@
   function cancelRecipeEdit() {
     state.editingRecipeId = "";
     state.recipeDraft = null;
+    state.recipeMode = "browse";
+    render();
+  }
+
+  function startRecipeAdd() {
+    if (state.editingRecipeId) {
+      state.editingRecipeId = "";
+      state.recipeDraft = null;
+    }
+    if (!state.recipeDraft || state.recipeDraft.editingId !== "") {
+      state.recipeDraft = {
+        editingId: "",
+        title: "",
+        category: state.recipeCategory || "",
+        ingredients: "",
+        steps: ""
+      };
+    }
+    state.recipeMode = "form";
+    render();
+  }
+
+  function showRecipeBrowse() {
+    captureRecipeDraft();
+    state.recipeMode = "browse";
     render();
   }
 
@@ -4007,6 +4079,12 @@
     }
     if (action === "saveRecipe") {
       saveRecipe();
+    }
+    if (action === "startRecipeAdd") {
+      startRecipeAdd();
+    }
+    if (action === "showRecipeBrowse") {
+      showRecipeBrowse();
     }
     if (action === "addRecipeCategory") {
       addRecipeCategory(content.querySelector("[data-recipe-category-input]")?.value);

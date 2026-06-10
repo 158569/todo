@@ -1328,6 +1328,126 @@ button:disabled {
   white-space: pre-wrap;
 }
 
+.recipe-modebar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.recipe-modebar button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fffdf8;
+  color: var(--ink);
+  font: 700 13px SimSun, "Microsoft YaHei", sans-serif;
+  cursor: pointer;
+}
+
+.recipe-modebar button.active {
+  background: var(--mark);
+  border-color: #e8c989;
+}
+
+.recipe-form-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #ead9c5;
+  border-radius: 14px;
+  background: #fffdf8;
+}
+
+.recipe-workspace,
+.recipe-workspace.recipe-categories-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.recipe-sidebar,
+.recipe-sidebar.collapsed {
+  position: static;
+  display: grid;
+  width: auto;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid #ead9c5;
+  border-radius: 14px;
+  background: #fffdf8;
+}
+
+.recipe-sidebar.collapsed {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.recipe-sidebar-toggle {
+  width: auto;
+  min-height: 28px;
+  justify-self: start;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.recipe-sidebar-inner {
+  display: grid;
+  gap: 7px;
+}
+
+.recipe-category-list {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.recipe-category-row {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.recipe-category-item,
+.recipe-category-delete {
+  min-width: max-content;
+  min-height: 30px;
+  border-radius: 999px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.recipe-category-delete {
+  padding: 0 8px;
+  background: #fff7f3;
+}
+
+.recipe-category-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 6px;
+}
+
+.recipe-category-add input,
+.recipe-category-add button {
+  border-radius: 999px;
+}
+
+.recipe-card {
+  border-radius: 14px;
+}
+
+.recipe-card-head {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.recipe-actions {
+  justify-content: start;
+}
+
 .period-panel {
   display: grid;
   gap: 12px;
