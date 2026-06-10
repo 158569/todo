@@ -696,6 +696,17 @@ button:disabled {
   padding: 0 6px;
 }
 
+.setting-color-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.setting-color-grid .setting-row {
+  grid-template-columns: minmax(0, 1fr) 42px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 6px;
+}
+
 .setting-row,
 .ledger-form {
   display: grid;
@@ -703,13 +714,6 @@ button:disabled {
   gap: 8px;
   align-items: center;
   margin: 6px 0;
-}
-
-.settings-panel > .setting-row:has(input[type="color"]) {
-  display: inline-grid;
-  width: calc(50% - 6px);
-  margin-right: 8px;
-  vertical-align: top;
 }
 
 .setting-row-text {
@@ -1911,7 +1915,7 @@ button:disabled {
   }
 
   .setting-feature-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -1943,7 +1947,8 @@ button:disabled {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .setting-feature-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .setting-feature-grid,
+  .setting-color-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
