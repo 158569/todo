@@ -222,13 +222,13 @@
       diaryLockedHint: "请输入四位数字密码。",
       unlock: "解锁",
       wrongPin: "密码不对 (｡>﹏<｡)",
-      reminderButtonNone: "跟进：无",
-      reminderButtonPrefix: "跟进",
-      advanceReminder: "提前跟进",
-      followReminder: "后续跟进",
-      advanceNone: "提前：无",
-      followOnce: "仅一次",
-      followEvery: "持续：每",
+      reminderButtonNone: "前/后：无",
+      reminderButtonPrefix: "前/后",
+      advanceReminder: "前",
+      followReminder: "后",
+      advanceNone: "前：无",
+      followOnce: "后：无",
+      followEvery: "后：每",
       todoReminderDefaultLabel: "待办跟进默认",
       todoReminderDefaultNone: "默认无",
       todoReminderDefaultLast: "沿用上次选择",
@@ -427,13 +427,13 @@
       diaryLockedHint: "4桁のパスコードを入力してください。",
       unlock: "ロック解除",
       wrongPin: "パスコードが違います (｡>﹏<｡)",
-      reminderButtonNone: "フォロー：なし",
-      reminderButtonPrefix: "フォロー",
-      advanceReminder: "事前フォロー",
-      followReminder: "後続フォロー",
-      advanceNone: "事前：なし",
-      followOnce: "1回だけ",
-      followEvery: "継続：",
+      reminderButtonNone: "前/後：なし",
+      reminderButtonPrefix: "前/後",
+      advanceReminder: "前",
+      followReminder: "後",
+      advanceNone: "前：なし",
+      followOnce: "後：なし",
+      followEvery: "後：",
       todoReminderDefaultLabel: "ToDoフォローの初期値",
       todoReminderDefaultNone: "毎回なし",
       todoReminderDefaultLast: "前回の選択を使う",
@@ -632,13 +632,13 @@
       diaryLockedHint: "Enter the 4-digit PIN.",
       unlock: "Unlock",
       wrongPin: "Wrong PIN (｡>﹏<｡)",
-      reminderButtonNone: "Follow-up: off",
-      reminderButtonPrefix: "Follow-up",
-      advanceReminder: "Advance follow-up",
-      followReminder: "Later follow-up",
-      advanceNone: "Advance: off",
-      followOnce: "Once",
-      followEvery: "Repeat every",
+      reminderButtonNone: "Before/after: off",
+      reminderButtonPrefix: "Before/after",
+      advanceReminder: "Before",
+      followReminder: "After",
+      advanceNone: "Before: off",
+      followOnce: "After: off",
+      followEvery: "After every",
       todoReminderDefaultLabel: "Todo follow-up default",
       todoReminderDefaultNone: "Off by default",
       todoReminderDefaultLast: "Use last choice",
@@ -1666,8 +1666,9 @@
       commandReminderButton.textContent = tx("reminderButtonNone");
       return;
     }
-    const follow = current.followMinutes > 0 ? ` / ${formatReminderMinutes(current.followMinutes)}` : "";
-    commandReminderButton.textContent = `${tx("reminderButtonPrefix")}：${formatReminderMinutes(current.advanceMinutes)}${follow}`;
+    const before = `前${formatReminderMinutes(current.advanceMinutes)}`;
+    const after = current.followMinutes > 0 ? `后每${formatReminderMinutes(current.followMinutes)}` : "后无";
+    commandReminderButton.textContent = `${before} / ${after}`;
   }
 
   function formatReminderMinutes(minutes) {
