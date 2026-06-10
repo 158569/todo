@@ -825,14 +825,15 @@ button:disabled {
 
 .ledger-category-menu {
   width: min(276px, calc(100vw - 28px));
-  max-height: min(312px, 56vh);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  max-height: 236px;
   overflow: hidden;
 }
 
 .ledger-category-scroll {
   display: grid;
   gap: 6px;
-  max-height: min(220px, 42vh);
+  max-height: 152px;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 4px;
@@ -1147,6 +1148,99 @@ button:disabled {
 .recipe-search {
   min-height: 34px;
   padding: 0 10px;
+}
+
+.recipe-form-category-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.recipe-form-category-trigger {
+  width: 100%;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf8;
+  padding: 0 10px;
+  color: var(--ink);
+  text-align: left;
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.recipe-form-category-trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recipe-form-category-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 24;
+  width: min(276px, 100%);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 6px;
+  max-height: 236px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fffdf8;
+  box-shadow: 0 14px 32px rgba(44, 35, 26, 0.16);
+}
+
+.recipe-form-category-scroll {
+  display: grid;
+  gap: 6px;
+  max-height: 152px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.recipe-form-category-option {
+  min-height: 34px;
+  border: 1px solid #ead9c5;
+  border-radius: 9px;
+  background: #fffdf8;
+  padding: 0 10px;
+  color: #45505c;
+  text-align: left;
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.recipe-form-category-option.active {
+  border-color: #e8c989;
+  background: var(--mark);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.recipe-form-category-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 6px;
+}
+
+.recipe-form-category-add input,
+.recipe-form-category-add button {
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fffdf8;
+  padding: 0 9px;
+  color: var(--ink);
+  font: 13px SimSun, "Microsoft YaHei", sans-serif;
+}
+
+.recipe-form-category-add button {
+  background: var(--mark);
+  font-weight: 700;
 }
 
 .recipe-form textarea {

@@ -2458,6 +2458,30 @@
     return `<datalist id="recipeCategoryList">${recipeCategories().map((category) => `<option value="${escapeAttr(category)}"></option>`).join("")}</datalist>`;
   }
 
+  function recipeFormCategoryPickerHtml(current) {
+    const category = String(current || "").trim();
+    const rows = [
+      `<button class="recipe-form-category-option${category ? "" : " active"}" data-action="selectRecipeFormCategory" data-recipe-category="" type="button">${tx("recipeNoCategory")}</button>`,
+      ...recipeCategories().map((item) => `<button class="recipe-form-category-option${item === category ? " active" : ""}" data-action="selectRecipeFormCategory" data-recipe-category="${escapeAttr(item)}" type="button">${escapeHtml(item)}</button>`)
+    ].join("");
+    return `
+      <div class="recipe-form-category-picker" data-recipe-form-category-picker>
+        <input data-recipe="category" type="hidden" value="${escapeAttr(category)}">
+        <button class="recipe-form-category-trigger" data-action="toggleRecipeFormCategoryMenu" type="button">
+          <span data-recipe-form-category-label>${escapeHtml(category || tx("recipeNoCategory"))}</span>
+          <span class="category-caret">⌄</span>
+        </button>
+        <div class="recipe-form-category-menu hidden" data-recipe-form-category-menu>
+          <div class="recipe-form-category-scroll">${rows}</div>
+          <div class="recipe-form-category-add">
+            <input data-recipe-category-input type="text" placeholder="${escapeAttr(tx("recipeCategoryPlaceholder"))}">
+            <button data-action="addRecipeCategoryFromForm" type="button">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function recipeCategorySidebarHtml() {
     const categories = recipeCategories();
     const rows = [
@@ -2547,8 +2571,7 @@
         `<div class="section-title">${tx("recipeFormTitle")}</div>`,
         '<div class="recipe-form">',
         `<input data-recipe="title" type="text" value="${escapeAttr(form.title)}" placeholder="${escapeAttr(tx("recipeName"))}">`,
-        `<input data-recipe="category" list="recipeCategoryList" type="text" value="${escapeAttr(form.category)}" placeholder="${escapeAttr(tx("recipeCategory"))}">`,
-        recipeCategoryDatalistHtml(),
+        recipeFormCategoryPickerHtml(form.category),
         `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
         `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
         '<div class="recipe-form-actions">',
@@ -2963,6 +2986,42 @@
     localStorage.setItem(RECIPE_CATEGORY_KEY, state.recipeCategory);
     scheduleSave();
     setStatus(tx("recipeCategoryAdded"));
+    render();
+  }
+
+  function closeRecipeFormCategoryMenu() {
+    content.querySelector("[data-recipe-form-category-menu]")?.classList.add("hidden");
+  }
+
+  function toggleRecipeFormCategoryMenu() {
+    const menu = content.querySelector("[data-recipe-form-category-menu]");
+    if (!menu) return;
+    menu.classList.toggle("hidden");
+  }
+
+  function selectRecipeFormCategory(category) {
+    category = String(category || "").trim();
+    const input = content.querySelector('[data-recipe="category"]');
+    const label = content.querySelector("[data-recipe-form-category-label]");
+    if (input) input.value = category;
+    if (label) label.textContent = category || tx("recipeNoCategory");
+    captureRecipeDraft();
+    closeRecipeFormCategoryMenu();
+  }
+
+  function addRecipeCategoryFromForm(value) {
+    captureRecipeDraft();
+    const category = String(value || "").trim();
+    if (!category) return;
+    if (!recipeCategories().includes(category)) {
+      state.data.recipeCategories.push(category);
+      scheduleSave();
+      setStatus(tx("recipeCategoryAdded"));
+    } else {
+      setStatus(tx("recipeCategoryExists"));
+    }
+    if (!state.recipeDraft) state.recipeDraft = { editingId: state.editingRecipeId || "", title: "", category: "", ingredients: "", steps: "" };
+    state.recipeDraft.category = category;
     render();
   }
 
@@ -4025,6 +4084,7 @@
   content.addEventListener("click", (event) => {
     if (!event.target.closest("[data-category-picker]")) closeLedgerCategoryMenu();
     if (!event.target.closest("[data-type-picker]")) closeLedgerTypeMenu();
+    if (!event.target.closest("[data-recipe-form-category-picker]")) closeRecipeFormCategoryMenu();
     const actionTarget = event.target.closest("[data-action]");
     const action = actionTarget?.dataset.action;
     if (!action) return;
@@ -4090,6 +4150,15 @@
     }
     if (action === "addRecipeCategory") {
       addRecipeCategory(content.querySelector("[data-recipe-category-input]")?.value);
+    }
+    if (action === "toggleRecipeFormCategoryMenu") {
+      toggleRecipeFormCategoryMenu();
+    }
+    if (action === "selectRecipeFormCategory") {
+      selectRecipeFormCategory(actionTarget.dataset.recipeCategory);
+    }
+    if (action === "addRecipeCategoryFromForm") {
+      addRecipeCategoryFromForm(content.querySelector("[data-recipe-category-input]")?.value);
     }
     if (action === "deleteRecipeCategory") {
       deleteRecipeCategory(actionTarget.dataset.recipeCategory);
@@ -4245,7 +4314,8 @@
   content.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && event.target.matches("[data-recipe-category-input]")) {
       event.preventDefault();
-      addRecipeCategory(event.target.value);
+      if (event.target.closest("[data-recipe-form-category-picker]")) addRecipeCategoryFromForm(event.target.value);
+      else addRecipeCategory(event.target.value);
       return;
     }
     if (event.key !== "Enter" || !event.target.matches("[data-diary-pin]")) return;
