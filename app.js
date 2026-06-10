@@ -239,7 +239,7 @@
       timer4h: "4h",
       timer8h: "8h",
       halfway: "提醒",
-      timerAlarmPrefix: "待办提醒",
+      timerAlarmPrefix: "待办跟进",
       timerSet: "已添加待办，并设置提醒 (๑•̀᎑<๑)و"
     },
     ja: {
@@ -444,7 +444,7 @@
       timer4h: "4h",
       timer8h: "8h",
       halfway: "通知",
-      timerAlarmPrefix: "ToDo通知",
+      timerAlarmPrefix: "ToDoフォロー",
       timerSet: "ToDoを追加し、通知を設定しました (๑•̀᎑<๑)و"
     },
     en: {
@@ -649,7 +649,7 @@
       timer4h: "4h",
       timer8h: "8h",
       halfway: "Reminder",
-      timerAlarmPrefix: "Todo reminder",
+      timerAlarmPrefix: "Todo follow-up",
       timerSet: "Todo added with reminder (๑•̀᎑<๑)و"
     }
   };
@@ -1367,9 +1367,18 @@
   }
 
   function dueAlarmRows() {
-    return [...dailyReminderRows(false), ...oneTimeTodayRows(), ...taskTimerRows()]
+    const oneTimeRows = oneTimeTodayRows().filter((row) => !hasOneTimeTimer(row.key));
+    return [...dailyReminderRows(false), ...oneTimeRows, ...taskTimerRows()]
       .filter((row) => row.group === "timer" || (row.time && row.sortTime <= nowMinutes()))
       .filter((row) => !day().completed.includes(`今日已完成：${row.time}  ${row.text}`));
+  }
+
+  function hasOneTimeTimer(key) {
+    const [at, text] = String(key || "").split("|");
+    if (!at || !text) return false;
+    return Object.values(state.data.days || {}).some((item) =>
+      Object.values(item.timers || {}).some((timer) => timer.source === "oneTime" && timer.at === at && timer.text === text && !timer.fired)
+    );
   }
 
   function showAlarm(row) {
@@ -1887,10 +1896,13 @@
     const now = Date.now();
     Object.keys(state.data.days || {}).forEach((dateKey) => {
       const current = day(dateKey);
-      Object.entries(current.timers || {}).forEach(([text, timer]) => {
-        const active = current.pending.includes(text) || current.inProgress.includes(text);
+      Object.entries(current.timers || {}).forEach(([timerKey, timer]) => {
+        const taskText = timer.text || timerKey;
+        const active = timer.source === "oneTime"
+          ? state.data.oneTimeReminders.some((item) => item.at === timer.at && item.text === taskText)
+          : current.pending.includes(taskText) || current.inProgress.includes(taskText);
         if (!active) {
-          delete current.timers[text];
+          delete current.timers[timerKey];
           return;
         }
         const dueAt = Date.parse(timer.remindAt || "");
@@ -1899,10 +1911,13 @@
         rows.push({
           group: "timer",
           dateKey,
-          taskText: text,
+          timerKey,
+          taskText,
+          source: timer.source || "todo",
+          at: timer.at || "",
           time,
-          text: `${tx("timerAlarmPrefix")}：${text}`,
-          key: `timer|${dateKey}|${dueAt}|${text}`,
+          text: `${tx("timerAlarmPrefix")}：${taskText}`,
+          key: `timer|${dateKey}|${dueAt}|${timerKey}`,
           sortTime: timeMinutes(time)
         });
       });
@@ -1914,12 +1929,16 @@
     const [, dateKey, maybeDueAt, ...parts] = String(key || "").split("|");
     const dueAt = Number(maybeDueAt);
     const isNewKey = Number.isFinite(dueAt) && parts.length > 0;
-    const text = (isNewKey ? parts : [maybeDueAt, ...parts]).join("|");
-    const timer = state.data.days?.[dateKey]?.timers?.[text];
+    const timerKey = (isNewKey ? parts : [maybeDueAt, ...parts]).join("|");
+    const timer = state.data.days?.[dateKey]?.timers?.[timerKey];
     if (!timer) return;
     const repeatMinutes = Number(timer.repeatMinutes || 0);
     if (repeatMinutes > 0) {
-      const next = new Date(Date.now() + repeatMinutes * 60 * 1000);
+      const eventAt = Date.parse(timer.eventAt || "");
+      const nextAt = Number.isFinite(eventAt) && Number.isFinite(dueAt) && dueAt < eventAt
+        ? eventAt
+        : Date.now() + repeatMinutes * 60 * 1000;
+      const next = new Date(nextAt);
       timer.remindAt = next.toISOString();
       timer.lastFiredAt = new Date().toISOString();
       timer.fired = false;
@@ -2996,26 +3015,48 @@
       return;
     }
     current.pending.push(text);
-    const config = normalizeTodoReminderConfig(reminderConfig);
-    if (config.advanceMinutes > 0) scheduleTaskTimer(text, config);
+    const scheduled = scheduleTaskTimer(text, reminderConfig);
     scheduleSave();
-    setStatus(config.advanceMinutes > 0 ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
+    setStatus(scheduled ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
-  function scheduleTaskTimer(text, reminderConfig) {
+  function scheduleTaskTimer(text, reminderConfig, options = {}) {
     const config = normalizeTodoReminderConfig(reminderConfig);
-    if (!config.advanceMinutes || config.advanceMinutes <= 0) return;
-    const current = day();
+    const now = new Date();
+    const eventAt = options.eventAt ? new Date(options.eventAt) : null;
+    const hasEventAt = eventAt && !Number.isNaN(eventAt.getTime());
+    if (!hasEventAt && config.followMinutes <= 0) return false;
+    if (hasEventAt && config.advanceMinutes <= 0 && config.followMinutes <= 0) return false;
+    const dateKey = options.dateKey || todayKey();
+    const current = day(dateKey);
     const start = new Date();
-    const remind = new Date(start.getTime() + config.advanceMinutes * 60 * 1000);
-    current.timers[text] = {
+    let remind = null;
+    if (hasEventAt) {
+      remind = config.advanceMinutes > 0
+        ? new Date(eventAt.getTime() - config.advanceMinutes * 60 * 1000)
+        : new Date(eventAt);
+      if (remind.getTime() < Date.now()) remind = new Date(Date.now() + 5000);
+    } else {
+      remind = new Date(Date.now() + config.followMinutes * 60 * 1000);
+    }
+    const timerKey = options.timerKey || text;
+    current.timers[timerKey] = {
+      text,
+      source: options.source || "todo",
+      at: options.at || "",
       advanceMinutes: config.advanceMinutes,
       repeatMinutes: config.followMinutes,
       followMode: config.followMode,
+      eventAt: hasEventAt ? eventAt.toISOString() : start.toISOString(),
       startedAt: start.toISOString(),
       remindAt: remind.toISOString(),
       fired: false
     };
+    return true;
+  }
+
+  function localDateTime(dateKey, time) {
+    return new Date(`${dateKey}T${time || "00:00"}:00`);
   }
 
   function addDatedTodo(offset, text) {
@@ -3064,7 +3105,7 @@
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
-  function addOneTimeReminder(dateKey, time, text) {
+  function addOneTimeReminder(dateKey, time, text, reminderConfig = null) {
     text = text.trim();
     if (!text) return;
     const at = `${dateKey} ${time}`;
@@ -3074,9 +3115,17 @@
       return;
     }
     state.data.oneTimeReminders.push({ at, text });
+    const timerKey = `oneTime|${at}|${text}`;
+    const scheduled = scheduleTaskTimer(text, reminderConfig, {
+      dateKey,
+      eventAt: localDateTime(dateKey, time),
+      source: "oneTime",
+      at,
+      timerKey
+    });
     logUpdate("增加", `${shortDate(dateKey)} ${time} ${text}`);
     scheduleSave();
-    setStatus("已成功记录 (｡•̀ᴗ-)و");
+    setStatus(scheduled ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
   function addWeeklyReminder(dayText, time, text) {
@@ -3143,9 +3192,13 @@
       current.completed.push(`今日已完成：${row.time ? `${row.time}  ` : ""}${row.text}`);
     } else if (row.group === "timer") {
       const source = day(row.dateKey);
-      source.pending = source.pending.filter((item) => item !== row.taskText);
-      source.inProgress = source.inProgress.filter((item) => item !== row.taskText);
-      delete source.timers[row.taskText];
+      if (row.source === "oneTime") {
+        state.data.oneTimeReminders = state.data.oneTimeReminders.filter((item) => !(item.at === row.at && item.text === row.taskText));
+      } else {
+        source.pending = source.pending.filter((item) => item !== row.taskText);
+        source.inProgress = source.inProgress.filter((item) => item !== row.taskText);
+      }
+      delete source.timers[row.timerKey || row.taskText];
       current.completed.push(row.dateKey === todayKey() ? row.taskText : `补完成：${row.taskText}（原 ${row.dateKey}）`);
     } else {
       current.pending = current.pending.filter((item) => item !== row.key);
@@ -3162,6 +3215,7 @@
     if (row.source === "once") {
       const [at, text] = row.key.split("|");
       state.data.oneTimeReminders = state.data.oneTimeReminders.filter((item) => !(item.at === at && item.text === text));
+      removeOneTimeTimers(at, text);
       if (shouldLog) {
         const [date, time = ""] = at.split(" ");
         logUpdate("删除", `${shortDate(date)} ${time} ${text}`.trim());
@@ -3172,6 +3226,14 @@
       state.data.dateImportantReminders = state.data.dateImportantReminders.filter((item) => !(item.date === date && item.text === text));
       if (shouldLog) logUpdate("删除", `${shortDate(date)} ${text}`);
     }
+  }
+
+  function removeOneTimeTimers(at, text) {
+    Object.values(state.data.days || {}).forEach((item) => {
+      Object.entries(item.timers || {}).forEach(([key, timer]) => {
+        if (timer.source === "oneTime" && timer.at === at && timer.text === text) delete item.timers[key];
+      });
+    });
   }
 
   function completeByQuery(query) {
@@ -3419,14 +3481,14 @@
     const naturalSchedule = parseNaturalSchedule(text);
     if (naturalSchedule) {
       return naturalSchedule.hasTime
-        ? addOneTimeReminder(naturalSchedule.dateKey, naturalSchedule.time, naturalSchedule.text)
+        ? addOneTimeReminder(naturalSchedule.dateKey, naturalSchedule.time, naturalSchedule.text, reminderConfig)
         : addTodoOnDate(naturalSchedule.dateKey, naturalSchedule.text);
     }
 
     match = text.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})\s+(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
-    if (match) return addOneTimeReminder(normalizeDateText(match[1]), normalizeTime(match[2], match[3] || "00"), match[4]);
+    if (match) return addOneTimeReminder(normalizeDateText(match[1]), normalizeTime(match[2], match[3] || "00"), match[4], reminderConfig);
     match = text.match(/^(明天|后天|大后天)\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
-    if (match) return addOneTimeReminder(dateWithOffset({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]]), normalizeTime(match[2], match[3] || "00"), match[4]);
+    if (match) return addOneTimeReminder(dateWithOffset({ 明天: 1, 后天: 2, 大后天: 3 }[match[1]]), normalizeTime(match[2], match[3] || "00"), match[4], reminderConfig);
     match = text.match(/^(每天|每日)\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addDailyImportant(match[2].trim());
 
