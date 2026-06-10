@@ -642,6 +642,9 @@
     ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
+    alarmRepeatTimer: null,
+    alarmTitleTimer: null,
+    alarmTitleOn: false,
     activeAlarm: null,
     firedAlarmKeys: new Set(),
     diaryUnlocked: false,
@@ -893,6 +896,14 @@
     return toDateKey(date);
   }
 
+  function dateFromMonthDay(month, day) {
+    const now = new Date();
+    let date = new Date(now.getFullYear(), Number(month) - 1, Number(day));
+    if (Number.isNaN(date.getTime()) || date.getMonth() !== Number(month) - 1 || date.getDate() !== Number(day)) return "";
+    if (toDateKey(date) < todayKey()) date = new Date(now.getFullYear() + 1, Number(month) - 1, Number(day));
+    return toDateKey(date);
+  }
+
   function dateFromKey(dateKey) {
     const [year, month, day] = String(dateKey || todayKey()).split("-").map(Number);
     if (!year || !month || !day) return new Date();
@@ -968,6 +979,10 @@
     return String(value || "").replace(/^(?:提醒我|提醒|设定|设置|叫我)\s*/, "").trim();
   }
 
+  function cleanRangeScheduledText(value) {
+    return cleanScheduledText(String(value || "").replace(/^\s*[-~～—至到]\s*\d{1,2}(?::\d{1,2})?\s*/, "").trim());
+  }
+
   function dayOffsetFromText(value) {
     const fixed = { 今天: 0, 今晚: 0, 明天: 1, 明晚: 1, 后天: 2, 大后天: 3 };
     if (fixed[value] !== undefined) return fixed[value];
@@ -1005,7 +1020,27 @@
     };
   }
 
+  function parseMonthDaySchedule(text) {
+    const number = "[半\\d.零〇一二两三四五六七八九十百]+";
+    const period = "(?:凌晨|早上|上午|中午|下午|傍晚|晚上)?";
+    const match = text.match(new RegExp(`^(\\d{1,2})\\s*(?:[./月-])\\s*(\\d{1,2})\\s*(?:日|号)?\\s*(?:(?:周|星期|礼拜)\\s*[一二三四五六日天])?\\s*(${period})\\s*(${number})\\s*(?:[:：；点]\\s*(${number}|半)?)?\\s*(?:[-~～—至到]\\s*\\d{1,2}\\s*(?:[:：]\\s*\\d{1,2})?)?\\s*(?:提醒我|提醒|设定|设置|叫我)?\\s*(.+)$`));
+    if (!match) return null;
+    const dateKey = dateFromMonthDay(match[1], match[2]);
+    const hour = hourWithPeriod(match[3], match[4]);
+    const textValue = cleanRangeScheduledText(match[6]);
+    if (!dateKey || hour === null || !textValue) return null;
+    return {
+      dateKey,
+      time: normalizeTime(hour, normalizeNaturalMinute(match[5])),
+      text: textValue,
+      hasTime: true
+    };
+  }
+
   function parseNaturalSchedule(text) {
+    const monthDay = parseMonthDaySchedule(text);
+    if (monthDay) return monthDay;
+
     const number = "[半\\d.零〇一二两三四五六七八九十百]+";
     let match = text.match(new RegExp(`^(?:提醒我\\s*)?(${number})\\s*(?:个)?\\s*(小时|钟头|h|H|分钟|分|min|m)\\s*后\\s*(?:提醒我|提醒|设定|设置|叫我)?\\s*(.+)$`));
     if (match) {
@@ -1299,22 +1334,93 @@
     state.activeAlarm = row;
     alarmText.textContent = `${row.time}  ${row.text}`;
     alarmModal.classList.remove("hidden");
+    alarmModal.classList.add("alarm-active");
     if (row.group === "timer") markTaskTimerFired(row.key);
-    sendSystemNotification(row);
+    startStrongAlarm(row);
   }
 
   function closeAlarm() {
+    stopStrongAlarm();
     alarmModal.classList.add("hidden");
+    alarmModal.classList.remove("alarm-active");
     state.activeAlarm = null;
+  }
+
+  function startStrongAlarm(row, notifyNow = true) {
+    stopStrongAlarm(false);
+    pingAlarm(row, notifyNow);
+    state.alarmRepeatTimer = setInterval(() => {
+      if (!state.activeAlarm) return;
+      pingAlarm(state.activeAlarm, true);
+    }, 45000);
+    state.alarmTitleTimer = setInterval(() => {
+      state.alarmTitleOn = !state.alarmTitleOn;
+      document.title = state.alarmTitleOn ? `【${tx("alarmTitle")}】memo` : tx("appTitle");
+    }, 900);
+  }
+
+  function stopStrongAlarm(resetTitle = true) {
+    clearInterval(state.alarmRepeatTimer);
+    clearInterval(state.alarmTitleTimer);
+    state.alarmRepeatTimer = null;
+    state.alarmTitleTimer = null;
+    state.alarmTitleOn = false;
+    if (resetTitle) document.title = tx("appTitle");
+  }
+
+  function pingAlarm(row, notify) {
+    playAlarmTone();
+    if ("vibrate" in navigator) {
+      try {
+        navigator.vibrate([220, 120, 220]);
+      } catch {
+        // Vibration support varies by platform.
+      }
+    }
+    if (notify) sendSystemNotification(row);
+  }
+
+  function playAlarmTone() {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    try {
+      const audio = new AudioContext();
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = 880;
+      gain.gain.setValueAtTime(0.001, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.16, audio.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.7);
+      oscillator.connect(gain);
+      gain.connect(audio.destination);
+      oscillator.start();
+      oscillator.stop(audio.currentTime + 0.72);
+      setTimeout(() => audio.close().catch(() => {}), 900);
+    } catch {
+      // Some browsers block audio until the user interacts with the page.
+    }
   }
 
   function sendSystemNotification(row) {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     try {
-      new Notification("待办提醒", {
+      const notification = new Notification(tx("alarmTitle"), {
         body: `${row.time}  ${row.text}`,
-        tag: row.key || `${row.time}-${row.text}`
+        tag: `memo-${todayKey()}-${row.key || `${row.time}-${row.text}`}`,
+        renotify: true,
+        requireInteraction: true,
+        silent: false
       });
+      notification.onclick = () => {
+        window.focus();
+        state.activeAlarm = row;
+        alarmText.textContent = `${row.time}  ${row.text}`;
+        alarmModal.classList.remove("hidden");
+        alarmModal.classList.add("alarm-active");
+        startStrongAlarm(row, false);
+        notification.close();
+      };
     } catch {
       // Browser notification support varies by platform.
     }
