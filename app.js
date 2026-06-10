@@ -2615,11 +2615,13 @@
     content.innerHTML = [
       '<div class="settings-panel">',
       '<div class="section-title">' + tx("featureSection") + "</div>",
+      '<div class="setting-grid setting-feature-grid">',
       settingCheckbox("showNotes", tx("showNotes"), current.showNotes !== false),
       settingCheckbox("showDiary", tx("showDiary"), current.showDiary !== false),
       settingCheckbox("showLedger", tx("showLedger"), current.showLedger !== false),
       settingCheckbox("showRecipes", tx("showRecipes"), current.showRecipes !== false),
       settingCheckbox("showPeriod", tx("showPeriod"), current.showPeriod !== false),
+      "</div>",
       '<div class="section-title">' + tx("diaryLockSection") + "</div>",
       settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled),
       current.diaryPinEnabled ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",

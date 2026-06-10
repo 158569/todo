@@ -634,6 +634,27 @@ button:disabled {
   gap: 8px;
 }
 
+.settings-panel {
+  max-width: min(100%, 720px);
+}
+
+.setting-grid {
+  display: grid;
+  gap: 8px 12px;
+}
+
+.setting-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 220px));
+  align-items: start;
+}
+
+.setting-feature-grid .setting-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 30px;
+  margin: 0;
+  padding: 0 6px;
+}
+
 .setting-row,
 .ledger-form {
   display: grid;
@@ -1462,6 +1483,14 @@ button:disabled {
   .period-future-row small {
     grid-column: 2;
   }
+
+  .settings-panel {
+    max-width: none;
+  }
+
+  .setting-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 340px) {
@@ -1489,6 +1518,10 @@ button:disabled {
   .ledger-rangebar,
   .ledger-record-card,
   .period-date-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .setting-feature-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
