@@ -3360,11 +3360,16 @@
     if (swipe) {
       const dx = event.clientX - swipe.startX;
       const dy = event.clientY - swipe.startY;
-      if (Math.abs(dx) > 32 && Math.abs(dx) > Math.abs(dy) && !swipe.swiped) {
+      if (dx < -32 && Math.abs(dx) > Math.abs(dy) && !swipe.swiped) {
         swipe.swiped = true;
         state.ignoreCategoryClick = true;
         content.querySelectorAll(".ledger-category-option.show-delete").forEach((row) => row.classList.remove("show-delete"));
         swipe.row.classList.add("show-delete");
+      }
+      if (dx > 32 && Math.abs(dx) > Math.abs(dy) && !swipe.swiped) {
+        swipe.swiped = true;
+        state.ignoreCategoryClick = true;
+        swipe.row.classList.remove("show-delete");
       }
       return;
     }
@@ -3377,6 +3382,10 @@
         content.querySelectorAll(".completed-row.show-delete").forEach((row) => row.classList.remove("show-delete"));
         completedSwipe.row.classList.add("show-delete");
       }
+      if (dx > 32 && Math.abs(dx) > Math.abs(dy) && !completedSwipe.swiped) {
+        completedSwipe.swiped = true;
+        completedSwipe.row.classList.remove("show-delete");
+      }
       return;
     }
     const ledgerSwipe = state.ledgerSwipe;
@@ -3387,6 +3396,10 @@
       ledgerSwipe.swiped = true;
       content.querySelectorAll(".ledger-record.show-delete").forEach((row) => row.classList.remove("show-delete"));
       ledgerSwipe.row.classList.add("show-delete");
+    }
+    if (dx > 32 && Math.abs(dx) > Math.abs(dy) && !ledgerSwipe.swiped) {
+      ledgerSwipe.swiped = true;
+      ledgerSwipe.row.classList.remove("show-delete");
     }
   });
 

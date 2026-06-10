@@ -776,17 +776,20 @@ button:disabled {
 }
 
 .ledger-category-menu {
-  width: min(232px, calc(100vw - 28px));
-  max-height: 252px;
+  width: min(276px, calc(100vw - 28px));
+  max-height: min(312px, 56vh);
+  overflow: hidden;
 }
 
 .ledger-category-scroll {
   display: grid;
-  gap: 4px;
-  max-height: 174px;
+  gap: 6px;
+  max-height: min(220px, 42vh);
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 2px;
+  padding-right: 4px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .ledger-category-option {
@@ -801,14 +804,18 @@ button:disabled {
   position: relative;
   z-index: 1;
   width: 100%;
-  min-height: 27px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
   border: 1px solid #ead9c5;
   border-radius: 9px;
   background: #fffdf8;
   text-align: left;
-  padding: 0 10px;
+  padding: 0 12px;
   color: #45505c;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: transform 0.16s ease;
 }
 
