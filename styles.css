@@ -1448,6 +1448,33 @@ button:disabled {
   justify-content: start;
 }
 
+.recipe-panel .recipe-form-card + .recipe-search,
+.recipe-panel .recipe-form-card + .recipe-search + .recipe-workspace {
+  display: none;
+}
+
+.recipe-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.recipe-sidebar {
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+}
+
+.recipe-sidebar-inner {
+  gap: 0;
+}
+
+.recipe-category-list {
+  padding: 2px 0 6px;
+}
+
+.recipe-category-delete {
+  min-width: 44px;
+}
+
 .period-panel {
   display: grid;
   gap: 12px;

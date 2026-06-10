@@ -2454,6 +2454,10 @@
     return options.join("");
   }
 
+  function recipeCategoryDatalistHtml() {
+    return `<datalist id="recipeCategoryList">${recipeCategories().map((category) => `<option value="${escapeAttr(category)}"></option>`).join("")}</datalist>`;
+  }
+
   function recipeCategorySidebarHtml() {
     const categories = recipeCategories();
     const rows = [
@@ -2492,14 +2496,9 @@
       `)
     ].join("");
     return `
-      <section class="recipe-sidebar${state.recipeCategoryCollapsed ? " collapsed" : ""}">
-        <button class="recipe-sidebar-toggle" data-action="toggleRecipeCategoryPanel" type="button">${state.recipeCategoryCollapsed ? tx("recipeCategory") : tx("recipeCollapse")}</button>
+      <section class="recipe-sidebar">
         <div class="recipe-sidebar-inner">
           <div class="recipe-category-list">${rows}</div>
-          <div class="recipe-category-add">
-            <input data-recipe-category-input type="text" placeholder="${escapeAttr(tx("recipeCategoryPlaceholder"))}">
-            <button data-action="addRecipeCategory" type="button">+</button>
-          </div>
         </div>
       </section>
     `;
@@ -2548,7 +2547,8 @@
         `<div class="section-title">${tx("recipeFormTitle")}</div>`,
         '<div class="recipe-form">',
         `<input data-recipe="title" type="text" value="${escapeAttr(form.title)}" placeholder="${escapeAttr(tx("recipeName"))}">`,
-        `<select data-recipe="category">${recipeCategoryOptions(String(form.category || ""))}</select>`,
+        `<input data-recipe="category" list="recipeCategoryList" type="text" value="${escapeAttr(form.category)}" placeholder="${escapeAttr(tx("recipeCategory"))}">`,
+        recipeCategoryDatalistHtml(),
         `<textarea data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
         `<textarea data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
         '<div class="recipe-form-actions">',
@@ -2558,11 +2558,13 @@
         "</div>",
         "</div>"
       ].join("") : "",
-      `<input class="recipe-search" data-action="recipeSearch" type="search" value="${escapeAttr(state.recipeSearch)}" placeholder="${escapeAttr(tx("recipeSearch"))}">`,
-      `<div class="recipe-workspace${state.recipeCategoryCollapsed ? " recipe-categories-collapsed" : ""}">`,
-      recipeCategoryPanelHtml(),
-      `<div class="recipe-main" data-recipe-list>${recipeListHtml()}</div>`,
-      "</div>",
+      !formVisible ? [
+        `<input class="recipe-search" data-action="recipeSearch" type="search" value="${escapeAttr(state.recipeSearch)}" placeholder="${escapeAttr(tx("recipeSearch"))}">`,
+        '<div class="recipe-workspace">',
+        recipeCategoryPanelHtml(),
+        `<div class="recipe-main" data-recipe-list>${recipeListHtml()}</div>`,
+        "</div>"
+      ].join("") : "",
       "</div>"
     ].join("");
   }
