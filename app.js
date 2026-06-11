@@ -4460,8 +4460,12 @@
     if (!key) return;
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
     if (key === "diaryPin") {
-      if (String(value || "").trim()) updateDiaryPin(value);
-      else render();
+      const nextPin = String(value || "").trim();
+      if (nextPin) {
+        window.setTimeout(() => {
+          if (settings().diaryPinEnabled === true) updateDiaryPin(nextPin);
+        }, 0);
+      }
       return;
     }
     if (key === "diaryPinEnabled") {
