@@ -1,0 +1,56 @@
+/*
+  memo UI 色彩精修版 v1
+  方向：奶油米白 + 灰绿色 + 低饱和浅金
+  用法：建议先在全局入口引入 memo-theme.all.css。
+*/
+
+:root {
+  /* 页面基底 */
+  --memo-bg: #FAF8F2;
+  --memo-topbar: #FFF8EF;
+  --memo-surface: #FFFDF8;
+  --memo-surface-soft: #FFFBF4;
+
+  /* 文字 */
+  --memo-text-main: #242A2E;
+  --memo-text-sub: #6F7A86;
+  --memo-text-muted: #9B9A93;
+  --memo-text-inverse: #FFFFFF;
+
+  /* 边框 */
+  --memo-border: #E4D8C8;
+  --memo-border-strong: #D8C9B3;
+  --memo-border-soft: #EFE6D8;
+
+  /* 主强调：灰绿色 */
+  --memo-accent: #7F9A8C;
+  --memo-accent-strong: #5F7F70;
+  --memo-accent-soft: #E8F0EC;
+  --memo-accent-softer: #F2F7F4;
+
+  /* 辅助强调：浅金 */
+  --memo-gold: #F3E5B8;
+  --memo-gold-soft: #F7EECB;
+  --memo-gold-softer: #FBF5DC;
+  --memo-gold-border: #D9C59E;
+
+  /* 状态色 */
+  --memo-danger: #C97363;
+  --memo-danger-soft: #F5E6E1;
+  --memo-success: #7F9A8C;
+  --memo-warning: #B7833D;
+
+  /* 阴影：尽量少用，保持简洁 */
+  --memo-shadow-soft: 0 6px 18px rgba(80, 66, 48, 0.06);
+
+  /* 圆角 */
+  --memo-radius-xs: 4px;
+  --memo-radius-sm: 8px;
+  --memo-radius-md: 12px;
+  --memo-radius-lg: 16px;
+  --memo-radius-pill: 999px;
+
+  /* 尺寸 */
+  --memo-border-width: 1px;
+  --memo-font-family: SimSun, "Microsoft YaHei", system-ui, sans-serif;
+}

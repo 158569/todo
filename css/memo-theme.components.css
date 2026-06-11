@@ -1,0 +1,413 @@
+@import url('./memo-theme.tokens.css');
+
+/* ===== 基础 ===== */
+html,
+body {
+  margin: 0;
+  background: var(--memo-bg);
+  color: var(--memo-text-main);
+  font-family: SimSun, "Microsoft YaHei", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--memo-font-family);
+}
+
+/* ===== APP 外层 ===== */
+.memo-app {
+  min-height: 100vh;
+  background: var(--memo-bg);
+  color: var(--memo-text-main);
+}
+
+.memo-page {
+  padding: 20px 16px 92px;
+}
+
+/* ===== 顶部区域 ===== */
+.memo-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--memo-topbar);
+  border-bottom: 1px solid var(--memo-border);
+}
+
+.memo-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.memo-nav-row::-webkit-scrollbar {
+  display: none;
+}
+
+.memo-date-lockup {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  color: #4F5D56;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.memo-nav-item {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: var(--memo-surface);
+  color: #3E4650;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.memo-nav-item.is-active,
+.memo-nav-item[aria-current="page"],
+.memo-nav-item[data-active="true"] {
+  background: var(--memo-gold);
+  color: var(--memo-text-main);
+  border-color: var(--memo-gold-border);
+}
+
+.memo-sync-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-top: 1px solid rgba(228, 216, 200, 0.55);
+  background: rgba(255, 253, 248, 0.46);
+  color: var(--memo-text-sub);
+  overflow: hidden;
+}
+
+.memo-sync-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memo-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.memo-action-btn,
+.memo-light-btn {
+  min-height: 34px;
+  padding: 6px 13px;
+  border: 1px solid var(--memo-border-strong);
+  border-radius: 12px;
+  background: var(--memo-surface);
+  color: #4F5D56;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: none;
+}
+
+/* ===== 标题 / 标签 ===== */
+.memo-section {
+  margin: 0 0 18px;
+}
+
+.memo-section-title {
+  display: inline-block;
+  margin: 0 0 7px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--memo-gold-soft);
+  color: var(--memo-text-main);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.memo-section-title.is-danger {
+  color: var(--memo-danger);
+  background: var(--memo-danger-soft);
+}
+
+.memo-date-tag,
+.memo-time-tag,
+.memo-inline-tag {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--memo-accent-soft);
+  color: #243A34;
+  font-weight: 800;
+  line-height: 1.25;
+  vertical-align: baseline;
+}
+
+.memo-gold-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--memo-gold-soft);
+  color: var(--memo-text-main);
+  font-weight: 800;
+}
+
+.memo-muted {
+  color: var(--memo-text-sub);
+}
+
+.memo-empty {
+  margin: 3px 0 0;
+  color: var(--memo-text-sub);
+  line-height: 1.6;
+}
+
+/* ===== 高密度列表：保留你原来的内容密度，不加前置 checkbox ===== */
+.memo-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memo-task-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 5px 0;
+  color: var(--memo-text-main);
+  font-size: 1rem;
+  line-height: 1.68;
+}
+
+.memo-task-no {
+  flex: 0 0 26px;
+  color: var(--memo-text-main);
+  font-weight: 800;
+  text-align: left;
+}
+
+.memo-task-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.memo-task-action {
+  flex: 0 0 auto;
+  margin-left: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--memo-border-strong);
+  border-radius: 10px;
+  background: var(--memo-surface);
+  color: #5F6B62;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.memo-task-action.is-danger {
+  color: var(--memo-danger);
+  border-color: #E5C9C1;
+  background: #FFF9F7;
+}
+
+.memo-completed-box {
+  margin-top: 4px;
+  padding: 5px 8px;
+  border: 1px solid var(--memo-border-soft);
+  border-radius: 0 12px 12px 0;
+  background: rgba(255, 253, 248, 0.75);
+}
+
+/* ===== 底部输入区 ===== */
+.memo-composer-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--memo-border);
+  background: rgba(250, 248, 242, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+.memo-composer-input {
+  min-width: 0;
+  flex: 1 1 auto;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--memo-border-strong);
+  border-radius: 18px;
+  background: var(--memo-surface);
+  color: var(--memo-text-main);
+  outline: none;
+}
+
+.memo-composer-input::placeholder {
+  color: var(--memo-text-muted);
+}
+
+.memo-composer-side-btn {
+  flex: 0 0 auto;
+  min-width: 96px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--memo-border-strong);
+  border-radius: 18px;
+  background: var(--memo-surface);
+  color: #4F5D56;
+  font-weight: 700;
+}
+
+/* ===== 表单页：记账 / 经期 / 设置等 ===== */
+.memo-form-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 10px;
+}
+
+.memo-field,
+.memo-select,
+.memo-input,
+.memo-textarea {
+  width: 100%;
+  border: 1px solid var(--memo-border-strong);
+  border-radius: 12px;
+  background: var(--memo-surface);
+  color: var(--memo-text-main);
+  outline: none;
+}
+
+.memo-field,
+.memo-select,
+.memo-input {
+  min-height: 44px;
+  padding: 0 13px;
+}
+
+.memo-textarea {
+  min-height: 112px;
+  padding: 12px 13px;
+  resize: vertical;
+}
+
+.memo-field::placeholder,
+.memo-input::placeholder,
+.memo-textarea::placeholder {
+  color: var(--memo-text-muted);
+}
+
+.memo-primary-btn {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--memo-gold-border);
+  border-radius: 16px;
+  background: var(--memo-gold);
+  color: var(--memo-text-main);
+  font-weight: 800;
+}
+
+.memo-segmented {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.memo-segmented-btn {
+  min-height: 40px;
+  padding: 0 17px;
+  border: 1px solid var(--memo-border-strong);
+  border-radius: var(--memo-radius-pill);
+  background: var(--memo-surface);
+  color: #4F5D56;
+  font-weight: 700;
+}
+
+.memo-segmented-btn.is-active {
+  border-color: var(--memo-gold-border);
+  background: var(--memo-gold);
+  color: var(--memo-text-main);
+}
+
+.memo-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 22px;
+}
+
+.memo-stat-card {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--memo-accent-soft);
+  color: var(--memo-text-main);
+  font-weight: 800;
+}
+
+.memo-card {
+  border: 1px solid var(--memo-border);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.65);
+}
+
+.memo-card-inner {
+  padding: 14px;
+}
+
+.memo-danger-text {
+  color: var(--memo-danger);
+}
+
+/* ===== 设置页 ===== */
+.memo-settings-section {
+  margin: 0 0 22px;
+}
+
+.memo-setting-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 0;
+}
+
+.memo-setting-label {
+  color: var(--memo-text-main);
+  line-height: 1.55;
+}
+
+.memo-checkbox,
+input[type="checkbox"].memo-checkbox {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--memo-accent);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--memo-accent);
+}

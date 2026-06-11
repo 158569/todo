@@ -1,0 +1,322 @@
+@import url('./memo-theme.tokens.css');
+
+/*
+  快速覆盖版：
+  适合你现在不想大改 HTML / JSX 结构时使用。
+  引入方式：把这个文件放在原有样式之后引入。
+  注意：如果某些地方没命中，需要把下面的选择器替换成你项目里的真实 className。
+*/
+
+html,
+body,
+#root,
+.app,
+.memo {
+  background: var(--memo-bg) !important;
+  color: var(--memo-text-main);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: SimSun, "Microsoft YaHei", sans-serif;
+}
+
+/* 顶部栏 / 导航栏 */
+header,
+.topbar,
+.header,
+.navbar,
+.tabs-wrap,
+.nav-wrap {
+  background: var(--memo-topbar) !important;
+  border-color: var(--memo-border) !important;
+  box-shadow: none !important;
+}
+
+/* 顶部功能按钮：待办 / 提醒 / 便签 / 日记等 */
+.tab,
+.nav-tab,
+.nav-btn,
+.menu-btn,
+[role="tab"],
+button[data-tab],
+button[data-nav] {
+  border: 1px solid transparent !important;
+  border-radius: 14px !important;
+  background: var(--memo-surface) !important;
+  color: #3E4650 !important;
+  box-shadow: none !important;
+  font-weight: 700;
+}
+
+.tab.active,
+.tab.is-active,
+.nav-tab.active,
+.nav-tab.is-active,
+.nav-btn.active,
+.nav-btn.is-active,
+.menu-btn.active,
+.menu-btn.is-active,
+[role="tab"][aria-selected="true"],
+button[data-active="true"] {
+  border-color: var(--memo-gold-border) !important;
+  background: var(--memo-gold) !important;
+  color: var(--memo-text-main) !important;
+  box-shadow: none !important;
+}
+
+/* 同步账号 / 次要说明 */
+.sync,
+.sync-row,
+.account-sync,
+.sub-text,
+.helper-text,
+.empty,
+.placeholder-text {
+  color: var(--memo-text-sub) !important;
+}
+
+/* 导入 / 导出 / 次级按钮：去掉网页蓝 */
+.export-btn,
+.import-btn,
+.light-btn,
+.outline-btn,
+.secondary-btn,
+button.export,
+button.import {
+  border: 1px solid var(--memo-border-strong) !important;
+  border-radius: 12px !important;
+  background: var(--memo-surface) !important;
+  color: #4F5D56 !important;
+  box-shadow: none !important;
+  font-weight: 700;
+}
+
+a {
+  color: var(--memo-accent-strong);
+}
+
+/* 黄色标题块：过期待办 / 今日待办 / 每日提醒等 */
+.section-title,
+.group-title,
+.title-label,
+.highlight-title,
+mark {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--memo-gold-soft) !important;
+  color: var(--memo-text-main) !important;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+/* 日期 / 时间标签 */
+.date-tag,
+.time-tag,
+.inline-date,
+.inline-time,
+.tag-green,
+.badge-time,
+.badge-date {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--memo-accent-soft) !important;
+  color: #243A34 !important;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* 完成按钮 */
+.done-btn,
+.finish-btn,
+.task-done,
+button.done,
+button.finish {
+  border: 1px solid var(--memo-border-strong) !important;
+  border-radius: 10px !important;
+  background: var(--memo-surface) !important;
+  color: #5F6B62 !important;
+  box-shadow: none !important;
+  font-weight: 800;
+}
+
+/* 输入框 / 选择框 / 文本域 */
+input,
+select,
+textarea {
+  border-color: var(--memo-border-strong) !important;
+  background: var(--memo-surface) !important;
+  color: var(--memo-text-main) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--memo-text-muted) !important;
+}
+
+/* 主按钮：记一笔 / 保存经期 / 吃点什么 */
+.primary-btn,
+.main-btn,
+.submit-btn,
+.save-btn,
+button.primary,
+button.submit {
+  border: 1px solid var(--memo-gold-border) !important;
+  border-radius: 16px !important;
+  background: var(--memo-gold) !important;
+  color: var(--memo-text-main) !important;
+  box-shadow: none !important;
+  font-weight: 800;
+}
+
+/* 底部输入区 */
+.composer,
+.input-bar,
+.bottom-input,
+.bottom-composer {
+  background: rgba(250, 248, 242, 0.94) !important;
+  border-color: var(--memo-border) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(10px);
+}
+
+.composer input,
+.input-bar input,
+.bottom-input input,
+.bottom-composer input {
+  border: 1.5px solid var(--memo-border-strong) !important;
+  border-radius: 18px !important;
+  background: var(--memo-surface) !important;
+}
+
+/* 设置页默认蓝色 checkbox 改成灰绿色 */
+input[type="checkbox"] {
+  accent-color: var(--memo-accent) !important;
+}
+
+/* 删除 / 过期 / 警示 */
+.danger,
+.delete,
+.expired,
+.warn,
+.text-danger {
+  color: var(--memo-danger) !important;
+}
+
+/* memo 当前项目专用映射 */
+:root {
+  --bg: var(--memo-bg);
+  --paper: var(--memo-surface);
+  --panel: var(--memo-topbar);
+  --cream: var(--memo-surface-soft);
+  --blush: var(--memo-danger-soft);
+  --ink: var(--memo-text-main);
+  --muted: var(--memo-text-sub);
+  --line: var(--memo-border);
+  --accent: var(--memo-accent);
+  --accent-soft: var(--memo-accent-soft);
+  --mark: var(--memo-gold-soft);
+  --danger: var(--memo-danger);
+  --ok: var(--memo-success);
+}
+
+.shell,
+.auth-panel,
+.content,
+.note-panel,
+.modal {
+  background: var(--memo-bg) !important;
+  color: var(--memo-text-main) !important;
+}
+
+.account-bar,
+.status-bar,
+.note-sidebar,
+.input-row {
+  background: rgba(255, 248, 239, 0.94) !important;
+  border-color: var(--memo-border) !important;
+  box-shadow: none !important;
+}
+
+.account-bar button,
+.import-button,
+.mini-button,
+.history-filter button,
+.note-tool-button,
+.command-reminder-button,
+.setting-button,
+.ledger-form button,
+.ledger-periods button,
+.recipe-form-actions button,
+.recipe-actions button,
+.recipe-modebar button,
+.period-form-actions button,
+.period-actions button,
+.modal-actions button {
+  border: 1px solid var(--memo-border-strong) !important;
+  background: var(--memo-surface) !important;
+  color: #4F5D56 !important;
+  box-shadow: none !important;
+}
+
+.ledger-periods button.active,
+.recipe-modebar button.active,
+.ledger-type-option.active,
+.ledger-category-option.active .ledger-category-pick {
+  border-color: var(--memo-gold-border) !important;
+  background: var(--memo-gold) !important;
+  color: var(--memo-text-main) !important;
+}
+
+.ledger-save-button,
+.recipe-form-actions button:first-child,
+.period-form-actions button:first-child {
+  border-color: var(--memo-gold-border) !important;
+  background: var(--memo-gold) !important;
+  color: var(--memo-text-main) !important;
+}
+
+.settings-panel,
+.ledger-form,
+.ledger-summary,
+.ledger-category-tools,
+.ledger-record-card,
+.recipe-form-card,
+.recipe-card,
+.period-form,
+.period-card,
+.period-record,
+.note-editor,
+.note-list button {
+  background: var(--memo-surface) !important;
+  border-color: var(--memo-border) !important;
+  box-shadow: none !important;
+}
+
+.date-label,
+.ledger-summary span,
+.period-stat,
+.period-future-row {
+  background: var(--memo-accent-soft) !important;
+  color: #243A34 !important;
+  border-color: var(--memo-border-soft) !important;
+}
+
+.completed-row,
+.ledger-record-delete,
+.note-delete-button,
+.ledger-category-delete {
+  background: var(--memo-danger-soft) !important;
+  color: var(--memo-danger) !important;
+}
