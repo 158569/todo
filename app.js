@@ -233,7 +233,7 @@
       diaryPinEnabled: "开启四位数字密码",
       diaryPin: "四位数字密码",
       diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "修改或关闭日记密码前，请先输入原密码。",
+      diaryOldPinPrompt: "修改日记密码前，请先输入原密码。",
       diaryPinRequired: "请输入 4 位数字密码。",
       diaryPinUpdated: "日记密码已更新 (｡•̀ᴗ-)و",
       diaryPinDisabled: "日记密码已关闭。",
@@ -455,7 +455,7 @@
       diaryPinEnabled: "4桁パスコードを有効にする",
       diaryPin: "新しい4桁パスコード",
       diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "日記パスコードを変更または無効化する前に、現在のパスコードを入力してください。",
+      diaryOldPinPrompt: "日記パスコードを変更する前に、現在のパスコードを入力してください。",
       diaryPinRequired: "4桁の数字を入力してください。",
       diaryPinUpdated: "日記パスコードを更新しました (｡•̀ᴗ-)و",
       diaryPinDisabled: "日記パスコードを無効にしました。",
@@ -677,7 +677,7 @@
       diaryPinEnabled: "Enable 4-digit PIN",
       diaryPin: "New 4-digit PIN",
       diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "Enter the current diary PIN before changing or disabling it.",
+      diaryOldPinPrompt: "Enter the current diary PIN before changing it.",
       diaryPinRequired: "Enter a 4-digit PIN.",
       diaryPinUpdated: "Diary PIN updated (｡•̀ᴗ-)و",
       diaryPinDisabled: "Diary PIN disabled.",
@@ -932,15 +932,17 @@
     data.ledgerCategories = Array.isArray(data.ledgerCategories)
       ? uniqueStrings(data.ledgerCategories)
       : [...DEFAULT_LEDGER_CATEGORIES];
-    data.settings = { ...DEFAULT_SETTINGS, ...(data.settings && typeof data.settings === "object" ? data.settings : {}) };
+    const rawSettings = data.settings && typeof data.settings === "object" ? data.settings : {};
+    const hasDiaryPinSetting = Object.prototype.hasOwnProperty.call(rawSettings, "diaryPin") || Object.prototype.hasOwnProperty.call(rawSettings, "diaryPinEnabled");
+    data.settings = { ...DEFAULT_SETTINGS, ...rawSettings };
     if (data.settings.welcomeTitle === OLD_WELCOME_TITLE) data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (data.settings.welcomeText === OLD_WELCOME_TEXT) data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
     if (data.settings.welcomeTouched !== true && data.settings.welcomeEnabled === true && data.settings.welcomeTitle === DEFAULT_WELCOME_TITLE && data.settings.welcomeText === DEFAULT_WELCOME_TEXT) {
       data.settings.welcomeEnabled = false;
     }
     data.settings.welcomeTouched = data.settings.welcomeTouched === true;
-    if (data.settings.notesPin && !data.settings.diaryPin) data.settings.diaryPin = data.settings.notesPin;
-    if (data.settings.notesPinEnabled && data.settings.diaryPinEnabled === DEFAULT_SETTINGS.diaryPinEnabled) data.settings.diaryPinEnabled = true;
+    if (!hasDiaryPinSetting && data.settings.notesPin && !data.settings.diaryPin) data.settings.diaryPin = data.settings.notesPin;
+    if (!hasDiaryPinSetting && data.settings.notesPinEnabled && data.settings.diaryPinEnabled === DEFAULT_SETTINGS.diaryPinEnabled) data.settings.diaryPinEnabled = true;
     if (!TEXT[data.settings.language]) data.settings.language = DEFAULT_SETTINGS.language;
     if (!["none", "last"].includes(data.settings.todoReminderDefault)) data.settings.todoReminderDefault = DEFAULT_SETTINGS.todoReminderDefault;
     data.settings.lastTodoReminderConfig = normalizeTodoReminderConfig(data.settings.lastTodoReminderConfig);
@@ -1682,7 +1684,10 @@
   }
 
   function tx(key) {
-    return TEXT[language()]?.[key] || TEXT.zh[key] || key;
+    const current = TEXT[language()] || TEXT.zh;
+    if (Object.prototype.hasOwnProperty.call(current, key)) return current[key];
+    if (Object.prototype.hasOwnProperty.call(TEXT.zh, key)) return TEXT.zh[key];
+    return key;
   }
 
   function applyLanguage() {
@@ -1892,14 +1897,11 @@
 
   function toggleDiaryPin(enabled) {
     const current = settings();
-    if (!enabled && activeDiaryPin()) {
-      if (!verifyDiaryPinForChange()) {
-        setStatus(tx("wrongPin"), false);
-        render();
-        return false;
-      }
+    if (!enabled) {
       current.diaryPinEnabled = false;
       current.diaryPin = "";
+      current.notesPinEnabled = false;
+      current.notesPin = "";
       state.diaryUnlocked = false;
       saveNowSoon();
       setStatus(tx("diaryPinDisabled"));
@@ -1907,6 +1909,11 @@
       return true;
     }
     current.diaryPinEnabled = Boolean(enabled);
+    if (!current.diaryPinEnabled) {
+      current.diaryPin = "";
+      current.notesPinEnabled = false;
+      current.notesPin = "";
+    }
     state.diaryUnlocked = false;
     saveNowSoon();
     render();
