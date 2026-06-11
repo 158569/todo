@@ -233,7 +233,7 @@
       diaryPinEnabled: "开启四位数字密码",
       diaryPin: "四位数字密码",
       diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "修改日记密码前，请先输入原密码。",
+      diaryOldPinPrompt: "修改或关闭日记密码前，请先输入原密码。",
       diaryPinRequired: "请输入 4 位数字密码。",
       diaryPinUpdated: "日记密码已更新 (｡•̀ᴗ-)و",
       diaryPinDisabled: "日记密码已关闭。",
@@ -455,7 +455,7 @@
       diaryPinEnabled: "4桁パスコードを有効にする",
       diaryPin: "新しい4桁パスコード",
       diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "日記パスコードを変更する前に、現在のパスコードを入力してください。",
+      diaryOldPinPrompt: "日記パスコードを変更または無効化する前に、現在のパスコードを入力してください。",
       diaryPinRequired: "4桁の数字を入力してください。",
       diaryPinUpdated: "日記パスコードを更新しました (｡•̀ᴗ-)و",
       diaryPinDisabled: "日記パスコードを無効にしました。",
@@ -677,7 +677,7 @@
       diaryPinEnabled: "Enable 4-digit PIN",
       diaryPin: "New 4-digit PIN",
       diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "Enter the current diary PIN before changing it.",
+      diaryOldPinPrompt: "Enter the current diary PIN before changing or disabling it.",
       diaryPinRequired: "Enter a 4-digit PIN.",
       diaryPinUpdated: "Diary PIN updated (｡•̀ᴗ-)و",
       diaryPinDisabled: "Diary PIN disabled.",
@@ -1898,6 +1898,11 @@
   function toggleDiaryPin(enabled) {
     const current = settings();
     if (!enabled) {
+      if (activeDiaryPin() && !verifyDiaryPinForChange()) {
+        setStatus(tx("wrongPin"), false);
+        render();
+        return false;
+      }
       current.diaryPinEnabled = false;
       current.diaryPin = "";
       current.notesPinEnabled = false;
