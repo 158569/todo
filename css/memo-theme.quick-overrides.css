@@ -313,10 +313,24 @@ input[type="checkbox"] {
   border-color: var(--memo-border-soft) !important;
 }
 
-.completed-row,
+.completed-row {
+  background: transparent !important;
+  color: #2d3136 !important;
+}
+
+.completed-row-card {
+  background: #f0eee9 !important;
+  color: #2d3136 !important;
+}
+
+.completed-row-delete {
+  background: #3f444a !important;
+  color: #ffffff !important;
+}
+
 .ledger-record-delete,
 .note-delete-button,
 .ledger-category-delete {
-  background: var(--memo-danger-soft) !important;
-  color: var(--memo-danger) !important;
+  background: #ece9e3 !important;
+  color: #3f444a !important;
 }

@@ -9,6 +9,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <title>memo</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="icon" href="./icon-192.png" sizes="192x192" type="image/png">
@@ -17,6 +19,15 @@
   <link rel="stylesheet" href="./css/memo-theme.all.css">
 </head>
 <body>
+  <div id="bootSplash" class="boot-splash" role="status" aria-live="polite">
+    <div class="boot-card">
+      <div class="boot-face">( ・・)✎__</div>
+      <div class="boot-title">memo 准备中</div>
+      <div class="boot-track"><span></span></div>
+      <div class="boot-note">正在把今天的小事摆整齐</div>
+    </div>
+  </div>
+
   <main id="authPanel" class="auth-panel hidden">
     <h1 data-i18n="appTitle">memo</h1>
     <p data-i18n="authHint">不登录也能本地使用；登录后可在电脑和手机之间同步。</p>
@@ -140,9 +151,9 @@
     </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./config.js"></script>
-  <script src="./app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="./config.js"></script>
+  <script defer src="./app.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {

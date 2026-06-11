@@ -22,7 +22,8 @@
     topColor: "#fff7ef",
     accentColor: "#62a68e",
     markColor: "#fff1c6",
-    welcomeEnabled: true,
+    welcomeEnabled: false,
+    welcomeTouched: false,
     welcomeTitle: DEFAULT_WELCOME_TITLE,
     welcomeText: DEFAULT_WELCOME_TEXT,
     notificationsEnabled: true,
@@ -783,6 +784,7 @@
   const helpTitle = $("#helpTitle");
   const helpBody = $("#helpBody");
   const helpCloseButton = $("#helpCloseButton");
+  const bootSplash = $("#bootSplash");
 
   function emptyData() {
     return {
@@ -917,6 +919,10 @@
     data.settings = { ...DEFAULT_SETTINGS, ...(data.settings && typeof data.settings === "object" ? data.settings : {}) };
     if (data.settings.welcomeTitle === OLD_WELCOME_TITLE) data.settings.welcomeTitle = DEFAULT_WELCOME_TITLE;
     if (data.settings.welcomeText === OLD_WELCOME_TEXT) data.settings.welcomeText = DEFAULT_WELCOME_TEXT;
+    if (data.settings.welcomeTouched !== true && data.settings.welcomeEnabled === true && data.settings.welcomeTitle === DEFAULT_WELCOME_TITLE && data.settings.welcomeText === DEFAULT_WELCOME_TEXT) {
+      data.settings.welcomeEnabled = false;
+    }
+    data.settings.welcomeTouched = data.settings.welcomeTouched === true;
     if (data.settings.notesPin && !data.settings.diaryPin) data.settings.diaryPin = data.settings.notesPin;
     if (data.settings.notesPinEnabled && data.settings.diaryPinEnabled === DEFAULT_SETTINGS.diaryPinEnabled) data.settings.diaryPinEnabled = true;
     if (!TEXT[data.settings.language]) data.settings.language = DEFAULT_SETTINGS.language;
@@ -1338,10 +1344,13 @@
   }
 
   async function loadUser() {
+    if (!state.localReady) {
+      loadLocalData();
+      showApp();
+    }
     const { data, error } = await state.supabase.auth.getUser();
     if (error || !data.user) {
       state.user = null;
-      loadLocalData();
       showApp();
       return;
     }
@@ -1402,6 +1411,12 @@
     }
   }
 
+  function saveNowSoon() {
+    clearTimeout(state.saveTimer);
+    saveLocalData();
+    saveNow().catch((error) => setStatus(`保存失败：${error.message}`, false));
+  }
+
   function mergeCloudRecipesForSave(currentData, cloudData) {
     const current = normalizeData(structuredCloneSafe(currentData));
     const cloud = normalizeData(structuredCloneSafe(cloudData));
@@ -1456,6 +1471,7 @@
     applyLanguage();
     authPanel.classList.remove("hidden");
     appPanel.classList.add("hidden");
+    hideBootSplash();
   }
 
   function showApp() {
@@ -1470,6 +1486,12 @@
     showWelcomeIfNeeded();
     startAlarmLoop();
     startSyncLoop();
+    hideBootSplash();
+  }
+
+  function hideBootSplash() {
+    bootSplash?.classList.add("is-done");
+    window.setTimeout(() => bootSplash?.remove(), 220);
   }
 
   function showWelcomeIfNeeded() {
@@ -1842,7 +1864,7 @@
     settings().diaryPin = cleanPin;
     settings().diaryPinEnabled = true;
     state.diaryUnlocked = false;
-    scheduleSave();
+    saveNowSoon();
     setStatus(tx("diaryPinUpdated"));
     render();
     return true;
@@ -1859,14 +1881,14 @@
       current.diaryPinEnabled = false;
       current.diaryPin = "";
       state.diaryUnlocked = false;
-      scheduleSave();
+      saveNowSoon();
       setStatus(tx("diaryPinDisabled"));
       render();
       return true;
     }
     current.diaryPinEnabled = Boolean(enabled);
     state.diaryUnlocked = false;
-    scheduleSave();
+    saveNowSoon();
     render();
     return true;
   }
@@ -4317,6 +4339,9 @@
       }
       return;
     }
+    if (key === "welcomeEnabled" || key === "welcomeTitle" || key === "welcomeText") {
+      settings().welcomeTouched = true;
+    }
     settings()[key] = value;
     applySettings();
     applyLanguage();
@@ -4340,6 +4365,9 @@
     if (key === "diaryPin") {
       event.target.value = String(event.target.value || "").replace(/\D/g, "").slice(0, 4);
       return;
+    }
+    if (key === "welcomeTitle" || key === "welcomeText") {
+      settings().welcomeTouched = true;
     }
     settings()[key] = event.target.value;
     applySettings();
