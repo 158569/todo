@@ -260,6 +260,8 @@ input[type="checkbox"] {
 .ledger-periods button,
 .recipe-form-actions button,
 .recipe-actions button,
+.recipe-photo-upload,
+.recipe-photo-actions button,
 .recipe-modebar button,
 .period-form-actions button,
 .period-actions button,
@@ -294,6 +296,8 @@ input[type="checkbox"] {
 .ledger-record-card,
 .recipe-form-card,
 .recipe-card,
+.recipe-photo-preview,
+.recipe-photo-thumb,
 .period-form,
 .period-card,
 .period-record,
@@ -315,12 +319,12 @@ input[type="checkbox"] {
 
 .completed-row {
   background: transparent !important;
-  color: #2d3136 !important;
+  color: var(--memo-text-main) !important;
 }
 
 .completed-row-card {
-  background: #f0eee9 !important;
-  color: #2d3136 !important;
+  background: #fffaf5 !important;
+  color: var(--memo-text-main) !important;
 }
 
 .completed-row-delete {

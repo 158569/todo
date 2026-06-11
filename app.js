@@ -183,6 +183,11 @@
       recipeSaved: "菜谱已保存 (｡•̀ᴗ-)و",
       recipeDeleted: "菜谱已删除 (｡･ω･)ﾉﾞ",
       recipeEdit: "编辑",
+      recipePhoto: "菜谱照片",
+      recipePhotoUpload: "上传照片",
+      recipePhotoRemove: "移除照片",
+      recipePhotoReady: "照片已加入菜谱。",
+      recipePhotoError: "照片读取失败，请换一张试试。",
       periodStartDate: "开始日期",
       periodEndDate: "结束日期",
       periodNote: "症状/备注",
@@ -400,6 +405,11 @@
       recipeSaved: "レシピを保存しました (｡•̀ᴗ-)و",
       recipeDeleted: "レシピを削除しました (｡･ω･)ﾉﾞ",
       recipeEdit: "編集",
+      recipePhoto: "写真",
+      recipePhotoUpload: "写真を追加",
+      recipePhotoRemove: "写真を削除",
+      recipePhotoReady: "写真を追加しました。",
+      recipePhotoError: "写真を読み込めませんでした。別の写真を試してください。",
       periodStartDate: "開始日",
       periodEndDate: "終了日",
       periodNote: "症状・メモ",
@@ -617,6 +627,11 @@
       recipeSaved: "Recipe saved (｡•̀ᴗ-)و",
       recipeDeleted: "Recipe deleted (｡･ω･)ﾉﾞ",
       recipeEdit: "Edit",
+      recipePhoto: "Recipe photo",
+      recipePhotoUpload: "Upload photo",
+      recipePhotoRemove: "Remove photo",
+      recipePhotoReady: "Photo added.",
+      recipePhotoError: "Could not read that photo. Try another one.",
       periodStartDate: "Start date",
       periodEndDate: "End date",
       periodNote: "Symptoms / note",
@@ -873,6 +888,7 @@
         ingredients: String(item.ingredients || "").trim(),
         steps: String(item.steps || "").trim(),
         category: String(item.category || "").trim(),
+        photoData: validRecipePhoto(item.photoData) ? item.photoData : "",
         collapsed: item.collapsed !== false,
         createdAt: String(item.createdAt || nowStamp()),
         updatedAt: String(item.updatedAt || item.createdAt || nowStamp())
@@ -1262,6 +1278,10 @@
 
   function escapeAttr(text) {
     return escapeHtml(text).replaceAll('"', "&quot;");
+  }
+
+  function validRecipePhoto(value) {
+    return typeof value === "string" && /^data:image\/(?:png|jpe?g|webp);base64,/i.test(value);
   }
 
   function requireConfig() {
@@ -2584,25 +2604,50 @@
     `;
   }
 
+  function recipePhotoFormHtml(photoData) {
+    const photo = validRecipePhoto(photoData) ? photoData : "";
+    return `
+      <div class="recipe-photo-field">
+        <input data-recipe="photoData" type="hidden" value="${escapeAttr(photo)}">
+        <div class="recipe-photo-preview${photo ? "" : " empty"}">
+          ${photo ? `<img src="${escapeAttr(photo)}" alt="${escapeAttr(tx("recipePhoto"))}">` : `<span>${tx("recipePhoto")}</span>`}
+        </div>
+        <div class="recipe-photo-actions">
+          <label class="recipe-photo-upload">
+            <span>${tx("recipePhotoUpload")}</span>
+            <input data-recipe-photo-input type="file" accept="image/*">
+          </label>
+          ${photo ? `<button data-action="removeRecipePhoto" type="button">${tx("recipePhotoRemove")}</button>` : ""}
+        </div>
+      </div>
+    `;
+  }
+
   function recipeListHtml() {
     const recipes = filteredRecipes();
     if (!recipes.length) return `<div class="section-title">${tx("recipeListTitle")}</div><div class="empty">${tx("noRecipes")}</div>`;
-    const cards = recipes.map((recipe) => `
-      <article class="recipe-card${recipe.collapsed !== false ? " collapsed" : ""}">
-        <div class="recipe-card-head">
-          <strong>${escapeHtml(recipe.title || tx("recipeName"))}</strong>
-          <div class="recipe-actions">
-            <button data-action="toggleRecipeCollapse" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${recipe.collapsed !== false ? tx("recipeExpand") : tx("recipeCollapse")}</button>
-            <button data-action="editRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("recipeEdit")}</button>
-            <button data-action="deleteRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("delete")}</button>
+    const cards = recipes.map((recipe) => {
+      const photo = validRecipePhoto(recipe.photoData) ? recipe.photoData : "";
+      return `
+        <article class="recipe-card${recipe.collapsed !== false ? " collapsed" : ""}${photo ? " has-photo" : ""}">
+          <div class="recipe-card-main">
+            <div class="recipe-card-head">
+              <strong>${escapeHtml(recipe.title || tx("recipeName"))}</strong>
+              <div class="recipe-actions">
+                <button data-action="toggleRecipeCollapse" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${recipe.collapsed !== false ? tx("recipeExpand") : tx("recipeCollapse")}</button>
+                <button data-action="editRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("recipeEdit")}</button>
+                <button data-action="deleteRecipe" data-recipe-id="${escapeAttr(recipe.id)}" type="button">${tx("delete")}</button>
+              </div>
+            </div>
+            <div class="recipe-card-body">
+              ${recipe.ingredients ? `<div class="recipe-block"><span>${tx("recipeIngredients")}</span><p>${escapeHtml(recipe.ingredients)}</p></div>` : ""}
+              ${recipe.steps ? `<div class="recipe-block"><span>${tx("recipeSteps")}</span><p>${escapeHtml(recipe.steps)}</p></div>` : ""}
+            </div>
           </div>
-        </div>
-        <div class="recipe-card-body">
-          ${recipe.ingredients ? `<div class="recipe-block"><span>${tx("recipeIngredients")}</span><p>${escapeHtml(recipe.ingredients)}</p></div>` : ""}
-          ${recipe.steps ? `<div class="recipe-block"><span>${tx("recipeSteps")}</span><p>${escapeHtml(recipe.steps)}</p></div>` : ""}
-        </div>
-      </article>
-    `).join("");
+          ${photo ? `<img class="recipe-photo-thumb" src="${escapeAttr(photo)}" alt="${escapeAttr(recipe.title || tx("recipePhoto"))}">` : ""}
+        </article>
+      `;
+    }).join("");
     return `<div class="section-title">${tx("recipeListTitle")}</div><div class="recipe-list">${cards}</div>`;
   }
 
@@ -2614,7 +2659,8 @@
       title: draft ? draft.title : (editing?.title || ""),
       category: draft ? draft.category : String(editing?.category || ""),
       ingredients: draft ? draft.ingredients : (editing?.ingredients || ""),
-      steps: draft ? draft.steps : (editing?.steps || "")
+      steps: draft ? draft.steps : (editing?.steps || ""),
+      photoData: draft ? draft.photoData : (editing?.photoData || "")
     };
     content.innerHTML = [
       `<div class="recipe-panel ${formVisible ? "recipe-panel-form" : "recipe-panel-browse"}">`,
@@ -2628,6 +2674,7 @@
         '<div class="recipe-form">',
         `<input data-recipe="title" type="text" value="${escapeAttr(form.title)}" placeholder="${escapeAttr(tx("recipeName"))}">`,
         recipeFormCategoryPickerHtml(form.category),
+        recipePhotoFormHtml(form.photoData),
         `<textarea class="recipe-ingredients-input" data-recipe="ingredients" placeholder="${escapeAttr(tx("recipeIngredients"))}">${escapeHtml(form.ingredients)}</textarea>`,
         `<textarea class="recipe-steps-input" data-recipe="steps" placeholder="${escapeAttr(tx("recipeSteps"))}">${escapeHtml(form.steps)}</textarea>`,
         '<div class="recipe-form-actions">',
@@ -2979,14 +3026,76 @@
     const categoryInput = content.querySelector('[data-recipe="category"]');
     const ingredientsInput = content.querySelector('[data-recipe="ingredients"]');
     const stepsInput = content.querySelector('[data-recipe="steps"]');
-    if (!titleInput && !categoryInput && !ingredientsInput && !stepsInput) return;
+    const photoInput = content.querySelector('[data-recipe="photoData"]');
+    if (!titleInput && !categoryInput && !ingredientsInput && !stepsInput && !photoInput) return;
     state.recipeDraft = {
       editingId: state.editingRecipeId || "",
       title: String(titleInput?.value || ""),
       category: String(categoryInput?.value || ""),
       ingredients: String(ingredientsInput?.value || ""),
-      steps: String(stepsInput?.value || "")
+      steps: String(stepsInput?.value || ""),
+      photoData: validRecipePhoto(photoInput?.value) ? photoInput.value : ""
     };
+  }
+
+  function readRecipePhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith("image/")) {
+        reject(new Error("not image"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error || new Error("read failed"));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error("decode failed"));
+        image.onload = () => {
+          try {
+            const maxSide = 900;
+            const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || 1, image.naturalHeight || 1));
+            const width = Math.max(1, Math.round((image.naturalWidth || 1) * scale));
+            const height = Math.max(1, Math.round((image.naturalHeight || 1) * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext("2d");
+            if (!context) throw new Error("canvas failed");
+            context.fillStyle = "#fffdf8";
+            context.fillRect(0, 0, width, height);
+            context.drawImage(image, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.78));
+          } catch (error) {
+            reject(error);
+          }
+        };
+        image.src = String(reader.result || "");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function updateRecipePhoto(file) {
+    try {
+      const photoData = await readRecipePhoto(file);
+      captureRecipeDraft();
+      if (!state.recipeDraft) {
+        state.recipeDraft = { editingId: state.editingRecipeId || "", title: "", category: "", ingredients: "", steps: "", photoData: "" };
+      }
+      state.recipeDraft.photoData = photoData;
+      setStatus(tx("recipePhotoReady"));
+      render();
+    } catch {
+      setStatus(tx("recipePhotoError"), false);
+    }
+  }
+
+  function removeRecipePhoto() {
+    captureRecipeDraft();
+    if (!state.recipeDraft) {
+      state.recipeDraft = { editingId: state.editingRecipeId || "", title: "", category: "", ingredients: "", steps: "", photoData: "" };
+    }
+    state.recipeDraft.photoData = "";
+    render();
   }
 
   function saveRecipe() {
@@ -2995,6 +3104,7 @@
     const category = String(content.querySelector('[data-recipe="category"]')?.value || "").trim();
     const ingredients = String(content.querySelector('[data-recipe="ingredients"]')?.value || "").trim();
     const steps = String(content.querySelector('[data-recipe="steps"]')?.value || "").trim();
+    const photoData = validRecipePhoto(content.querySelector('[data-recipe="photoData"]')?.value) ? content.querySelector('[data-recipe="photoData"]').value : "";
     if (!title) {
       setStatus(tx("recipeNeedName"), false);
       return;
@@ -3006,6 +3116,7 @@
       existing.category = category;
       existing.ingredients = ingredients;
       existing.steps = steps;
+      existing.photoData = photoData;
       existing.updatedAt = now;
     } else {
       state.data.recipes.unshift({
@@ -3014,6 +3125,7 @@
         category,
         ingredients,
         steps,
+        photoData,
         collapsed: true,
         createdAt: now,
         updatedAt: now
@@ -3076,7 +3188,7 @@
     } else {
       setStatus(tx("recipeCategoryExists"));
     }
-    if (!state.recipeDraft) state.recipeDraft = { editingId: state.editingRecipeId || "", title: "", category: "", ingredients: "", steps: "" };
+    if (!state.recipeDraft) state.recipeDraft = { editingId: state.editingRecipeId || "", title: "", category: "", ingredients: "", steps: "", photoData: "" };
     state.recipeDraft.category = category;
     render();
   }
@@ -3127,7 +3239,8 @@
       title: recipe.title || "",
       category: recipe.category || "",
       ingredients: recipe.ingredients || "",
-      steps: recipe.steps || ""
+      steps: recipe.steps || "",
+      photoData: validRecipePhoto(recipe.photoData) ? recipe.photoData : ""
     } : null;
     render();
   }
@@ -3160,7 +3273,8 @@
         title: "",
         category: state.recipeCategory || "",
         ingredients: "",
-        steps: ""
+        steps: "",
+        photoData: ""
       };
     }
     state.recipeMode = "form";
@@ -4238,6 +4352,9 @@
     if (action === "cancelRecipeEdit") {
       cancelRecipeEdit();
     }
+    if (action === "removeRecipePhoto") {
+      removeRecipePhoto();
+    }
     if (action === "savePeriod") {
       savePeriodRecord();
     }
@@ -4298,6 +4415,12 @@
   });
 
   content.addEventListener("change", (event) => {
+    if (event.target.matches("[data-recipe-photo-input]")) {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (file) updateRecipePhoto(file);
+      return;
+    }
     if (event.target.dataset.action === "editLedgerRecordDate") {
       updateLedgerRecord(event.target.dataset.ledgerId, { date: event.target.value });
       return;
