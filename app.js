@@ -237,6 +237,7 @@
       diaryPinRequired: "请输入 4 位数字密码。",
       diaryPinUpdated: "日记密码已更新 (｡•̀ᴗ-)و",
       diaryPinDisabled: "日记密码已关闭。",
+      diaryPinDisableButton: "关闭密码",
       localMerged: "已合并本地旧数据并同步到当前账号。",
       diaryLockedTitle: "日记已锁定",
       diaryLockedHint: "请输入四位数字密码。",
@@ -459,6 +460,7 @@
       diaryPinRequired: "4桁の数字を入力してください。",
       diaryPinUpdated: "日記パスコードを更新しました (｡•̀ᴗ-)و",
       diaryPinDisabled: "日記パスコードを無効にしました。",
+      diaryPinDisableButton: "パスコードを無効化",
       localMerged: "ローカルの旧データを統合して同期しました。",
       diaryLockedTitle: "日記はロックされています",
       diaryLockedHint: "4桁のパスコードを入力してください。",
@@ -681,6 +683,7 @@
       diaryPinRequired: "Enter a 4-digit PIN.",
       diaryPinUpdated: "Diary PIN updated (｡•̀ᴗ-)و",
       diaryPinDisabled: "Diary PIN disabled.",
+      diaryPinDisableButton: "Disable PIN",
       localMerged: "Merged local old data and synced it to this account.",
       diaryLockedTitle: "Diary locked",
       diaryLockedHint: "Enter the 4-digit PIN.",
@@ -3393,6 +3396,7 @@
 
   function renderSettings() {
     const current = settings();
+    const diaryPinActive = current.diaryPinEnabled === true && /^\d{4}$/.test(current.diaryPin || "");
     const notificationText = !("Notification" in window)
       ? tx("notifyUnsupported")
       : Notification.permission === "granted"
@@ -3411,8 +3415,10 @@
       settingCheckbox("showPeriod", tx("showPeriod"), current.showPeriod !== false),
       "</div>",
       '<div class="section-title">' + tx("diaryLockSection") + "</div>",
-      settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled === true),
-      current.diaryPinEnabled === true ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
+      diaryPinActive
+        ? `<div class="setting-row"><span>${escapeHtml(tx("diaryPinEnabled"))}</span><button class="setting-button" data-action="disableDiaryPin" type="button">${escapeHtml(tx("diaryPinDisableButton"))}</button></div>`
+        : settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled === true),
+      current.diaryPinEnabled === true && !diaryPinActive ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
       '<div class="section-title">' + tx("tutorialSection") + "</div>",
       `<button class="setting-button" data-action="openHelp" type="button">${tx("openTutorial")}</button>`,
       '<div class="section-title">' + tx("colorSection") + "</div>",
@@ -4378,6 +4384,9 @@
     }
     if (action === "cancelPeriodEdit") {
       cancelPeriodEdit();
+    }
+    if (action === "disableDiaryPin") {
+      toggleDiaryPin(false);
     }
     if (action === "enableNotifications") {
       enableNotifications();
