@@ -751,6 +751,8 @@
     ledgerSwipe: null,
     completedSwipe: null,
     taskSwipe: null,
+    taskLongPressTimer: null,
+    lastTaskTap: null,
     ignoreTaskClick: false,
     ignoreCategoryClick: false,
     showCompleted: true,
@@ -4166,6 +4168,20 @@
     });
   }
 
+  function editableFromTaskTarget(target) {
+    if (!target || target.closest("input,select,textarea,.task-row-delete")) return null;
+    if (target.closest(".row-action")) return null;
+    const row = target.closest("[data-task-row]");
+    return target.closest(".editable-row") || row?.querySelector(".editable-row") || null;
+  }
+
+  function beginTaskEditFromTarget(target) {
+    const editable = editableFromTaskTarget(target);
+    if (!editable || !content.contains(editable)) return false;
+    beginInlineEdit(editable);
+    return true;
+  }
+
   function editTodayText(group, oldText, nextText) {
     nextText = String(nextText || "").trim();
     if (!nextText || nextText === oldText) {
@@ -4541,13 +4557,24 @@
     }
     const taskRow = event.target.closest("[data-task-row]");
     if (taskRow && !event.target.closest(".task-row-delete,input,select,textarea")) {
+      const editable = editableFromTaskTarget(event.target);
+      clearTimeout(state.taskLongPressTimer);
       state.taskSwipe = {
         row: taskRow,
+        editable,
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
+        moved: false,
         swiped: false
       };
+      if (editable) {
+        state.taskLongPressTimer = window.setTimeout(() => {
+          if (!state.taskSwipe || state.taskSwipe.row !== taskRow || state.taskSwipe.swiped || state.taskSwipe.moved) return;
+          state.ignoreTaskClick = true;
+          beginInlineEdit(editable);
+        }, 560);
+      }
       taskRow.setPointerCapture?.(event.pointerId);
       return;
     }
@@ -4598,6 +4625,10 @@
     if (taskSwipe) {
       const dx = event.clientX - taskSwipe.startX;
       const dy = event.clientY - taskSwipe.startY;
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        taskSwipe.moved = true;
+        clearTimeout(state.taskLongPressTimer);
+      }
       const horizontal = Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8;
       if (horizontal) event.preventDefault();
       if (dx < -32 && Math.abs(dx) > Math.abs(dy) && !taskSwipe.swiped) {
@@ -4630,9 +4661,23 @@
 
   content.addEventListener("pointerup", () => {
     const swiped = state.categorySwipe?.swiped;
+    const taskSwipe = state.taskSwipe;
     const taskSwiped = state.taskSwipe?.swiped;
+    clearTimeout(state.taskLongPressTimer);
+    state.taskLongPressTimer = null;
+    if (taskSwipe && !taskSwipe.swiped && !taskSwipe.moved && taskSwipe.editable) {
+      const now = Date.now();
+      const rowKey = taskSwipe.row?.dataset.rowPayload || "";
+      if (state.lastTaskTap && state.lastTaskTap.rowKey === rowKey && now - state.lastTaskTap.time < 420) {
+        state.lastTaskTap = null;
+        state.ignoreTaskClick = true;
+        beginInlineEdit(taskSwipe.editable);
+      } else {
+        state.lastTaskTap = { rowKey, time: now };
+      }
+    }
     try {
-      state.taskSwipe?.row?.releasePointerCapture?.(state.taskSwipe.pointerId);
+      taskSwipe?.row?.releasePointerCapture?.(taskSwipe.pointerId);
     } catch {
       // Some browsers throw when capture was already released after a tap.
     }
@@ -4653,6 +4698,8 @@
   });
 
   content.addEventListener("pointercancel", () => {
+    clearTimeout(state.taskLongPressTimer);
+    state.taskLongPressTimer = null;
     state.categorySwipe = null;
     state.ledgerSwipe = null;
     state.completedSwipe = null;
@@ -4834,11 +4881,7 @@
       beginLedgerNoteEdit(ledgerNote);
       return;
     }
-    if (event.target.closest("button,input,select,textarea")) return;
-    const row = event.target.closest("[data-task-row]");
-    const editable = event.target.closest(".editable-row") || row?.querySelector(".editable-row");
-    if (!editable || !content.contains(editable)) return;
-    beginInlineEdit(editable);
+    beginTaskEditFromTarget(event.target);
   });
 
   content.addEventListener("change", (event) => {
