@@ -880,7 +880,7 @@ button:disabled {
 
 .ledger-main-row {
   display: grid;
-  grid-template-columns: 68px minmax(138px, 176px) minmax(82px, 1fr);
+  grid-template-columns: 72px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
 }
@@ -913,8 +913,7 @@ button:disabled {
   font-size: 10px;
 }
 
-.ledger-type-menu,
-.ledger-category-menu {
+.ledger-type-menu {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
@@ -948,20 +947,45 @@ button:disabled {
   font-weight: 700;
 }
 
-.ledger-category-menu {
-  width: min(320px, calc(100vw - 28px));
-  grid-template-rows: auto auto auto;
-  max-height: min(300px, calc(100vh - 130px));
+.ledger-category-sheet {
+  width: 100%;
+  max-width: 420px;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fffdf8;
+  box-shadow: inset 0 0 0 1px rgba(255, 241, 198, 0.42);
+}
+
+.ledger-category-sheet.hidden {
+  display: none;
+}
+
+.ledger-category-sheet-head {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ledger-category-sheet-head strong {
+  min-width: 0;
+  color: var(--ink);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ledger-category-scroll {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 6px;
-  height: 168px;
-  max-height: 42vh;
-  min-height: 112px;
+  height: 156px;
+  max-height: 38vh;
+  align-content: start;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 4px;
@@ -971,7 +995,6 @@ button:disabled {
 
 .ledger-category-option {
   position: relative;
-  flex: 0 0 auto;
   overflow: hidden;
   border-radius: 9px;
   background: transparent;
@@ -1047,6 +1070,15 @@ button:disabled {
   font-weight: 700;
 }
 
+.ledger-category-sheet .ledger-category-add-toggle {
+  font-size: 0;
+}
+
+.ledger-category-sheet .ledger-category-add-toggle::before {
+  content: "+";
+  font-size: 16px;
+}
+
 .ledger-category-add-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1064,6 +1096,7 @@ button:disabled {
 }
 
 .ledger-form input[data-ledger="amount"] {
+  grid-column: 1 / -1;
   min-width: 0;
 }
 
