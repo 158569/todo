@@ -944,7 +944,8 @@ button:disabled {
 
 .ledger-category-menu {
   left: 0;
-  width: min(240px, calc(100vw - 36px));
+  width: 100%;
+  min-width: 0;
   grid-template-rows: minmax(0, 1fr) auto auto;
   overflow: hidden;
 }
@@ -1026,16 +1027,16 @@ button:disabled {
   position: relative;
   z-index: 1;
   width: 100%;
-  min-height: 48px;
+  min-height: 38px;
   display: flex;
   align-items: center;
   border: 1px solid #eadfce;
   border-radius: 9px;
   background: #fffdf8;
   text-align: left;
-  padding: 10px 12px;
+  padding: 8px 10px;
   color: #45505c;
-  font: 14px/1.45 SimSun, "Microsoft YaHei", sans-serif;
+  font: 13px/1.35 SimSun, "Microsoft YaHei", sans-serif;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
