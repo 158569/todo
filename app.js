@@ -751,6 +751,7 @@
     ledgerSwipe: null,
     completedSwipe: null,
     taskSwipe: null,
+    ignoreTaskClick: false,
     ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
@@ -4539,13 +4540,15 @@
       return;
     }
     const taskRow = event.target.closest("[data-task-row]");
-    if (taskRow && !event.target.closest(".task-row-delete,button,input,select")) {
+    if (taskRow && !event.target.closest(".task-row-delete,input,select,textarea")) {
       state.taskSwipe = {
         row: taskRow,
+        pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
         swiped: false
       };
+      taskRow.setPointerCapture?.(event.pointerId);
       return;
     }
     const ledgerRow = event.target.closest("[data-ledger-row]");
@@ -4595,13 +4598,17 @@
     if (taskSwipe) {
       const dx = event.clientX - taskSwipe.startX;
       const dy = event.clientY - taskSwipe.startY;
+      const horizontal = Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8;
+      if (horizontal) event.preventDefault();
       if (dx < -32 && Math.abs(dx) > Math.abs(dy) && !taskSwipe.swiped) {
         taskSwipe.swiped = true;
+        state.ignoreTaskClick = true;
         content.querySelectorAll(".task-row.show-delete").forEach((row) => row.classList.remove("show-delete"));
         taskSwipe.row.classList.add("show-delete");
       }
       if (dx > 32 && Math.abs(dx) > Math.abs(dy) && !taskSwipe.swiped) {
         taskSwipe.swiped = true;
+        state.ignoreTaskClick = true;
         taskSwipe.row.classList.remove("show-delete");
       }
       return;
@@ -4623,6 +4630,12 @@
 
   content.addEventListener("pointerup", () => {
     const swiped = state.categorySwipe?.swiped;
+    const taskSwiped = state.taskSwipe?.swiped;
+    try {
+      state.taskSwipe?.row?.releasePointerCapture?.(state.taskSwipe.pointerId);
+    } catch {
+      // Some browsers throw when capture was already released after a tap.
+    }
     state.categorySwipe = null;
     state.ledgerSwipe = null;
     state.completedSwipe = null;
@@ -4632,6 +4645,11 @@
         state.ignoreCategoryClick = false;
       }, 250);
     }
+    if (taskSwiped) {
+      window.setTimeout(() => {
+        state.ignoreTaskClick = false;
+      }, 260);
+    }
   });
 
   content.addEventListener("pointercancel", () => {
@@ -4640,6 +4658,7 @@
     state.completedSwipe = null;
     state.taskSwipe = null;
     state.ignoreCategoryClick = false;
+    state.ignoreTaskClick = false;
   });
 
   content.addEventListener("click", (event) => {
@@ -4658,6 +4677,10 @@
       render();
     }
     if (action === "complete") {
+      if (state.ignoreTaskClick) {
+        event.preventDefault();
+        return;
+      }
       const row = todoRows().find((item) => item.key === actionTarget.dataset.key);
       if (row) completeRow(row);
     }
@@ -4811,7 +4834,9 @@
       beginLedgerNoteEdit(ledgerNote);
       return;
     }
-    const editable = event.target.closest(".editable-row");
+    if (event.target.closest("button,input,select,textarea")) return;
+    const row = event.target.closest("[data-task-row]");
+    const editable = event.target.closest(".editable-row") || row?.querySelector(".editable-row");
     if (!editable || !content.contains(editable)) return;
     beginInlineEdit(editable);
   });

@@ -404,6 +404,7 @@ button:disabled {
   overflow: hidden;
   border-radius: 8px;
   touch-action: pan-y;
+  user-select: none;
 }
 
 .task-row-card {
@@ -411,6 +412,7 @@ button:disabled {
   z-index: 1;
   background: var(--paper);
   transition: transform 0.16s ease;
+  will-change: transform;
 }
 
 .task-row-delete {
@@ -876,7 +878,7 @@ button:disabled {
 
 .ledger-main-row {
   display: grid;
-  grid-template-columns: 68px minmax(108px, 128px) minmax(82px, 1fr);
+  grid-template-columns: 68px minmax(138px, 176px) minmax(82px, 1fr);
   gap: 8px;
   align-items: center;
 }
@@ -945,16 +947,19 @@ button:disabled {
 }
 
 .ledger-category-menu {
-  width: min(276px, calc(100vw - 28px));
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  max-height: 236px;
+  width: min(320px, calc(100vw - 28px));
+  grid-template-rows: auto auto auto;
+  max-height: min(300px, calc(100vh - 130px));
   overflow: hidden;
 }
 
 .ledger-category-scroll {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  max-height: 152px;
+  height: 168px;
+  max-height: 42vh;
+  min-height: 112px;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 4px;
@@ -964,6 +969,7 @@ button:disabled {
 
 .ledger-category-option {
   position: relative;
+  flex: 0 0 auto;
   overflow: hidden;
   border-radius: 9px;
   background: transparent;
@@ -981,11 +987,12 @@ button:disabled {
   border-radius: 9px;
   background: #fffdf8;
   text-align: left;
-  padding: 0 12px;
+  padding: 7px 12px;
   color: #45505c;
-  white-space: nowrap;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
   overflow: hidden;
-  text-overflow: ellipsis;
   transition: transform 0.16s ease;
 }
 
