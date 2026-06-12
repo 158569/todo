@@ -399,6 +399,38 @@ button:disabled {
   border-color: #e4c88d;
 }
 
+.task-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  touch-action: pan-y;
+}
+
+.task-row-card {
+  position: relative;
+  z-index: 1;
+  background: var(--paper);
+  transition: transform 0.16s ease;
+}
+
+.task-row-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 0;
+  width: 56px;
+  height: 100%;
+  border: 0;
+  border-radius: 0 8px 8px 0;
+  background: #3f444a;
+  color: #fff;
+  font-weight: 700;
+}
+
+.task-row.show-delete .task-row-card {
+  transform: translateX(-56px);
+}
+
 .empty {
   color: var(--muted);
 }

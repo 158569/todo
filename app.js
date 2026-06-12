@@ -750,6 +750,7 @@
     categorySwipe: null,
     ledgerSwipe: null,
     completedSwipe: null,
+    taskSwipe: null,
     ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
@@ -1162,6 +1163,27 @@
     };
   }
 
+  function startsWithExplicitTime(value) {
+    const text = String(value || "").trim();
+    const number = "[\\d.\\u96f6\\u3007\\u4e00\\u4e8c\\u4e24\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341\\u767e\\u534a]+";
+    const period = "(?:\\u51cc\\u6668|\\u65e9\\u4e0a|\\u4e0a\\u5348|\\u4e2d\\u5348|\\u4e0b\\u5348|\\u508d\\u665a|\\u665a\\u4e0a|\\u4eca\\u665a|\\u660e\\u665a|\\u4eca\\u65e9|\\u660e\\u65e9)";
+    return new RegExp(`^(?:${period}\\s*)?${number}\\s*(?:[:\\uff1a\\uff1b\\u70b9]|\\u70b9\\u534a|\\u534a)`).test(text)
+      || new RegExp(`^${period}\\s*${number}`).test(text);
+  }
+
+  function parseMonthDayTodo(text) {
+    const match = String(text || "").match(/^(\d{1,2})\s*(?:[./\u6708-])\s*(\d{1,2})\s*(?:\u65e5|\u53f7)?\s*(?:(?:\u5468|\u661f\u671f|\u793c\u62dc)\s*[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u65e5\u5929])?\s*(.+)$/);
+    if (!match) return null;
+    const dateKey = dateFromMonthDay(match[1], match[2]);
+    const textValue = cleanScheduledText(match[3]);
+    if (!dateKey || !textValue || startsWithExplicitTime(textValue)) return null;
+    return {
+      dateKey,
+      text: textValue,
+      hasTime: false
+    };
+  }
+
   function parseMonthDaySchedule(text) {
     const number = "[半\\d.零〇一二两三四五六七八九十百]+";
     const period = "(?:凌晨|早上|上午|中午|下午|傍晚|晚上)?";
@@ -1180,6 +1202,9 @@
   }
 
   function parseNaturalSchedule(text) {
+    const monthDayTodo = parseMonthDayTodo(text);
+    if (monthDayTodo) return monthDayTodo;
+
     const monthDay = parseMonthDaySchedule(text);
     if (monthDay) return monthDay;
 
@@ -1988,6 +2013,24 @@
     return `rgb(${Math.round((r + 255 * 4) / 5)}, ${Math.round((g + 255 * 4) / 5)}, ${Math.round((b + 255 * 4) / 5)})`;
   }
 
+  function taskRowPayload(row) {
+    const payload = {};
+    ["group", "source", "key", "dateKey", "time", "text", "taskText", "timerKey", "at", "editGroup", "editKey"].forEach((field) => {
+      if (row[field] !== undefined && row[field] !== null) payload[field] = row[field];
+    });
+    return escapeAttr(JSON.stringify(payload));
+  }
+
+  function taskRowHtml(row, rowHtml) {
+    if (!row.deletable) return rowHtml;
+    return [
+      `<div class="task-row" data-task-row data-row-payload="${taskRowPayload(row)}">`,
+      `<button class="task-row-delete" data-action="deleteTaskRow" type="button">${tx("delete")}</button>`,
+      rowHtml,
+      "</div>"
+    ].join("");
+  }
+
   function section(title, rows, startIndex = 1, emptyText = tx("none")) {
     const parts = [`<div class="section-title">${escapeHtml(title)}</div>`];
     if (!rows.length) {
@@ -2001,7 +2044,9 @@
         ? `<button class="row-action ${row.action === "complete" ? "complete-action" : ""}" data-action="${row.action}" data-key="${escapeAttr(row.key)}" title="${escapeAttr(row.label || tx("complete"))}" aria-label="${escapeAttr(row.label || tx("complete"))}">${row.action === "complete" ? tx("completeIcon") : row.label || tx("complete")}</button>`
         : "";
       const editAttrs = row.editable ? ` class="row-main editable-row" title="双击修改" data-edit-group="${escapeAttr(row.editGroup)}" data-edit-key="${escapeAttr(row.editKey)}"` : ' class="row-main"';
-      parts.push(`<div class="row"><span class="idx">${index}.</span><span${editAttrs}>${time}${escapeHtml(row.text)}</span>${action}</div>`);
+      const rowClass = row.deletable ? "row task-row-card" : "row";
+      const rowCard = `<div class="${rowClass}"><span class="idx">${index}.</span><span${editAttrs}>${time}${escapeHtml(row.text)}</span>${action}</div>`;
+      parts.push(taskRowHtml(row, rowCard));
     });
     return parts.join("");
   }
@@ -2053,7 +2098,18 @@
       if (!includeFuture && item.startDate && item.startDate > current) return;
       const text = item.text;
       if (!completed.includes(text) && !completed.includes(`今日已完成：${text}`)) {
-        rows.push({ group: "reminder", time: "", text, key: text, sortTime: -1 });
+        rows.push({
+          group: "reminder",
+          source: "dailyImportant",
+          time: "",
+          text,
+          key: text,
+          sortTime: -1,
+          editable: true,
+          editGroup: `dailyImportant|${item.startDate || ""}`,
+          editKey: text,
+          deletable: true
+        });
       }
     });
 
@@ -2062,7 +2118,18 @@
       times.forEach((time) => {
         const key = `${time}  ${item.text}`;
         if (!completed.includes(key) && !completed.includes(`今日已完成：${key}`)) {
-          rows.push({ group: "reminder", time, text: item.text, key, sortTime: timeMinutes(time) });
+          rows.push({
+            group: "reminder",
+            source: "daily",
+            time,
+            text: item.text,
+            key,
+            sortTime: timeMinutes(time),
+            editable: true,
+            editGroup: `dailyReminder|${time}`,
+            editKey: item.text,
+            deletable: true
+          });
         }
       });
     });
@@ -2082,7 +2149,19 @@
       const key = `${item.at}|${item.text}`;
       const doneText = `${time}  ${item.text}`.trim();
       if (!completed.includes(doneText) && !completed.includes(`今日已完成：${doneText}`)) {
-        rows.push({ group: "single", source: "once", dateKey: date, time, text: item.text, key, sortTime: timeMinutes(time) });
+        rows.push({
+          group: "single",
+          source: "once",
+          dateKey: date,
+          time,
+          text: item.text,
+          key,
+          sortTime: timeMinutes(time),
+          editable: true,
+          editGroup: `oneTime|${item.at}`,
+          editKey: item.text,
+          deletable: true
+        });
       }
     });
 
@@ -2090,7 +2169,19 @@
       if (!item.date || item.date !== current || !item.text) return;
       const key = `${item.date}|${item.text}`;
       if (!completed.includes(item.text) && !completed.includes(`今日已完成：${item.text}`)) {
-        rows.push({ group: "single", source: "dateImportant", dateKey: item.date, time: "", text: item.text, key, sortTime: -1 });
+        rows.push({
+          group: "single",
+          source: "dateImportant",
+          dateKey: item.date,
+          time: "",
+          text: item.text,
+          key,
+          sortTime: -1,
+          editable: true,
+          editGroup: `dateImportant|${item.date}`,
+          editKey: item.text,
+          deletable: true
+        });
       }
     });
 
@@ -2157,18 +2248,18 @@
   function todoRows() {
     const rows = [];
     const overdue = overdueRows();
-    overdue.forEach((row, i) => rows.push({ ...row, index: i + 1, action: "complete", label: tx("complete") }));
+    overdue.forEach((row, i) => rows.push({ ...row, index: i + 1, action: "complete", label: tx("complete"), deletable: true }));
 
     let index = rows.length + 1;
     const timedRows = [...dailyReminderRows(false), ...oneTimeTodayRows()];
     const dueRows = timedRows.filter((row) => !row.time || row.sortTime <= nowMinutes());
     const laterRows = timedRows.filter((row) => row.time && row.sortTime > nowMinutes());
-    dueRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
+    dueRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete"), deletable: true }));
 
     const current = day();
-    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, time: taskTimerLabel(text), text, key: text, editable: true, editGroup: "inProgress", editKey: text, action: "complete", label: tx("complete") }));
-    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, time: taskTimerLabel(text), text, key: text, editable: true, editGroup: "pending", editKey: text, action: "complete", label: tx("complete") }));
-    laterRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete") }));
+    current.inProgress.forEach((text) => rows.push({ group: "ing", index: index++, time: taskTimerLabel(text), text, key: text, editable: true, editGroup: "inProgress", editKey: text, action: "complete", label: tx("complete"), deletable: true }));
+    current.pending.forEach((text) => rows.push({ group: "todo", index: index++, time: taskTimerLabel(text), text, key: text, editable: true, editGroup: "pending", editKey: text, action: "complete", label: tx("complete"), deletable: true }));
+    laterRows.forEach((row) => rows.push({ ...row, group: row.group === "single" ? "single" : "reminder", index: index++, action: "complete", label: tx("complete"), deletable: true }));
     return rows;
   }
 
@@ -2200,24 +2291,80 @@
     const future = [];
     Object.keys(state.data.days).sort().forEach((dateKey) => {
       if (dateKey <= todayKey()) return;
-      day(dateKey).pending.forEach((text) => future.push({ time: shortDate(dateKey), text, sortKey: `${dateKey} 00:00` }));
+      day(dateKey).pending.forEach((text) => future.push({
+        group: "futureTodo",
+        dateKey,
+        time: shortDate(dateKey),
+        text,
+        key: `${dateKey}|${text}`,
+        sortKey: `${dateKey} 00:00`,
+        editable: true,
+        editGroup: `futureTodo|${dateKey}`,
+        editKey: text,
+        deletable: true
+      }));
     });
     state.data.oneTimeReminders.forEach((item) => {
       if (!item.at || !item.text) return;
       const [date, time = ""] = item.at.split(" ");
-      if (date > todayKey()) future.push({ time: `${shortDate(date)} ${time}`.trim(), text: item.text, sortKey: item.at });
+      if (date > todayKey()) future.push({
+        group: "single",
+        source: "once",
+        dateKey: date,
+        time: `${shortDate(date)} ${time}`.trim(),
+        text: item.text,
+        key: `${item.at}|${item.text}`,
+        sortKey: item.at,
+        editable: true,
+        editGroup: `oneTime|${item.at}`,
+        editKey: item.text,
+        deletable: true
+      });
     });
     state.data.dateImportantReminders.forEach((item) => {
       if (!item.date || !item.text || item.date <= todayKey()) return;
-      future.push({ time: shortDate(item.date), text: item.text, sortKey: `${item.date} 00:00` });
+      future.push({
+        group: "single",
+        source: "dateImportant",
+        dateKey: item.date,
+        time: shortDate(item.date),
+        text: item.text,
+        key: `${item.date}|${item.text}`,
+        sortKey: `${item.date} 00:00`,
+        editable: true,
+        editGroup: `dateImportant|${item.date}`,
+        editKey: item.text,
+        deletable: true
+      });
     });
     future.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 
     const weekly = state.data.weeklyReminders
-      .map((item) => ({ time: `${asArray(item.days).map(dayName).join("/")} ${item.time || ""}`.trim(), text: item.text }))
+      .map((item) => {
+        const days = asArray(item.days).join(",");
+        return {
+          group: "weekly",
+          time: `${asArray(item.days).map(dayName).join("/")} ${item.time || ""}`.trim(),
+          text: item.text,
+          key: `${days}|${item.time || ""}|${item.text}`,
+          editable: true,
+          editGroup: `weeklyReminder|${days}|${item.time || ""}`,
+          editKey: item.text,
+          deletable: true
+        };
+      })
       .sort((a, b) => a.time.localeCompare(b.time));
     const monthly = state.data.monthlyReminders
-      .map((item) => ({ time: `每月${item.day}号`, text: item.text }))
+      .map((item) => ({
+        group: "monthly",
+        time: `\u6bcf\u6708${item.day}\u53f7`,
+        text: item.text,
+        key: `${item.day}|${item.text}`,
+        editable: true,
+        editGroup: `monthlyReminder|${item.day}`,
+        editKey: item.text,
+        deletable: true
+      }))
       .sort((a, b) => Number(a.time.match(/\d+/)?.[0] || 99) - Number(b.time.match(/\d+/)?.[0] || 99));
     content.innerHTML =
       section(tx("futureTodos"), future) +
@@ -3885,7 +4032,7 @@
     const close = (shouldSave) => {
       if (closed) return;
       closed = true;
-      if (shouldSave) editTodayText(group, oldText, input.value);
+      if (shouldSave) editRowText(group, oldText, input.value);
       else render();
     };
 
@@ -3900,6 +4047,122 @@
       }
     });
     input.addEventListener("blur", () => close(true));
+  }
+
+  function editRowText(group, oldText, nextText) {
+    const [type, ...parts] = String(group || "").split("|");
+    if (type === "pending" || type === "inProgress") {
+      editTodayText(type, oldText, nextText);
+      return;
+    }
+    nextText = String(nextText || "").trim();
+    if (!nextText || nextText === oldText) {
+      render();
+      return;
+    }
+
+    let changed = false;
+    if (type === "futureTodo") changed = editFutureTodoText(parts[0], oldText, nextText);
+    if (type === "oneTime") changed = editOneTimeReminderText(parts.join("|"), oldText, nextText);
+    if (type === "dateImportant") changed = editDateImportantText(parts[0], oldText, nextText);
+    if (type === "dailyImportant") changed = editDailyImportantText(parts.join("|"), oldText, nextText);
+    if (type === "dailyReminder") changed = editDailyReminderText(parts[0], oldText, nextText);
+    if (type === "weeklyReminder") changed = editWeeklyReminderText(parts[0], parts[1], oldText, nextText);
+    if (type === "monthlyReminder") changed = editMonthlyReminderText(parts[0], oldText, nextText);
+
+    if (changed === "duplicate") {
+      setStatus(tx("editDuplicate"), false);
+      render();
+      return;
+    }
+    if (!changed) {
+      setStatus("\u6ca1\u627e\u5230\u8fd9\u6761\u5f85\u529e\u3002", false);
+      render();
+      return;
+    }
+    logUpdate("\u4fee\u6539", `${oldText} -> ${nextText}`);
+    scheduleSave();
+    setStatus(tx("editDone"));
+    render();
+  }
+
+  function editFutureTodoText(dateKey, oldText, nextText) {
+    if (!dateKey) return false;
+    const current = day(dateKey);
+    if (current.pending.includes(nextText) || current.inProgress.includes(nextText) || current.completed.includes(nextText)) return "duplicate";
+    const index = current.pending.indexOf(oldText);
+    if (index === -1) return false;
+    current.pending[index] = nextText;
+    if (current.timers[oldText]) {
+      current.timers[nextText] = { ...current.timers[oldText], text: nextText };
+      delete current.timers[oldText];
+    }
+    return true;
+  }
+
+  function editOneTimeReminderText(at, oldText, nextText) {
+    if (!at) return false;
+    if (state.data.oneTimeReminders.some((item) => item.at === at && item.text === nextText)) return "duplicate";
+    const item = state.data.oneTimeReminders.find((entry) => entry.at === at && entry.text === oldText);
+    if (!item) return false;
+    item.text = nextText;
+    renameOneTimeTimers(at, oldText, nextText);
+    return true;
+  }
+
+  function editDateImportantText(dateKey, oldText, nextText) {
+    if (!dateKey) return false;
+    if (state.data.dateImportantReminders.some((item) => item.date === dateKey && item.text === nextText)) return "duplicate";
+    const item = state.data.dateImportantReminders.find((entry) => entry.date === dateKey && entry.text === oldText);
+    if (!item) return false;
+    item.text = nextText;
+    return true;
+  }
+
+  function editDailyImportantText(startDate, oldText, nextText) {
+    if (state.data.dailyImportantReminders.some((item) => (item.startDate || "") === startDate && item.text === nextText)) return "duplicate";
+    const item = state.data.dailyImportantReminders.find((entry) => (entry.startDate || "") === startDate && entry.text === oldText);
+    if (!item) return false;
+    item.text = nextText;
+    return true;
+  }
+
+  function editDailyReminderText(time, oldText, nextText) {
+    if (!time) return false;
+    if (state.data.dailyReminders.some((item) => item.text === nextText && reminderTimes(item).includes(time))) return "duplicate";
+    const item = state.data.dailyReminders.find((entry) => entry.text === oldText && reminderTimes(entry).includes(time));
+    if (!item) return false;
+    item.text = nextText;
+    return true;
+  }
+
+  function editWeeklyReminderText(daysKey, time, oldText, nextText) {
+    if (state.data.weeklyReminders.some((item) => asArray(item.days).join(",") === daysKey && (item.time || "") === time && item.text === nextText)) return "duplicate";
+    const item = state.data.weeklyReminders.find((entry) => asArray(entry.days).join(",") === daysKey && (entry.time || "") === time && entry.text === oldText);
+    if (!item) return false;
+    item.text = nextText;
+    return true;
+  }
+
+  function editMonthlyReminderText(dayNumber, oldText, nextText) {
+    if (state.data.monthlyReminders.some((item) => String(item.day) === String(dayNumber) && item.text === nextText)) return "duplicate";
+    const item = state.data.monthlyReminders.find((entry) => String(entry.day) === String(dayNumber) && entry.text === oldText);
+    if (!item) return false;
+    item.text = nextText;
+    return true;
+  }
+
+  function renameOneTimeTimers(at, oldText, nextText) {
+    Object.values(state.data.days || {}).forEach((item) => {
+      Object.entries(item.timers || {}).forEach(([key, timer]) => {
+        if (timer.source !== "oneTime" || timer.at !== at || timer.text !== oldText) return;
+        timer.text = nextText;
+        if (key === `oneTime|${at}|${oldText}`) {
+          item.timers[`oneTime|${at}|${nextText}`] = timer;
+          delete item.timers[key];
+        }
+      });
+    });
   }
 
   function editTodayText(group, oldText, nextText) {
@@ -3993,14 +4256,62 @@
       removeSingleReminder(row, true);
       return 1;
     }
+    if (row.group === "futureTodo") {
+      const target = day(row.dateKey);
+      const before = target.pending.length + target.inProgress.length + target.hidden.length;
+      target.pending = target.pending.filter((item) => item !== row.text);
+      target.inProgress = target.inProgress.filter((item) => item !== row.text);
+      target.hidden = target.hidden.filter((item) => item !== row.text);
+      delete target.timers[row.text];
+      if (before > target.pending.length + target.inProgress.length + target.hidden.length) {
+        logUpdate("\u5220\u9664", `${shortDate(row.dateKey)} ${row.text}`);
+      }
+      return before - target.pending.length - target.inProgress.length - target.hidden.length;
+    }
     if (row.group === "reminder") {
       return removeDailyReminder(row);
+    }
+    if (row.group === "weekly") {
+      const [daysKey, time = "", ...parts] = String(row.key || "").split("|");
+      const text = parts.join("|") || row.text;
+      return removeFromArray("weeklyReminders", (item) => asArray(item.days).join(",") === daysKey && (item.time || "") === time && item.text === text, reminderLogText);
+    }
+    if (row.group === "monthly") {
+      const [dayNumber, ...parts] = String(row.key || "").split("|");
+      const text = parts.join("|") || row.text;
+      return removeFromArray("monthlyReminders", (item) => String(item.day) === String(dayNumber) && item.text === text, reminderLogText);
     }
     const before = current.pending.length + current.inProgress.length;
     current.pending = current.pending.filter((item) => item !== row.key);
     current.inProgress = current.inProgress.filter((item) => item !== row.key);
     delete current.timers[row.key];
     return before - current.pending.length - current.inProgress.length;
+  }
+
+  function parseTaskRowPayload(target) {
+    try {
+      const row = JSON.parse(target?.closest("[data-task-row]")?.dataset.rowPayload || "{}");
+      return row && typeof row === "object" ? row : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function deleteTaskRow(target) {
+    const row = parseTaskRowPayload(target);
+    if (!row) {
+      setStatus("\u6ca1\u627e\u5230\u53ef\u5220\u9664\u7684\u5185\u5bb9\u3002", false);
+      return;
+    }
+    const removed = deleteVisibleRow(row);
+    if (!removed) {
+      setStatus("\u6ca1\u627e\u5230\u53ef\u5220\u9664\u7684\u5185\u5bb9\u3002", false);
+      render();
+      return;
+    }
+    scheduleSave();
+    setStatus("\u5df2\u5220\u9664\u8bb0\u5f55 (づ｡◕‿‿◕｡)づ");
+    render();
   }
 
   function deleteCompleted(index) {
@@ -4227,6 +4538,16 @@
       };
       return;
     }
+    const taskRow = event.target.closest("[data-task-row]");
+    if (taskRow && !event.target.closest(".task-row-delete,button,input,select")) {
+      state.taskSwipe = {
+        row: taskRow,
+        startX: event.clientX,
+        startY: event.clientY,
+        swiped: false
+      };
+      return;
+    }
     const ledgerRow = event.target.closest("[data-ledger-row]");
     if (!ledgerRow || event.target.closest("button,input,select")) return;
     state.ledgerSwipe = {
@@ -4270,6 +4591,21 @@
       }
       return;
     }
+    const taskSwipe = state.taskSwipe;
+    if (taskSwipe) {
+      const dx = event.clientX - taskSwipe.startX;
+      const dy = event.clientY - taskSwipe.startY;
+      if (dx < -32 && Math.abs(dx) > Math.abs(dy) && !taskSwipe.swiped) {
+        taskSwipe.swiped = true;
+        content.querySelectorAll(".task-row.show-delete").forEach((row) => row.classList.remove("show-delete"));
+        taskSwipe.row.classList.add("show-delete");
+      }
+      if (dx > 32 && Math.abs(dx) > Math.abs(dy) && !taskSwipe.swiped) {
+        taskSwipe.swiped = true;
+        taskSwipe.row.classList.remove("show-delete");
+      }
+      return;
+    }
     const ledgerSwipe = state.ledgerSwipe;
     if (!ledgerSwipe) return;
     const dx = event.clientX - ledgerSwipe.startX;
@@ -4290,6 +4626,7 @@
     state.categorySwipe = null;
     state.ledgerSwipe = null;
     state.completedSwipe = null;
+    state.taskSwipe = null;
     if (swiped) {
       window.setTimeout(() => {
         state.ignoreCategoryClick = false;
@@ -4301,6 +4638,7 @@
     state.categorySwipe = null;
     state.ledgerSwipe = null;
     state.completedSwipe = null;
+    state.taskSwipe = null;
     state.ignoreCategoryClick = false;
   });
 
@@ -4325,6 +4663,9 @@
     }
     if (action === "deleteCompleted") {
       deleteCompleted(actionTarget.dataset.index);
+    }
+    if (action === "deleteTaskRow") {
+      deleteTaskRow(actionTarget);
     }
     if (action === "addLedger") {
       addLedger(
