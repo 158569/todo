@@ -880,7 +880,7 @@ button:disabled {
 
 .ledger-main-row {
   display: grid;
-  grid-template-columns: 72px minmax(88px, 0.95fr) minmax(104px, 1.2fr);
+  grid-template-columns: 72px minmax(112px, 1.25fr) minmax(88px, 0.95fr);
   gap: 8px;
   align-items: center;
 }
@@ -896,7 +896,7 @@ button:disabled {
 }
 
 .ledger-category-picker {
-  order: 3;
+  order: 2;
 }
 
 .ledger-type-trigger,
@@ -941,8 +941,8 @@ button:disabled {
 }
 
 .ledger-category-menu {
-  right: 0;
-  width: min(260px, calc(100vw - 36px));
+  left: 0;
+  width: min(240px, calc(100vw - 36px));
 }
 
 .ledger-type-option {
@@ -997,7 +997,7 @@ button:disabled {
 .ledger-category-scroll {
   display: grid;
   gap: 6px;
-  height: 172px;
+  height: 178px;
   max-height: 38vh;
   align-content: start;
   overflow-y: auto;
@@ -1019,16 +1019,16 @@ button:disabled {
   position: relative;
   z-index: 1;
   width: 100%;
-  min-height: 36px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   border: 1px solid #eadfce;
   border-radius: 9px;
   background: #fffdf8;
   text-align: left;
-  padding: 7px 12px;
+  padding: 9px 12px;
   color: #45505c;
-  line-height: 1.25;
+  line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -1110,7 +1110,7 @@ button:disabled {
 }
 
 .ledger-form input[data-ledger="amount"] {
-  order: 2;
+  order: 3;
   min-width: 0;
   width: 100%;
 }
