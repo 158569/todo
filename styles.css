@@ -793,6 +793,7 @@ button:disabled {
 }
 
 .setting-row input[type="text"],
+.setting-row input[type="password"],
 .setting-row input[type="color"],
 .setting-row select,
 .ledger-form input,
@@ -814,6 +815,18 @@ button:disabled {
   width: 18px;
   height: 18px;
   justify-self: start;
+}
+
+.diary-pin-box {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.setting-action-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .setting-note {

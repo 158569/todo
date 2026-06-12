@@ -230,10 +230,15 @@
       showRecipes: "菜谱",
       showPeriod: "经期",
       diaryLockSection: "日记密码：",
-      diaryPinEnabled: "开启四位数字密码",
+      diaryPinEnabled: "日记密码",
       diaryPin: "四位数字密码",
-      diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "修改或关闭日记密码前，请先输入原密码。",
+      diaryPinPlaceholder: "输入 4 位数字",
+      diaryCurrentPin: "原密码",
+      diaryNewPin: "新密码",
+      diaryEnableButton: "开启密码",
+      diaryChangeButton: "修改密码",
+      diaryOldPinPrompt: "请输入原密码。",
+      diaryCurrentPinRequired: "请先输入正确的原密码。",
       diaryPinRequired: "请输入 4 位数字密码。",
       diaryPinUpdated: "日记密码已更新 (｡•̀ᴗ-)و",
       diaryPinDisabled: "日记密码已关闭。",
@@ -453,10 +458,15 @@
       showRecipes: "レシピ",
       showPeriod: "周期",
       diaryLockSection: "日記ロック：",
-      diaryPinEnabled: "4桁パスコードを有効にする",
-      diaryPin: "新しい4桁パスコード",
-      diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "日記パスコードを変更または無効化する前に、現在のパスコードを入力してください。",
+      diaryPinEnabled: "日記パスコード",
+      diaryPin: "4桁パスコード",
+      diaryPinPlaceholder: "4桁の数字",
+      diaryCurrentPin: "現在のパスコード",
+      diaryNewPin: "新しいパスコード",
+      diaryEnableButton: "有効にする",
+      diaryChangeButton: "変更する",
+      diaryOldPinPrompt: "現在のパスコードを入力してください。",
+      diaryCurrentPinRequired: "現在のパスコードを正しく入力してください。",
       diaryPinRequired: "4桁の数字を入力してください。",
       diaryPinUpdated: "日記パスコードを更新しました (｡•̀ᴗ-)و",
       diaryPinDisabled: "日記パスコードを無効にしました。",
@@ -676,10 +686,15 @@
       showRecipes: "Recipes",
       showPeriod: "Cycle",
       diaryLockSection: "Diary PIN:",
-      diaryPinEnabled: "Enable 4-digit PIN",
-      diaryPin: "New 4-digit PIN",
-      diaryPinPlaceholder: "",
-      diaryOldPinPrompt: "Enter the current diary PIN before changing or disabling it.",
+      diaryPinEnabled: "Diary PIN",
+      diaryPin: "4-digit PIN",
+      diaryPinPlaceholder: "Enter 4 digits",
+      diaryCurrentPin: "Current PIN",
+      diaryNewPin: "New PIN",
+      diaryEnableButton: "Enable PIN",
+      diaryChangeButton: "Change PIN",
+      diaryOldPinPrompt: "Enter the current PIN.",
+      diaryCurrentPinRequired: "Enter the correct current PIN first.",
       diaryPinRequired: "Enter a 4-digit PIN.",
       diaryPinUpdated: "Diary PIN updated (｡•̀ᴗ-)و",
       diaryPinDisabled: "Diary PIN disabled.",
@@ -1677,6 +1692,7 @@
     if (!["none", "last"].includes(state.data.settings.todoReminderDefault)) state.data.settings.todoReminderDefault = DEFAULT_SETTINGS.todoReminderDefault;
     state.data.settings.lastTodoReminderConfig = normalizeTodoReminderConfig(state.data.settings.lastTodoReminderConfig);
     state.data.settings.diaryPin = String(state.data.settings.diaryPin || "").replace(/\D/g, "").slice(0, 4);
+    state.data.settings.diaryPinEnabled = state.data.settings.diaryPinEnabled === true && /^\d{4}$/.test(state.data.settings.diaryPin);
     state.data.settings.ledgerLastCategory = ledgerCategories().includes(state.data.settings.ledgerLastCategory) ? state.data.settings.ledgerLastCategory : "";
     return state.data.settings;
   }
@@ -1869,63 +1885,63 @@
     return current.diaryPinEnabled && /^\d{4}$/.test(current.diaryPin || "") ? current.diaryPin : "";
   }
 
-  function verifyDiaryPinForChange() {
-    const oldPin = activeDiaryPin();
-    if (!oldPin) return true;
-    const value = window.prompt(tx("diaryOldPinPrompt"));
-    if (value === null) return false;
-    return String(value || "").replace(/\D/g, "").slice(0, 4) === oldPin;
+  function cleanPin(value) {
+    return String(value || "").replace(/\D/g, "").slice(0, 4);
   }
 
-  function updateDiaryPin(nextPin) {
-    const cleanPin = String(nextPin || "").replace(/\D/g, "").slice(0, 4);
-    if (!/^\d{4}$/.test(cleanPin)) {
+  function settingDiaryPinValue(name) {
+    return cleanPin(content.querySelector(`[data-diary-pin-setting="${name}"]`)?.value || "");
+  }
+
+  function saveDiaryPinState({ enabled, pin, message }) {
+    const current = settings();
+    current.diaryPinEnabled = enabled === true;
+    current.diaryPin = enabled === true ? cleanPin(pin) : "";
+    current.notesPinEnabled = false;
+    current.notesPin = "";
+    state.diaryUnlocked = false;
+    saveNowSoon();
+    setStatus(message);
+    render();
+    return true;
+  }
+
+  function enableDiaryPinFromSettings() {
+    const nextPin = settingDiaryPinValue("new");
+    if (!/^\d{4}$/.test(nextPin)) {
       setStatus(tx("diaryPinRequired"), false);
       render();
       return false;
     }
-    if (activeDiaryPin() && cleanPin !== activeDiaryPin() && !verifyDiaryPinForChange()) {
-      setStatus(tx("wrongPin"), false);
+    return saveDiaryPinState({ enabled: true, pin: nextPin, message: tx("diaryPinUpdated") });
+  }
+
+  function changeDiaryPinFromSettings() {
+    const oldPin = activeDiaryPin();
+    const currentPin = settingDiaryPinValue("current");
+    const nextPin = settingDiaryPinValue("new");
+    if (!oldPin || currentPin !== oldPin) {
+      setStatus(tx("diaryCurrentPinRequired"), false);
       render();
       return false;
     }
-    settings().diaryPin = cleanPin;
-    settings().diaryPinEnabled = true;
-    state.diaryUnlocked = false;
-    saveNowSoon();
-    setStatus(tx("diaryPinUpdated"));
-    render();
-    return true;
+    if (!/^\d{4}$/.test(nextPin)) {
+      setStatus(tx("diaryPinRequired"), false);
+      render();
+      return false;
+    }
+    return saveDiaryPinState({ enabled: true, pin: nextPin, message: tx("diaryPinUpdated") });
   }
 
-  function toggleDiaryPin(enabled) {
-    const current = settings();
-    if (!enabled) {
-      if (activeDiaryPin() && !verifyDiaryPinForChange()) {
-        setStatus(tx("wrongPin"), false);
-        render();
-        return false;
-      }
-      current.diaryPinEnabled = false;
-      current.diaryPin = "";
-      current.notesPinEnabled = false;
-      current.notesPin = "";
-      state.diaryUnlocked = false;
-      saveNowSoon();
-      setStatus(tx("diaryPinDisabled"));
+  function disableDiaryPinFromSettings() {
+    const oldPin = activeDiaryPin();
+    const currentPin = settingDiaryPinValue("current");
+    if (!oldPin || currentPin !== oldPin) {
+      setStatus(tx("diaryCurrentPinRequired"), false);
       render();
-      return true;
+      return false;
     }
-    current.diaryPinEnabled = Boolean(enabled);
-    if (!current.diaryPinEnabled) {
-      current.diaryPin = "";
-      current.notesPinEnabled = false;
-      current.notesPin = "";
-    }
-    state.diaryUnlocked = false;
-    saveNowSoon();
-    render();
-    return true;
+    return saveDiaryPinState({ enabled: false, pin: "", message: tx("diaryPinDisabled") });
   }
 
   function viewAvailable(view) {
@@ -3415,10 +3431,7 @@
       settingCheckbox("showPeriod", tx("showPeriod"), current.showPeriod !== false),
       "</div>",
       '<div class="section-title">' + tx("diaryLockSection") + "</div>",
-      diaryPinActive
-        ? `<div class="setting-row"><span>${escapeHtml(tx("diaryPinEnabled"))}</span><button class="setting-button" data-action="disableDiaryPin" type="button">${escapeHtml(tx("diaryPinDisableButton"))}</button></div>`
-        : settingCheckbox("diaryPinEnabled", tx("diaryPinEnabled"), current.diaryPinEnabled === true),
-      current.diaryPinEnabled === true && !diaryPinActive ? settingPin("diaryPin", tx("diaryPin"), "", tx("diaryPinPlaceholder")) : "",
+      diaryPinSettingsHtml(diaryPinActive),
       '<div class="section-title">' + tx("tutorialSection") + "</div>",
       `<button class="setting-button" data-action="openHelp" type="button">${tx("openTutorial")}</button>`,
       '<div class="section-title">' + tx("colorSection") + "</div>",
@@ -3445,6 +3458,27 @@
         ["ja", tx("languageJa")],
         ["en", tx("languageEn")]
       ]),
+      "</div>"
+    ].join("");
+  }
+
+  function diaryPinSettingsHtml(active) {
+    if (active) {
+      return [
+        '<div class="diary-pin-box">',
+        `<label class="setting-row"><span>${escapeHtml(tx("diaryCurrentPin"))}</span><input data-diary-pin-setting="current" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="${escapeAttr(tx("diaryPinPlaceholder"))}"></label>`,
+        `<label class="setting-row"><span>${escapeHtml(tx("diaryNewPin"))}</span><input data-diary-pin-setting="new" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="${escapeAttr(tx("diaryPinPlaceholder"))}"></label>`,
+        '<div class="setting-action-row">',
+        `<button class="setting-button" data-action="changeDiaryPin" type="button">${escapeHtml(tx("diaryChangeButton"))}</button>`,
+        `<button class="setting-button" data-action="disableDiaryPin" type="button">${escapeHtml(tx("diaryPinDisableButton"))}</button>`,
+        "</div>",
+        "</div>"
+      ].join("");
+    }
+    return [
+      '<div class="diary-pin-box">',
+      `<label class="setting-row"><span>${escapeHtml(tx("diaryPin"))}</span><input data-diary-pin-setting="new" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="${escapeAttr(tx("diaryPinPlaceholder"))}"></label>`,
+      `<button class="setting-button" data-action="enableDiaryPin" type="button">${escapeHtml(tx("diaryEnableButton"))}</button>`,
       "</div>"
     ].join("");
   }
@@ -4385,8 +4419,14 @@
     if (action === "cancelPeriodEdit") {
       cancelPeriodEdit();
     }
+    if (action === "enableDiaryPin") {
+      enableDiaryPinFromSettings();
+    }
+    if (action === "changeDiaryPin") {
+      changeDiaryPinFromSettings();
+    }
     if (action === "disableDiaryPin") {
-      toggleDiaryPin(false);
+      disableDiaryPinFromSettings();
     }
     if (action === "enableNotifications") {
       enableNotifications();
@@ -4468,25 +4508,6 @@
     const key = event.target.dataset.setting;
     if (!key) return;
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
-    if (key === "diaryPin") {
-      const nextPin = String(value || "").trim();
-      if (nextPin) {
-        window.setTimeout(() => {
-          if (settings().diaryPinEnabled === true) updateDiaryPin(nextPin);
-        }, 0);
-      }
-      return;
-    }
-    if (key === "diaryPinEnabled") {
-      const changed = toggleDiaryPin(value);
-      event.target.checked = settings().diaryPinEnabled === true;
-      if (!changed) {
-        window.setTimeout(render, 0);
-      } else {
-        render();
-      }
-      return;
-    }
     if (key === "welcomeEnabled" || key === "welcomeTitle" || key === "welcomeText") {
       settings().welcomeTouched = true;
     }
@@ -4498,6 +4519,10 @@
   });
 
   content.addEventListener("input", (event) => {
+    if (event.target.matches("[data-diary-pin-setting]")) {
+      event.target.value = cleanPin(event.target.value);
+      return;
+    }
     if (event.target.dataset.recipe) {
       captureRecipeDraft();
       return;
@@ -4510,10 +4535,6 @@
     }
     const key = event.target.dataset.setting;
     if (!key || event.target.type === "checkbox") return;
-    if (key === "diaryPin") {
-      event.target.value = String(event.target.value || "").replace(/\D/g, "").slice(0, 4);
-      return;
-    }
     if (key === "welcomeTitle" || key === "welcomeText") {
       settings().welcomeTouched = true;
     }

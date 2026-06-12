@@ -1,4 +1,4 @@
-const CACHE_NAME = "workday-todo-pwa-v39";
+const CACHE_NAME = "workday-todo-pwa-v40";
 const APP_SHELL = [
   "./",
   "./index.html",
