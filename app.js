@@ -2657,7 +2657,7 @@
           <span data-category-label>${escapeHtml(ledgerCategoryLabel(state.ledgerCategory))}</span>
           <span class="category-caret">⌄</span>
         </button>
-        <div class="ledger-category-menu hidden" data-old-category-menu>
+        <div class="ledger-category-menu hidden" data-category-menu>
           <div class="ledger-category-scroll">${categoryRows || `<div class="empty">${tx("none")}</div>`}</div>
           <button class="ledger-category-add-toggle" data-action="toggleLedgerCategoryAdd" type="button">＋</button>
           <div class="ledger-category-add-row hidden" data-category-add-row>
@@ -2668,7 +2668,7 @@
       </div>`,
       `<input data-ledger="amount" type="number" step="0.01" placeholder="${tx("amount")}">`,
       "</div>",
-      `<div class="ledger-category-sheet hidden" data-category-menu>
+      `<div class="ledger-category-sheet hidden" data-old-category-menu>
         <div class="ledger-category-sheet-head">
           <span>${escapeHtml(tx("category"))}</span>
           <strong>${escapeHtml(ledgerCategoryLabel(state.ledgerCategory))}</strong>

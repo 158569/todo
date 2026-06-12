@@ -880,7 +880,7 @@ button:disabled {
 
 .ledger-main-row {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 72px minmax(88px, 0.95fr) minmax(104px, 1.2fr);
   gap: 8px;
   align-items: center;
 }
@@ -889,6 +889,14 @@ button:disabled {
 .ledger-category-picker {
   position: relative;
   min-width: 0;
+}
+
+.ledger-type-picker {
+  order: 1;
+}
+
+.ledger-category-picker {
+  order: 3;
 }
 
 .ledger-type-trigger,
@@ -913,11 +921,11 @@ button:disabled {
   font-size: 10px;
 }
 
-.ledger-type-menu {
+.ledger-type-menu,
+.ledger-category-menu {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
-  z-index: 20;
+  z-index: 30;
   display: grid;
   gap: 5px;
   padding: 7px;
@@ -928,7 +936,13 @@ button:disabled {
 }
 
 .ledger-type-menu {
+  left: 0;
   width: 100%;
+}
+
+.ledger-category-menu {
+  right: 0;
+  width: min(260px, calc(100vw - 36px));
 }
 
 .ledger-type-option {
@@ -983,7 +997,7 @@ button:disabled {
 .ledger-category-scroll {
   display: grid;
   gap: 6px;
-  height: 156px;
+  height: 172px;
   max-height: 38vh;
   align-content: start;
   overflow-y: auto;
@@ -1008,22 +1022,22 @@ button:disabled {
   min-height: 36px;
   display: flex;
   align-items: center;
-  border: 1px solid #ead9c5;
+  border: 1px solid #eadfce;
   border-radius: 9px;
   background: #fffdf8;
   text-align: left;
   padding: 7px 12px;
   color: #45505c;
   line-height: 1.25;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   overflow: hidden;
   transition: transform 0.16s ease;
 }
 
 .ledger-category-option.active .ledger-category-pick {
-  border-color: #e8c989;
-  background: var(--mark);
+  border-color: #e8d9ad;
+  background: #fff6d8;
   color: var(--ink);
   font-weight: 700;
 }
@@ -1064,8 +1078,8 @@ button:disabled {
   width: 100%;
   min-height: 28px;
   border: 1px dashed #e0c59e;
-  border-radius: 999px;
-  background: #fff8df;
+  border-radius: 10px;
+  background: #fffaf0;
   color: var(--accent);
   font-weight: 700;
 }
@@ -1096,8 +1110,9 @@ button:disabled {
 }
 
 .ledger-form input[data-ledger="amount"] {
-  grid-column: 1 / -1;
+  order: 2;
   min-width: 0;
+  width: 100%;
 }
 
 .ledger-form input[data-ledger="note"],
