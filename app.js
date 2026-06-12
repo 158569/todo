@@ -11,6 +11,7 @@
   const RECIPE_CATEGORY_COLLAPSED_KEY = "todoCloudRecipeCategoryCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
   const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSize";
+  const BOOT_STARTED_AT = Date.now();
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
   const OLD_WELCOME_TITLE = "待办提醒 顽张って！";
@@ -1314,7 +1315,7 @@
     state.statusTimer = setTimeout(() => {
       statusEl.textContent = "";
       statusEl.classList.remove("error");
-    }, 5000);
+    }, ok ? 1000 : 3000);
   }
 
   function escapeHtml(text) {
@@ -1558,8 +1559,12 @@
   }
 
   function hideBootSplash() {
-    bootSplash?.classList.add("is-done");
-    window.setTimeout(() => bootSplash?.remove(), 220);
+    if (!bootSplash) return;
+    const delay = Math.max(0, 700 - (Date.now() - BOOT_STARTED_AT));
+    window.setTimeout(() => {
+      bootSplash.classList.add("is-done");
+      window.setTimeout(() => bootSplash.remove(), 220);
+    }, delay);
   }
 
   function showWelcomeIfNeeded() {
