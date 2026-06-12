@@ -281,6 +281,16 @@ input[type="checkbox"] {
   color: var(--memo-text-main) !important;
 }
 
+.ledger-form .ledger-category-pick {
+  min-height: 32px !important;
+  padding: 5px 9px !important;
+  line-height: 1.25 !important;
+}
+
+.ledger-category-scroll .ledger-category-option + .ledger-category-option {
+  margin-top: 5px !important;
+}
+
 .ledger-save-button,
 .recipe-form-actions button:first-child,
 .period-form-actions button:first-child {
@@ -315,6 +325,11 @@ input[type="checkbox"] {
   background: var(--memo-accent-soft) !important;
   color: #243A34 !important;
   border-color: var(--memo-border-soft) !important;
+}
+
+.task-row-card {
+  background: var(--memo-bg) !important;
+  box-shadow: none !important;
 }
 
 .completed-row {
