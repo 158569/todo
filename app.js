@@ -840,6 +840,7 @@
       recipeCategories: [],
       deletedRecipes: [],
       periodRecords: [],
+      periodNoPeriodMonths: [],
       versionLog: [],
       ledger: [],
       ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
@@ -941,6 +942,10 @@
         };
       })
       .filter((item) => item.startDate);
+    data.periodNoPeriodMonths = uniqueStrings(data.periodNoPeriodMonths)
+      .map(normalizePeriodMonth)
+      .filter(Boolean)
+      .filter((month) => !periodCoveredMonthSet(data.periodRecords).has(month));
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger)
       .filter((item) => item && typeof item === "object")
@@ -1393,6 +1398,7 @@
         .filter((item) => !deletedRecipeIds.has(item.id));
     }
     merged.periodRecords = dedupeBy([...extra.periodRecords, ...merged.periodRecords], (item) => item.id || `${item.startDate}|${item.endDate}|${item.note}`);
+    merged.periodNoPeriodMonths = uniqueStrings([...extra.periodNoPeriodMonths, ...merged.periodNoPeriodMonths]);
     merged.notes = dedupeBy([...extra.notes, ...merged.notes], (item) => item.id || `${item.title}|${item.text}`);
     merged.noteText = merged.notes[0]?.text || merged.noteText || extra.noteText;
     merged.diaries = { ...extra.diaries, ...merged.diaries };
@@ -2536,6 +2542,65 @@
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
   }
 
+  function normalizePeriodMonth(value) {
+    const match = String(value || "").match(/^(\d{4})-(\d{1,2})/);
+    if (!match) return "";
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    if (!year || month < 1 || month > 12) return "";
+    return `${year}-${String(month).padStart(2, "0")}`;
+  }
+
+  function addMonthsKey(value, offset) {
+    const month = normalizePeriodMonth(value);
+    if (!month) return "";
+    const [year, monthNumber] = month.split("-").map(Number);
+    return monthKey(new Date(year, monthNumber - 1 + offset, 1));
+  }
+
+  function periodMonthLabel(value) {
+    const month = normalizePeriodMonth(value);
+    if (!month) return "";
+    const [year, monthNumber] = month.split("-").map(Number);
+    if (language() === "en") return `${year}-${String(monthNumber).padStart(2, "0")}`;
+    return `${year}年${monthNumber}月`;
+  }
+
+  function periodCoveredMonthSet(records = []) {
+    const months = new Set();
+    asArray(records).forEach((record) => {
+      if (!record?.startDate) return;
+      let current = normalizePeriodMonth(record.startDate);
+      const end = normalizePeriodMonth(record.endDate || record.startDate);
+      while (current && end && current <= end) {
+        months.add(current);
+        if (current === end) break;
+        current = addMonthsKey(current, 1);
+      }
+    });
+    return months;
+  }
+
+  function periodNoPeriodMonths() {
+    const covered = periodCoveredMonthSet(state.data.periodRecords);
+    state.data.periodNoPeriodMonths = uniqueStrings(state.data.periodNoPeriodMonths)
+      .map(normalizePeriodMonth)
+      .filter(Boolean)
+      .filter((month) => !covered.has(month))
+      .sort();
+    return state.data.periodNoPeriodMonths;
+  }
+
+  function periodIntervalHasNoMonth(previous, next, noMonths = new Set(periodNoPeriodMonths())) {
+    let current = addMonthsKey(normalizePeriodMonth(previous?.startDate), 1);
+    const last = addMonthsKey(normalizePeriodMonth(next?.startDate), -1);
+    while (current && last && current <= last) {
+      if (noMonths.has(current)) return true;
+      current = addMonthsKey(current, 1);
+    }
+    return false;
+  }
+
   function ledgerRangeTitle(period, start, end) {
     const startKey = toDateKey(start);
     const endKey = toDateKey(end);
@@ -2928,9 +2993,10 @@
   function periodStats() {
     const records = periodRecordsSorted();
     const intervals = [];
+    const noMonths = new Set(periodNoPeriodMonths());
     for (let index = 1; index < records.length; index += 1) {
       const diff = daysBetween(records[index - 1].startDate, records[index].startDate);
-      if (diff >= 15 && diff <= 60) intervals.push(diff);
+      if (diff >= 15 && diff <= 45 && !periodIntervalHasNoMonth(records[index - 1], records[index], noMonths)) intervals.push(diff);
     }
     const recent = intervals.slice(-6);
     const avgCycle = clampNumber(Math.round(weightedAverage(recent) || 28), 21, 45);
@@ -2964,6 +3030,21 @@
       });
     }
     return { ...summary, predictions };
+  }
+
+  function periodMissingMonths(records) {
+    const sorted = asArray(records).slice().sort((a, b) => String(a.startDate || "").localeCompare(String(b.startDate || "")));
+    if (sorted.length < 2) return [];
+    const covered = periodCoveredMonthSet(sorted);
+    const confirmedNone = new Set(periodNoPeriodMonths());
+    let current = addMonthsKey(normalizePeriodMonth(sorted[0].startDate), 1);
+    const last = addMonthsKey(normalizePeriodMonth(sorted[sorted.length - 1].startDate), -1);
+    const missing = [];
+    while (current && last && current <= last) {
+      if (!covered.has(current) && !confirmedNone.has(current)) missing.push(current);
+      current = addMonthsKey(current, 1);
+    }
+    return missing;
   }
 
   function confidenceLabel(value) {
@@ -3019,30 +3100,58 @@
         <strong>${escapeHtml(value)}</strong>
       </div>
     `).join("");
-    const futureRows = summary.predictions.map((item, index) => `
-      <div class="period-future-row">
-        <span>${index + 1}.</span>
-        <strong>${shortDate(item.startDate)} - ${shortDate(item.endDate)}</strong>
-        <small>${tx("periodOvulation")} ${shortDate(item.ovulation)}</small>
-      </div>
-    `).join("");
     return [
       '<section class="period-card">',
       `<div class="section-title">${tx("periodPredictionTitle")}</div>`,
       `<div class="period-stats">${detailRows}</div>`,
-      `<div class="section-title">${tx("periodUpcomingTitle")}</div>`,
-      `<div class="period-future-list">${futureRows}</div>`,
       `<p class="period-disclaimer">${tx("periodDisclaimer")}</p>`,
       "</section>"
     ].join("");
   }
 
+  function periodMissingHtml(records) {
+    const missing = periodMissingMonths(records);
+    if (!missing.length) return "";
+    const rows = missing.map((month) => `
+      <div class="period-missing-row">
+        <span>${escapeHtml(periodMonthLabel(month))} 没有经期记录，确认一下：</span>
+        <div class="period-missing-actions">
+          <button data-action="fillPeriodMonth" data-period-month="${escapeAttr(month)}" type="button">补记录</button>
+          <button data-action="markPeriodNone" data-period-month="${escapeAttr(month)}" type="button">无</button>
+        </div>
+      </div>
+    `).join("");
+    return [
+      '<section class="period-card period-missing-card">',
+      '<div class="section-title">缺月确认：</div>',
+      '<div class="period-missing-list">',
+      rows,
+      "</div>",
+      "</section>"
+    ].join("");
+  }
+
   function periodHistoryHtml(records) {
-    const sorted = records.slice().sort((a, b) => String(b.startDate || "").localeCompare(String(a.startDate || "")));
+    const noPeriodItems = periodNoPeriodMonths().map((month) => ({ type: "none", month, sortKey: `${month}-01` }));
+    const recordItems = records.map((record) => ({ type: "record", record, sortKey: record.startDate || "" }));
+    const sorted = [...recordItems, ...noPeriodItems].sort((a, b) => String(b.sortKey || "").localeCompare(String(a.sortKey || "")));
     if (!sorted.length) {
       return `<div class="section-title">${tx("periodHistoryTitle")}</div><div class="empty">${tx("periodNoRecords")}</div>`;
     }
-    const cards = sorted.map((record) => {
+    const cards = sorted.map((item) => {
+      if (item.type === "none") {
+        return `
+          <article class="period-record period-none-record">
+            <div class="period-record-head">
+              <strong>${escapeHtml(periodMonthLabel(item.month))} 无</strong>
+              <div class="period-actions">
+                <button data-action="deletePeriodNone" data-period-month="${escapeAttr(item.month)}" type="button">${tx("delete")}</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+      const record = item.record;
       const end = record.endDate ? ` - ${shortDate(record.endDate)}` : "";
       const length = record.endDate ? ` · ${periodDayText(daysBetween(record.startDate, record.endDate) + 1)}` : "";
       return `
@@ -3078,6 +3187,7 @@
       "</div>",
       "</div>",
       periodPredictionHtml(summary),
+      periodMissingHtml(summary.records),
       periodHistoryHtml(summary.records),
       "</div>"
     ].join("");
@@ -3516,6 +3626,7 @@
         updatedAt: now
       });
     }
+    state.data.periodNoPeriodMonths = periodNoPeriodMonths().filter((month) => month !== normalizePeriodMonth(startDate));
     state.editingPeriodId = "";
     scheduleSave();
     setStatus(tx("periodSaved"));
@@ -3540,6 +3651,41 @@
 
   function cancelPeriodEdit() {
     state.editingPeriodId = "";
+    render();
+  }
+
+  function fillPeriodMonth(month) {
+    month = normalizePeriodMonth(month);
+    if (!month) return;
+    state.editingPeriodId = "";
+    render();
+    const startInput = content.querySelector('[data-period="startDate"]');
+    const endInput = content.querySelector('[data-period="endDate"]');
+    const noteInput = content.querySelector('[data-period="note"]');
+    if (startInput) startInput.value = `${month}-01`;
+    if (endInput) endInput.value = "";
+    if (noteInput) noteInput.value = "";
+    startInput?.focus();
+  }
+
+  function markPeriodNone(month) {
+    month = normalizePeriodMonth(month);
+    if (!month) return;
+    const covered = periodCoveredMonthSet(state.data.periodRecords);
+    if (covered.has(month)) return;
+    state.data.periodNoPeriodMonths = uniqueStrings([...periodNoPeriodMonths(), month]).sort();
+    scheduleSave();
+    setStatus(`${periodMonthLabel(month)} 已标记为无`);
+    render();
+  }
+
+  function deletePeriodNone(month) {
+    month = normalizePeriodMonth(month);
+    const before = periodNoPeriodMonths().length;
+    state.data.periodNoPeriodMonths = periodNoPeriodMonths().filter((item) => item !== month);
+    if (state.data.periodNoPeriodMonths.length === before) return;
+    scheduleSave();
+    setStatus("已删除记录");
     render();
   }
 
@@ -4844,6 +4990,15 @@
     }
     if (action === "deletePeriod") {
       deletePeriod(actionTarget.dataset.periodId);
+    }
+    if (action === "fillPeriodMonth") {
+      fillPeriodMonth(actionTarget.dataset.periodMonth);
+    }
+    if (action === "markPeriodNone") {
+      markPeriodNone(actionTarget.dataset.periodMonth);
+    }
+    if (action === "deletePeriodNone") {
+      deletePeriodNone(actionTarget.dataset.periodMonth);
     }
     if (action === "cancelPeriodEdit") {
       cancelPeriodEdit();
