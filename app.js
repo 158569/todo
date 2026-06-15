@@ -1521,6 +1521,17 @@
     saveNow().catch((error) => setStatus(`保存失败：${error.message}`, false));
   }
 
+  function flushSaveBeforeBackground() {
+    if (!state.data) return;
+    clearTimeout(state.saveTimer);
+    clearTimeout(state.noteTimer);
+    clearTimeout(state.diaryTimer);
+    saveLocalData();
+    if (state.user && state.supabase) {
+      saveNow().catch(() => {});
+    }
+  }
+
   function mergeCloudRecipesForSave(currentData, cloudData) {
     const current = normalizeData(structuredCloneSafe(currentData));
     const cloud = normalizeData(structuredCloneSafe(cloudData));
@@ -4140,7 +4151,7 @@
     }
     current.pending.push(text);
     const scheduled = scheduleTaskTimer(text, reminderConfig);
-    scheduleSave();
+    saveNowSoon();
     setStatus(scheduled ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4197,7 +4208,7 @@
     }
     current.pending.push(text);
     if (dateKey !== todayKey()) logUpdate("增加", `${shortDate(dateKey)} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4211,7 +4222,7 @@
     }
     state.data.dailyReminders.push({ times: [time], text });
     logUpdate("增加", `${time} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4225,7 +4236,7 @@
     }
     state.data.dailyImportantReminders.push({ startDate, text });
     logUpdate("增加", `每天 ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4248,7 +4259,7 @@
       timerKey
     });
     logUpdate("增加", `${shortDate(dateKey)} ${time} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus(scheduled ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4263,7 +4274,7 @@
     }
     state.data.weeklyReminders.push({ days: [day], time, text });
     logUpdate("增加", `${dayName(day)} ${time} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4277,7 +4288,7 @@
     }
     state.data.monthlyReminders.push({ day: Number(dayNumber), text });
     logUpdate("增加", `每月${Number(dayNumber)}号 ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -5379,7 +5390,7 @@
       current.lastTodoReminderConfig = normalizeTodoReminderConfig(reminderConfig);
       if (current.todoReminderDefault === "none") applyTodoReminderConfig(null);
       else applyTodoReminderConfig(current.lastTodoReminderConfig);
-      scheduleSave();
+      saveNowSoon();
     }
     render();
   }
@@ -5512,11 +5523,16 @@
   fullscreenButton?.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", updateFullscreenButton);
   window.addEventListener("resize", schedulePwaWindowSizeSave);
-  window.addEventListener("beforeunload", savePwaWindowSize);
+  window.addEventListener("beforeunload", () => {
+    savePwaWindowSize();
+    flushSaveBeforeBackground();
+  });
+  window.addEventListener("pagehide", flushSaveBeforeBackground);
   window.addEventListener("focus", () => refreshCloudData({ silent: true }));
   window.addEventListener("online", () => refreshCloudData({ silent: false }));
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refreshCloudData({ silent: true });
+    else flushSaveBeforeBackground();
   });
   signOutButton.addEventListener("click", signOut);
   welcomeCloseButton.addEventListener("click", () => welcomeModal.classList.add("hidden"));
