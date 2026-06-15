@@ -25,6 +25,11 @@ const vapidPublicKey = Deno.env.get("TODO_VAPID_PUBLIC_KEY") || "";
 const vapidPrivateKey = Deno.env.get("TODO_VAPID_PRIVATE_KEY") || "";
 const timeZone = Deno.env.get("TODO_TIME_ZONE") || "Asia/Shanghai";
 const appUrl = Deno.env.get("TODO_APP_URL") || "/";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS"
+};
 
 if (vapidPublicKey && vapidPrivateKey) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
@@ -34,7 +39,11 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false }
 });
 
-Deno.serve(async () => {
+Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (!supabaseUrl || !serviceRoleKey || !vapidPublicKey || !vapidPrivateKey) {
     return json({ ok: false, error: "Missing Supabase or VAPID environment variables." }, 500);
   }
@@ -95,7 +104,7 @@ Deno.serve(async () => {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" }
+    headers: { ...corsHeaders, "content-type": "application/json; charset=utf-8" }
   });
 }
 
