@@ -2010,21 +2010,21 @@
   }
 
   function clampWindowSize(width, height) {
-    const maxWidth = window.screen?.availWidth || width || 320;
-    const maxHeight = window.screen?.availHeight || height || 680;
+    const maxWidth = window.screen?.availWidth || width || 300;
+    const maxHeight = window.screen?.availHeight || height || 660;
     return {
-      width: Math.min(Math.max(Math.round(Number(width) || 320), 260), maxWidth),
-      height: Math.min(Math.max(Math.round(Number(height) || 680), 420), maxHeight)
+      width: Math.min(Math.max(Math.round(Number(width) || 300), 220), maxWidth),
+      height: Math.min(Math.max(Math.round(Number(height) || 660), 400), maxHeight)
     };
   }
 
   function restorePwaWindowSize() {
     if (!isStandaloneApp() || typeof window.resizeTo !== "function") return;
     const saved = windowSizeFromStorage();
-    let targetWidth = saved?.width || 320;
-    let targetHeight = saved?.height || 680;
-    if (saved?.width > 430 && localStorage.getItem(PWA_COMPACT_WINDOW_MIGRATION_KEY) !== "1") {
-      targetWidth = 320;
+    let targetWidth = saved?.width || 300;
+    let targetHeight = saved?.height || 660;
+    if (saved?.width > 320 && localStorage.getItem(PWA_COMPACT_WINDOW_MIGRATION_KEY) !== "1") {
+      targetWidth = 300;
       localStorage.setItem(PWA_COMPACT_WINDOW_MIGRATION_KEY, "1");
     }
     const size = clampWindowSize(targetWidth, targetHeight);

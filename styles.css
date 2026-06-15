@@ -516,8 +516,7 @@ button:disabled {
   position: relative;
   z-index: 1;
   margin: 0;
-  background: #fffaf5;
-  background: color-mix(in srgb, var(--bg) 34%, var(--paper));
+  background: transparent;
   color: var(--ink);
   transition: transform 0.16s ease;
 }
@@ -2453,6 +2452,13 @@ button:disabled {
     width: 68px;
   }
 
+  .command-bar input,
+  .command-reminder-button,
+  .command-reminder-panel select {
+    font-size: 12px;
+    padding: 0 7px;
+  }
+
   .ledger-main-row,
   .ledger-rangebar,
   .ledger-record-card,
@@ -2463,5 +2469,62 @@ button:disabled {
   .setting-feature-grid,
   .setting-color-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 300px) {
+  .topbar {
+    gap: 3px;
+    padding: 5px;
+  }
+
+  .date-label {
+    width: 30px;
+  }
+
+  .tab {
+    min-width: 38px;
+    height: 27px;
+    padding: 0 5px;
+  }
+
+  .mini-button {
+    min-width: 30px;
+    height: 27px;
+    padding: 0 5px;
+  }
+
+  .account-bar button,
+  .import-button {
+    padding: 0 6px;
+  }
+
+  .content {
+    padding-inline: 8px;
+    font-size: 12.5px;
+  }
+
+  .row {
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 3px;
+  }
+
+  .row .time {
+    padding: 0 2px;
+  }
+
+  .complete-action {
+    width: 22px;
+    height: 22px;
+  }
+
+  .command-bar {
+    grid-template-columns: minmax(0, 1fr) 58px;
+    padding: 7px 7px 9px;
+  }
+
+  .command-reminder-control,
+  .command-reminder-button {
+    width: 58px;
   }
 }
