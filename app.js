@@ -28,6 +28,7 @@
     welcomeTitle: DEFAULT_WELCOME_TITLE,
     welcomeText: DEFAULT_WELCOME_TEXT,
     notificationsEnabled: true,
+    pushNotificationsEnabled: false,
     language: "zh",
     showNotes: true,
     showDiary: true,
@@ -136,7 +137,14 @@
       notifyAllowed: "系统通知已允许",
       notifyDenied: "系统通知已被浏览器阻止",
       notifyEnable: "点击开启系统通知",
-      notifyNote: "网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。App 完全关闭或被系统冻结时，网页不能保证后台常驻。",
+      notifyPushAllowed: "手机后台推送已开启",
+      notifyPushEnable: "开启系统通知 + 手机后台推送",
+      notifyPushMissing: "系统通知已允许；后台推送还缺 VAPID 公钥",
+      notifyLoginRequired: "登录后才能开启手机后台推送。",
+      notifyPushSaved: "手机后台推送已开启 (｡•̀ᴗ-)و",
+      notifyPushUnsupported: "当前浏览器不支持手机后台推送。",
+      notifyPushConfigMissing: "后台推送缺 VAPID 公钥，请先配置 vapidPublicKey。",
+      notifyNote: "网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。配置后台推送后，手机把 App 加到主屏幕也能收到服务端推送。",
       bgColor: "背景色",
       topColor: "顶部色",
       accentColor: "强调色",
@@ -364,7 +372,14 @@
       notifyAllowed: "通知は許可済み",
       notifyDenied: "通知はブラウザでブロックされています",
       notifyEnable: "通知を有効にする",
-      notifyNote: "Web Appを開いている間は、時間になると画面内に強めのポップアップを表示します。システム通知を許可すると、ブラウザ通知も届きます。アプリを完全に閉じた場合やOSに停止された場合、Web Appでは常駐を保証できません。",
+      notifyPushAllowed: "バックグラウンド通知は有効です",
+      notifyPushEnable: "通知とバックグラウンド通知を有効にする",
+      notifyPushMissing: "通知は許可済み。バックグラウンド通知にはVAPID公開鍵が必要です",
+      notifyLoginRequired: "ログイン後にバックグラウンド通知を有効にできます。",
+      notifyPushSaved: "バックグラウンド通知を有効にしました (｡•̀ᴗ-)و",
+      notifyPushUnsupported: "このブラウザはバックグラウンド通知に対応していません。",
+      notifyPushConfigMissing: "バックグラウンド通知には vapidPublicKey の設定が必要です。",
+      notifyNote: "Web Appを開いている間は、時間になると画面内に強めのポップアップを表示します。通知を許可し、バックグラウンド通知を設定すると、ホーム画面に追加したスマホでもサーバー通知を受け取れます。",
       bgColor: "背景色",
       topColor: "上部色",
       accentColor: "強調色",
@@ -592,7 +607,14 @@
       notifyAllowed: "System notifications allowed",
       notifyDenied: "System notifications blocked by browser",
       notifyEnable: "Enable notifications",
-      notifyNote: "When the Web App is open, due reminders show an in-app popup. If system notifications are allowed, it also sends a browser notification. If the app is fully closed or frozen by the OS, a web app cannot guarantee background running.",
+      notifyPushAllowed: "Mobile background push enabled",
+      notifyPushEnable: "Enable notifications + mobile push",
+      notifyPushMissing: "System notifications allowed; mobile push needs a VAPID public key",
+      notifyLoginRequired: "Sign in before enabling mobile background push.",
+      notifyPushSaved: "Mobile background push enabled (｡•̀ᴗ-)و",
+      notifyPushUnsupported: "This browser does not support mobile background push.",
+      notifyPushConfigMissing: "Mobile background push needs vapidPublicKey in config.",
+      notifyNote: "When the Web App is open, due reminders show an in-app popup. If background push is configured, phones that install the app to the home screen can also receive server push notifications.",
       bgColor: "Background",
       topColor: "Top bar",
       accentColor: "Accent",
@@ -763,6 +785,7 @@
     alarmTitleOn: false,
     activeAlarm: null,
     firedAlarmKeys: new Set(),
+    pushSubscriptionReady: false,
     syncTimer: null,
     syncBusy: false,
     saving: false,
@@ -1561,6 +1584,7 @@
     showWelcomeIfNeeded();
     startAlarmLoop();
     startSyncLoop();
+    syncPushSubscriptionIfEnabled();
     hideBootSplash();
   }
 
@@ -1710,6 +1734,93 @@
     }
   }
 
+  function pushPublicKey() {
+    return String(CONFIG.vapidPublicKey || CONFIG.pushVapidPublicKey || "").trim();
+  }
+
+  function canUseWebPush() {
+    return Boolean("serviceWorker" in navigator && "PushManager" in window);
+  }
+
+  function urlBase64ToUint8Array(value) {
+    const padding = "=".repeat((4 - (value.length % 4)) % 4);
+    const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = window.atob(base64);
+    const output = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
+    return output;
+  }
+
+  async function savePushSubscription(subscription) {
+    if (!state.supabase || !state.user || !subscription) return false;
+    const json = subscription.toJSON();
+    const { error } = await state.supabase
+      .from("todo_push_subscriptions")
+      .upsert({
+        user_id: state.user.id,
+        endpoint: json.endpoint,
+        subscription: json,
+        p256dh: json.keys?.p256dh || "",
+        auth: json.keys?.auth || "",
+        user_agent: navigator.userAgent || "",
+        enabled: true,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id,endpoint" });
+    if (error) throw error;
+    state.pushSubscriptionReady = true;
+    return true;
+  }
+
+  async function registerPushSubscription({ quiet = false } = {}) {
+    if (!state.user) {
+      if (!quiet) setStatus(tx("notifyLoginRequired"), false);
+      return false;
+    }
+    if (!canUseWebPush()) {
+      if (!quiet) setStatus(tx("notifyPushUnsupported"), false);
+      return false;
+    }
+    const publicKey = pushPublicKey();
+    if (!publicKey) {
+      if (!quiet) setStatus(tx("notifyPushConfigMissing"), false);
+      return false;
+    }
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+    }
+    await savePushSubscription(subscription);
+    settings().pushNotificationsEnabled = true;
+    scheduleSave();
+    if (!quiet) setStatus(tx("notifyPushSaved"));
+    return true;
+  }
+
+  async function disableCurrentPushSubscription() {
+    if (!state.supabase || !state.user || !canUseWebPush()) return;
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription?.endpoint) return;
+    await state.supabase
+      .from("todo_push_subscriptions")
+      .update({ enabled: false, updated_at: new Date().toISOString() })
+      .eq("user_id", state.user.id)
+      .eq("endpoint", subscription.endpoint);
+    state.pushSubscriptionReady = false;
+  }
+
+  function syncPushSubscriptionIfEnabled() {
+    const current = settings();
+    if (!current.pushNotificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+    registerPushSubscription({ quiet: true }).catch(() => {
+      state.pushSubscriptionReady = false;
+    });
+  }
+
   async function enableNotifications() {
     if (!("Notification" in window)) {
       setStatus("当前浏览器不支持系统通知。", false);
@@ -1717,8 +1828,14 @@
     }
     const permission = await Notification.requestPermission();
     settings().notificationsEnabled = permission === "granted";
+    if (permission === "granted") {
+      await registerPushSubscription().catch((error) => {
+        state.pushSubscriptionReady = false;
+        setStatus(error.message || tx("notifyPushUnsupported"), false);
+      });
+    }
     scheduleSave();
-    setStatus(permission === "granted" ? "系统通知已开启。" : "系统通知未开启。", permission === "granted");
+    if (permission !== "granted") setStatus("系统通知未开启。", false);
     render();
   }
 
@@ -3727,13 +3844,21 @@
   function renderSettings() {
     const current = settings();
     const diaryPinActive = current.diaryPinEnabled === true && /^\d{4}$/.test(current.diaryPin || "");
+    const pushConfigured = Boolean(pushPublicKey());
+    const pushAllowed = current.pushNotificationsEnabled && state.pushSubscriptionReady;
     const notificationText = !("Notification" in window)
       ? tx("notifyUnsupported")
       : Notification.permission === "granted"
-        ? tx("notifyAllowed")
+        ? pushAllowed
+          ? tx("notifyPushAllowed")
+          : pushConfigured
+            ? tx("notifyPushEnable")
+            : tx("notifyPushMissing")
         : Notification.permission === "denied"
           ? tx("notifyDenied")
-          : tx("notifyEnable");
+          : pushConfigured
+            ? tx("notifyPushEnable")
+            : tx("notifyEnable");
     content.innerHTML = [
       '<div class="settings-panel">',
       '<div class="section-title">' + tx("featureSection") + "</div>",
@@ -4659,6 +4784,7 @@
       openSyncLogin();
       return;
     }
+    await disableCurrentPushSubscription().catch(() => {});
     await state.supabase.auth.signOut();
     state.user = null;
     clearInterval(state.syncTimer);
