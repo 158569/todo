@@ -1770,12 +1770,18 @@ $form.Size = New-Object System.Drawing.Size(300, 500)
 $form.StartPosition = "Manual"
 $form.Location = New-Object System.Drawing.Point(40, 80)
 $form.TopMost = $true
-$form.MinimumSize = New-Object System.Drawing.Size(300, 500)
+$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::Sizable
+$form.MinimumSize = New-Object System.Drawing.Size(240, 420)
 $form.BackColor = [System.Drawing.Color]::FromArgb(255, 251, 245)
 $form.Icon = New-AppIcon
 
 $font = New-Object System.Drawing.Font("SimSun", 10)
 $form.Font = $font
+
+$script:contentMargin = 18
+function Get-ContentWidth {
+  return [Math]::Max(180, $form.ClientSize.Width - ($script:contentMargin * 2))
+}
 
 $toolbar = New-Object System.Windows.Forms.Panel
 $toolbar.Dock = "Top"
@@ -1995,7 +2001,7 @@ $textBox.BackColor = [System.Drawing.Color]::FromArgb(255, 254, 250)
 $textBox.ForeColor = [System.Drawing.Color]::FromArgb(33, 37, 43)
 $textBox.Font = New-Object System.Drawing.Font("SimSun", 9.5, [System.Drawing.FontStyle]::Regular)
 $textBox.Location = New-Object System.Drawing.Point(18, 66)
-$textBox.Size = New-Object System.Drawing.Size(262, 328)
+$textBox.Size = New-Object System.Drawing.Size((Get-ContentWidth), 328)
 $textBox.Anchor = "Top,Bottom,Left,Right"
 $textBox.Add_Enter({
   if ($script:currentView -eq "notes" -and $textBox.ForeColor -eq [System.Drawing.Color]::Gray -and $textBox.Text -eq $script:notePlaceholder) {
@@ -2038,13 +2044,13 @@ $textBox.Add_MouseDown({
 
 $inputSeparator = New-Object System.Windows.Forms.Panel
 $inputSeparator.Location = New-Object System.Drawing.Point(18, 394)
-$inputSeparator.Size = New-Object System.Drawing.Size(262, 1)
+$inputSeparator.Size = New-Object System.Drawing.Size((Get-ContentWidth), 1)
 $inputSeparator.Anchor = "Bottom,Left,Right"
 $inputSeparator.BackColor = [System.Drawing.Color]::FromArgb(225, 218, 204)
 
 $inputPanel = New-Object System.Windows.Forms.Panel
 $inputPanel.Location = New-Object System.Drawing.Point(18, 402)
-$inputPanel.Size = New-Object System.Drawing.Size(262, 26)
+$inputPanel.Size = New-Object System.Drawing.Size((Get-ContentWidth), 26)
 $inputPanel.Anchor = "Bottom,Left,Right"
 $inputPanel.BackColor = [System.Drawing.Color]::FromArgb(255, 253, 248)
 Set-RoundedControl $inputPanel 8
@@ -2199,18 +2205,19 @@ function Save-CurrentNoteIfNeeded($showStatus = $true) {
 }
 
 function Set-NotesLayout($enabled) {
+  $contentWidth = Get-ContentWidth
   if ($enabled) {
     $inputPanel.Visible = $false
     $inputSeparator.Visible = $false
-    $textBox.Size = New-Object System.Drawing.Size(262, 366)
+    $textBox.Size = New-Object System.Drawing.Size($contentWidth, 366)
   } else {
     $showTodoInput = ($script:currentView -eq "todos")
     $inputPanel.Visible = $showTodoInput
     $inputSeparator.Visible = $showTodoInput
     if ($showTodoInput) {
-      $textBox.Size = New-Object System.Drawing.Size(262, 328)
+      $textBox.Size = New-Object System.Drawing.Size($contentWidth, 328)
     } else {
-      $textBox.Size = New-Object System.Drawing.Size(262, 366)
+      $textBox.Size = New-Object System.Drawing.Size($contentWidth, 366)
     }
   }
 }
@@ -2490,7 +2497,6 @@ $form.Add_FormClosed({
 
 [System.Windows.Forms.Application]::EnableVisualStyles()
 [System.Windows.Forms.Application]::Run($form)
-
 
 
 
