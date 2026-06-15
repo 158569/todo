@@ -16,6 +16,7 @@ type Reminder = {
   tag: string;
   title: string;
   body: string;
+  occurrenceKey: string;
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -49,6 +50,7 @@ Deno.serve(async (request) => {
   }
 
   const now = zonedNow(new Date());
+  const moments = recentZonedMoments(new Date(), 5);
   const { data: docs, error: docsError } = await supabase
     .from("todo_documents")
     .select("user_id,data");
@@ -56,10 +58,12 @@ Deno.serve(async (request) => {
 
   let sent = 0;
   let skipped = 0;
+  let remindersFound = 0;
   const errors: string[] = [];
 
   for (const doc of (docs || []) as TodoDocument[]) {
-    const reminders = dueReminders(doc.data || {}, now);
+    const reminders = dueReminders(doc.data || {}, moments);
+    remindersFound += reminders.length;
     if (!reminders.length) continue;
 
     const { data: subscriptions, error: subError } = await supabase
@@ -74,7 +78,7 @@ Deno.serve(async (request) => {
 
     for (const reminder of reminders) {
       for (const sub of (subscriptions || []) as PushSubscriptionRow[]) {
-        const deliveryKey = await sha256Hex(`${doc.user_id}|${sub.endpoint}|${now.dateKey} ${now.time}|${reminder.tag}`);
+        const deliveryKey = await sha256Hex(`${doc.user_id}|${sub.endpoint}|${reminder.occurrenceKey}|${reminder.tag}`);
         const inserted = await reserveDelivery(deliveryKey, doc.user_id, sub.endpoint, reminder.tag);
         if (!inserted) {
           skipped += 1;
@@ -98,7 +102,7 @@ Deno.serve(async (request) => {
     }
   }
 
-  return json({ ok: true, sent, skipped, errors });
+  return json({ ok: true, now: `${now.dateKey} ${now.time}`, remindersFound, sent, skipped, errors });
 });
 
 function json(body: unknown, status = 200) {
@@ -131,6 +135,19 @@ function zonedNow(date: Date) {
   };
 }
 
+function recentZonedMoments(date: Date, minutes: number) {
+  const moments = [];
+  const seen = new Set<string>();
+  for (let i = 0; i <= minutes; i += 1) {
+    const moment = zonedNow(new Date(date.getTime() - i * 60_000));
+    const key = `${moment.dateKey} ${moment.time}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    moments.push(moment);
+  }
+  return moments;
+}
+
 function asArray<T = unknown>(value: unknown): T[] {
   return Array.isArray(value) ? value as T[] : [];
 }
@@ -161,63 +178,91 @@ function isCompleted(completed: Set<string>, key: string) {
   return completed.has(key) || completed.has(`今日已完成：${key}`);
 }
 
-function dueReminders(data: Record<string, unknown>, now: ReturnType<typeof zonedNow>) {
-  const completed = completedSet(data, now.dateKey);
+function dueReminders(data: Record<string, unknown>, moments: ReturnType<typeof recentZonedMoments>) {
   const reminders: Reminder[] = [];
+  const seen = new Set<string>();
+
+  const addReminder = (reminder: Reminder) => {
+    const key = `${reminder.occurrenceKey}|${reminder.tag}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    reminders.push(reminder);
+  };
 
   for (const item of asArray<Record<string, unknown>>(data.dailyReminders)) {
     const text = String(item.text || "").trim();
-    if (!text || !reminderTimes(item).includes(now.time)) continue;
-    const key = `${now.time}  ${text}`;
-    if (isCompleted(completed, key)) continue;
-    reminders.push({
-      tag: `daily|${now.time}|${text}`,
-      title: "memo提醒",
-      body: `${now.time}  ${text}`
-    });
+    const times = reminderTimes(item);
+    if (!text || !times.length) continue;
+    for (const moment of moments) {
+      if (!times.includes(moment.time)) continue;
+      const completed = completedSet(data, moment.dateKey);
+      const key = `${moment.time}  ${text}`;
+      if (isCompleted(completed, key)) continue;
+      addReminder({
+        tag: `daily|${moment.dateKey}|${moment.time}|${text}`,
+        title: "memo提醒",
+        body: `${moment.time}  ${text}`,
+        occurrenceKey: `${moment.dateKey} ${moment.time}`
+      });
+    }
   }
 
   for (const item of asArray<Record<string, unknown>>(data.weeklyReminders)) {
     const text = String(item.text || "").trim();
     const days = asArray<string>(item.days);
     const time = normalizeTime(String(item.time || ""));
-    if (!text || time !== now.time || !days.includes(now.weekday)) continue;
-    const key = `${time}  ${text}`;
-    if (isCompleted(completed, key)) continue;
-    reminders.push({
-      tag: `weekly|${now.weekday}|${time}|${text}`,
-      title: "memo提醒",
-      body: `${time}  ${text}`
-    });
+    if (!text || !time) continue;
+    for (const moment of moments) {
+      if (time !== moment.time || !days.includes(moment.weekday)) continue;
+      const completed = completedSet(data, moment.dateKey);
+      const key = `${time}  ${text}`;
+      if (isCompleted(completed, key)) continue;
+      addReminder({
+        tag: `weekly|${moment.dateKey}|${moment.weekday}|${time}|${text}`,
+        title: "memo提醒",
+        body: `${time}  ${text}`,
+        occurrenceKey: `${moment.dateKey} ${time}`
+      });
+    }
   }
 
   for (const item of asArray<Record<string, unknown>>(data.oneTimeReminders)) {
     const text = String(item.text || "").trim();
     const at = String(item.at || "").trim();
-    if (!text || at !== `${now.dateKey} ${now.time}`) continue;
-    const key = `${now.time}  ${text}`;
-    if (isCompleted(completed, key)) continue;
-    reminders.push({
-      tag: `once|${at}|${text}`,
-      title: "memo提醒",
-      body: `${now.time}  ${text}`
-    });
+    if (!text || !at) continue;
+    for (const moment of moments) {
+      if (at !== `${moment.dateKey} ${moment.time}`) continue;
+      const completed = completedSet(data, moment.dateKey);
+      const key = `${moment.time}  ${text}`;
+      if (isCompleted(completed, key)) continue;
+      addReminder({
+        tag: `once|${at}|${text}`,
+        title: "memo提醒",
+        body: `${moment.time}  ${text}`,
+        occurrenceKey: at
+      });
+    }
   }
 
   for (const item of asArray<Record<string, unknown>>(data.monthlyReminders)) {
     const text = String(item.text || "").trim();
     const time = normalizeTime(String(item.time || ""));
-    if (!text || !time || time !== now.time || Number(item.day) !== now.dayOfMonth) continue;
-    const key = `${time}  ${text}`;
-    if (isCompleted(completed, key)) continue;
-    reminders.push({
-      tag: `monthly|${now.dayOfMonth}|${time}|${text}`,
-      title: "memo提醒",
-      body: `${time}  ${text}`
-    });
+    if (!text || !time) continue;
+    for (const moment of moments) {
+      if (time !== moment.time || Number(item.day) !== moment.dayOfMonth) continue;
+      const completed = completedSet(data, moment.dateKey);
+      const key = `${time}  ${text}`;
+      if (isCompleted(completed, key)) continue;
+      addReminder({
+        tag: `monthly|${moment.dateKey}|${moment.dayOfMonth}|${time}|${text}`,
+        title: "memo提醒",
+        body: `${time}  ${text}`,
+        occurrenceKey: `${moment.dateKey} ${time}`
+      });
+    }
   }
 
-  dueTaskTimers(data, now).forEach((reminder) => reminders.push(reminder));
+  dueTaskTimers(data, moments[0]).forEach(addReminder);
 
   return reminders;
 }
@@ -236,7 +281,8 @@ function dueTaskTimers(data: Record<string, unknown>, now: ReturnType<typeof zon
       reminders.push({
         tag: `timer|${dateKey}|${timerKey}|${String(timer.remindAt || "")}`,
         title: "memo待办跟进",
-        body: text
+        body: text,
+        occurrenceKey: String(timer.remindAt || "")
       });
     }
   }
