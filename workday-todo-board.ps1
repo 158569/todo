@@ -1817,17 +1817,31 @@ $lockDot.Add_Paint({
   $pinPen.Dispose()
 })
 
-function Toggle-Lock {
-  $script:isLocked = -not $script:isLocked
+function Apply-LockState {
   $form.TopMost = $script:isLocked
+  if ($script:isLocked) {
+    $form.TopMost = $false
+    $form.TopMost = $true
+    $form.Activate()
+  }
   $lockDot.Invalidate()
+  if ($null -ne $toolTip) {
+    $lockText = if ($script:isLocked) { "已置顶：左键取消，右键更多" } else { "未置顶：左键置顶，右键更多" }
+    $toolTip.SetToolTip($lockDot, $lockText)
+  }
 }
 
-$lockDot.Add_Click({
-  if ($null -ne $script:catMenu) {
-    $script:catMenu.Show($lockDot, 0, $lockDot.Height)
-  } else {
+function Toggle-Lock {
+  $script:isLocked = -not $script:isLocked
+  Apply-LockState
+}
+
+$lockDot.Add_MouseUp({
+  param($sender, $eventArgs)
+  if ($eventArgs.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
     Toggle-Lock
+  } elseif ($eventArgs.Button -eq [System.Windows.Forms.MouseButtons]::Right -and $null -ne $script:catMenu) {
+    $script:catMenu.Show($lockDot, 0, $lockDot.Height)
   }
 })
 
@@ -1848,7 +1862,7 @@ $dateLabel.Add_Click({
 })
 
 $toolTip = New-Object System.Windows.Forms.ToolTip
-$toolTip.SetToolTip($lockDot, "置顶 / 更多菜单")
+$toolTip.SetToolTip($lockDot, "已置顶：左键取消，右键更多")
 $toolTip.SetToolTip($dateLabel, "历史页可点这里筛选日期")
 
 $todoButton = New-Object System.Windows.Forms.Button
@@ -2455,6 +2469,7 @@ $form.Controls.Add($toolbar)
 $form.Add_Shown({
   Update-NavScrollRange
   Refresh-Board
+  Apply-LockState
   $timer.Start()
 })
 
@@ -2475,7 +2490,6 @@ $form.Add_FormClosed({
 
 [System.Windows.Forms.Application]::EnableVisualStyles()
 [System.Windows.Forms.Application]::Run($form)
-
 
 
 
