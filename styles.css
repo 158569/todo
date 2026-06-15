@@ -2344,15 +2344,11 @@ button:disabled {
   }
 }
 
-@media (max-width: 340px) {
-  .shell {
-    border-radius: 0;
-  }
-
-  .tab {
-    min-width: 48px;
-    padding: 0 8px;
-    font-size: 12px;
+@media (max-width: 430px) {
+  .topbar {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 4px;
+    padding: 6px;
   }
 
   .date-label {
@@ -2360,9 +2356,101 @@ button:disabled {
     font-size: 12px;
   }
 
+  .tab {
+    min-width: 46px;
+    height: 28px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+
   .mini-button {
     min-width: 38px;
+    height: 28px;
     padding: 0 7px;
+  }
+
+  .account-bar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 4px;
+    padding: 3px 6px;
+  }
+
+  #userLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .content {
+    padding: 12px 10px 8px;
+    font-size: 13px;
+  }
+
+  .row {
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    gap: 4px;
+  }
+
+  .command-bar {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    gap: 6px;
+    padding: 8px 8px 10px;
+  }
+
+  .command-reminder-control,
+  .command-reminder-button {
+    width: 76px;
+  }
+
+  .command-bar input,
+  .command-reminder-button,
+  .command-reminder-panel select {
+    height: 34px;
+    border-radius: 11px;
+    padding: 0 9px;
+    font-size: 13px;
+  }
+
+  .command-reminder-panel {
+    width: min(208px, calc(100vw - 16px));
+  }
+}
+
+@media (max-width: 340px) {
+  .shell {
+    border-radius: 0;
+  }
+
+  .tab {
+    min-width: 42px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .date-label {
+    width: 34px;
+    font-size: 11px;
+  }
+
+  .mini-button {
+    min-width: 34px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .pin {
+    width: 16px;
+    height: 16px;
+  }
+
+  .command-bar {
+    grid-template-columns: minmax(0, 1fr) 68px;
+  }
+
+  .command-reminder-control,
+  .command-reminder-button {
+    width: 68px;
   }
 
   .ledger-main-row,

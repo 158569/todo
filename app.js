@@ -11,6 +11,7 @@
   const RECIPE_CATEGORY_COLLAPSED_KEY = "todoCloudRecipeCategoryCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
   const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSize";
+  const PWA_COMPACT_WINDOW_MIGRATION_KEY = "todoCloudPwaCompactWindowV1";
   const BOOT_STARTED_AT = Date.now();
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
@@ -2009,18 +2010,24 @@
   }
 
   function clampWindowSize(width, height) {
-    const maxWidth = window.screen?.availWidth || width || 430;
-    const maxHeight = window.screen?.availHeight || height || 720;
+    const maxWidth = window.screen?.availWidth || width || 320;
+    const maxHeight = window.screen?.availHeight || height || 680;
     return {
-      width: Math.min(Math.max(Math.round(Number(width) || 430), 360), maxWidth),
-      height: Math.min(Math.max(Math.round(Number(height) || 720), 520), maxHeight)
+      width: Math.min(Math.max(Math.round(Number(width) || 320), 260), maxWidth),
+      height: Math.min(Math.max(Math.round(Number(height) || 680), 420), maxHeight)
     };
   }
 
   function restorePwaWindowSize() {
     if (!isStandaloneApp() || typeof window.resizeTo !== "function") return;
     const saved = windowSizeFromStorage();
-    const size = clampWindowSize(saved?.width || 430, saved?.height || 720);
+    let targetWidth = saved?.width || 320;
+    let targetHeight = saved?.height || 680;
+    if (saved?.width > 430 && localStorage.getItem(PWA_COMPACT_WINDOW_MIGRATION_KEY) !== "1") {
+      targetWidth = 320;
+      localStorage.setItem(PWA_COMPACT_WINDOW_MIGRATION_KEY, "1");
+    }
+    const size = clampWindowSize(targetWidth, targetHeight);
     if (Math.abs(window.outerWidth - size.width) < 8 && Math.abs(window.outerHeight - size.height) < 8) return;
     setTimeout(() => {
       try {
