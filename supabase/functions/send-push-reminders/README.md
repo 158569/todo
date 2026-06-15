@@ -12,3 +12,5 @@
    - `TODO_TIME_ZONE`，默认 `Asia/Shanghai`
 
 部署后，用 Supabase Scheduler/Cron 每 1 分钟调用一次 `send-push-reminders`。
+
+另外部署 `send-test-push`，设置页里的“发送测试推送”会调用它，专门用来测试当前账号的手机订阅是否能收到后台推送。

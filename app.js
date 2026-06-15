@@ -145,6 +145,12 @@
       notifyPushUnsupported: "当前浏览器不支持手机后台推送。",
       notifyPushConfigMissing: "后台推送缺 VAPID 公钥，请先配置 vapidPublicKey。",
       notifyNote: "网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。配置后台推送后，手机把 App 加到主屏幕也能收到服务端推送。",
+      pushDiagnosticsTitle: "后台推送自检：",
+      pushDiagnosticsRefresh: "刷新自检",
+      pushTestSend: "发送测试推送",
+      pushTestSent: "测试推送已发出，请看手机通知栏。",
+      pushTestNoSubscription: "没有可用的手机推送订阅，先在手机上点开启通知。",
+      pushTestFunctionMissing: "测试推送函数还没部署到 Supabase。",
       bgColor: "背景色",
       topColor: "顶部色",
       accentColor: "强调色",
@@ -1742,6 +1748,15 @@
     return Boolean("serviceWorker" in navigator && "PushManager" in window);
   }
 
+  function isLikelyIos() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent || "")
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function isSecurePushContext() {
+    return location.protocol === "https:" || ["localhost", "127.0.0.1"].includes(location.hostname);
+  }
+
   function urlBase64ToUint8Array(value) {
     const padding = "=".repeat((4 - (value.length % 4)) % 4);
     const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -1821,6 +1836,43 @@
     });
   }
 
+  function pushCheckRow(label, ok, detail) {
+    return [
+      '<div class="push-check-row">',
+      `<span>${escapeHtml(label)}</span>`,
+      `<strong class="${ok ? "ok" : "error"}">${ok ? "OK" : "NO"}</strong>`,
+      `<em>${escapeHtml(detail || "")}</em>`,
+      "</div>"
+    ].join("");
+  }
+
+  function pushDiagnosticsHtml() {
+    const hasNotification = "Notification" in window;
+    const permission = hasNotification ? Notification.permission : "unsupported";
+    const ios = isLikelyIos();
+    const standalone = isStandaloneApp();
+    const rows = [
+      pushCheckRow("登录", Boolean(state.user), state.user?.email || "未登录"),
+      pushCheckRow("HTTPS", isSecurePushContext(), location.protocol),
+      pushCheckRow("Service Worker", "serviceWorker" in navigator, "serviceWorker" in navigator ? "支持" : "不支持"),
+      pushCheckRow("PushManager", "PushManager" in window, "PushManager" in window ? "支持" : "不支持"),
+      pushCheckRow("系统通知", permission === "granted", permission),
+      pushCheckRow("VAPID 公钥", Boolean(pushPublicKey()), pushPublicKey() ? "已配置" : "缺少"),
+      pushCheckRow("当前订阅", state.pushSubscriptionReady, state.pushSubscriptionReady ? "已写入 Supabase" : "未确认"),
+      pushCheckRow("iPhone 主屏幕", !ios || standalone, ios ? (standalone ? "已从主屏幕打开" : "必须添加到主屏幕后从图标打开") : "非 iPhone 可忽略")
+    ];
+    return [
+      `<div class="section-title">${tx("pushDiagnosticsTitle")}</div>`,
+      '<div class="push-check-list">',
+      rows.join(""),
+      "</div>",
+      '<div class="setting-action-row">',
+      `<button class="setting-button" data-action="refreshPushDiagnostics" type="button">${tx("pushDiagnosticsRefresh")}</button>`,
+      `<button class="setting-button" data-action="sendTestPush" type="button">${tx("pushTestSend")}</button>`,
+      "</div>"
+    ].join("");
+  }
+
   async function enableNotifications() {
     if (!("Notification" in window)) {
       setStatus("当前浏览器不支持系统通知。", false);
@@ -1837,6 +1889,47 @@
     scheduleSave();
     if (permission !== "granted") setStatus("系统通知未开启。", false);
     render();
+  }
+
+  async function refreshPushDiagnostics() {
+    if (!("Notification" in window)) {
+      setStatus(tx("notifyUnsupported"), false);
+      render();
+      return;
+    }
+    if (Notification.permission !== "granted") {
+      await enableNotifications();
+      return;
+    }
+    await registerPushSubscription().catch((error) => {
+      state.pushSubscriptionReady = false;
+      setStatus(error.message || tx("notifyPushUnsupported"), false);
+    });
+    render();
+  }
+
+  async function sendTestPush() {
+    if (!state.supabase || !state.user) {
+      setStatus(tx("notifyLoginRequired"), false);
+      return;
+    }
+    if (!("Notification" in window) || Notification.permission !== "granted" || !state.pushSubscriptionReady) {
+      await refreshPushDiagnostics();
+      if (!("Notification" in window) || Notification.permission !== "granted" || !state.pushSubscriptionReady) return;
+    }
+    const { data, error } = await state.supabase.functions.invoke("send-test-push", {
+      body: { message: `memo 测试推送 ${nowStamp()}` }
+    });
+    if (error) {
+      const message = /not found|404/i.test(error.message || "") ? tx("pushTestFunctionMissing") : `测试推送失败：${error.message}`;
+      setStatus(message, false);
+      return;
+    }
+    if (!data?.sent) {
+      setStatus(tx("pushTestNoSubscription"), false);
+      return;
+    }
+    setStatus(tx("pushTestSent"));
   }
 
   function settings() {
@@ -3888,6 +3981,7 @@
       '<div class="section-title">' + tx("alarmSection") + "</div>",
       `<button class="setting-button" data-action="enableNotifications" type="button">${escapeHtml(notificationText)}</button>`,
       `<div class="setting-note">${tx("notifyNote")}</div>`,
+      pushDiagnosticsHtml(),
       settingSelect("todoReminderDefault", tx("todoReminderDefaultLabel"), current.todoReminderDefault, [
         ["none", tx("todoReminderDefaultNone")],
         ["last", tx("todoReminderDefaultLast")]
@@ -5140,6 +5234,12 @@
     }
     if (action === "enableNotifications") {
       enableNotifications();
+    }
+    if (action === "refreshPushDiagnostics") {
+      refreshPushDiagnostics();
+    }
+    if (action === "sendTestPush") {
+      sendTestPush();
     }
     if (action === "resetSettings") {
       state.data.settings = { ...DEFAULT_SETTINGS };

@@ -934,6 +934,39 @@ button:disabled {
   line-height: 1.5;
 }
 
+.push-check-list {
+  display: grid;
+  gap: 6px;
+}
+
+.push-check-row {
+  display: grid;
+  grid-template-columns: 88px 42px 1fr;
+  gap: 8px;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffdf8;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.push-check-row strong {
+  color: var(--accent);
+}
+
+.push-check-row strong.error {
+  color: #8a4b48;
+}
+
+.push-check-row em {
+  color: var(--muted);
+  font-style: normal;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .ledger-form {
   grid-template-columns: minmax(0, 1fr);
   gap: 10px;
