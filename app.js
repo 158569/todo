@@ -4955,6 +4955,7 @@
 
   tabsNav?.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
+    if (event.target.closest(".tab")) return;
     state.tabDrag = {
       pointerId: event.pointerId,
       startX: event.clientX,
