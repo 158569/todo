@@ -4969,7 +4969,7 @@
     const drag = state.tabDrag;
     if (!drag) return;
     const dx = event.clientX - drag.startX;
-    if (Math.abs(dx) > 3) {
+    if (Math.abs(dx) > 12) {
       drag.moved = true;
       tabsNav.scrollLeft = drag.scrollLeft - dx;
       event.preventDefault();
