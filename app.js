@@ -10,7 +10,6 @@
   const RECIPE_CATEGORY_KEY = "todoCloudRecipeCategory";
   const RECIPE_CATEGORY_COLLAPSED_KEY = "todoCloudRecipeCategoryCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
-  const PWA_DEFAULT_WINDOW_WIDTH = 462;
   const BOOT_STARTED_AT = Date.now();
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
@@ -1596,7 +1595,6 @@
     applyTodoReminderConfig(settings().todoReminderDefault === "last" ? settings().lastTodoReminderConfig : null);
     if (state.user?.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
     render();
-    fitStandaloneWindowWidth();
     showWelcomeIfNeeded();
     startAlarmLoop();
     startSyncLoop();
@@ -1996,19 +1994,6 @@
 
   function isStandaloneApp() {
     return Boolean(window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone);
-  }
-
-  function fitStandaloneWindowWidth() {
-    if (!isStandaloneApp() || isFullscreen() || typeof window.resizeTo !== "function") return;
-    if (window.outerWidth <= PWA_DEFAULT_WINDOW_WIDTH + 24) return;
-    const targetWidth = Math.min(PWA_DEFAULT_WINDOW_WIDTH, window.screen?.availWidth || PWA_DEFAULT_WINDOW_WIDTH);
-    setTimeout(() => {
-      try {
-        window.resizeTo(targetWidth, window.outerHeight);
-      } catch {
-        // Windows installed apps can block scripted resize; manual resizing still works.
-      }
-    }, 120);
   }
 
   async function toggleFullscreen() {
