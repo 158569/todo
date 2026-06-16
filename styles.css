@@ -2528,3 +2528,24 @@ button:disabled {
     width: 58px;
   }
 }
+
+@media (display-mode: standalone) and (min-width: 520px) {
+  body {
+    place-items: stretch start;
+  }
+
+  .shell {
+    width: 462px;
+    max-width: 462px;
+    border-right: 1px solid #efe3d3;
+    box-shadow: 8px 0 24px rgba(44, 35, 26, 0.08);
+  }
+
+  .shell:fullscreen,
+  .shell.is-fullscreen {
+    width: 100vw;
+    max-width: none;
+    border-right: 0;
+    box-shadow: none;
+  }
+}
