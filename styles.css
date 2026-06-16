@@ -555,6 +555,14 @@ button:disabled {
   background: #3f444a;
   color: #fff;
   font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.completed-row.show-delete .completed-row-delete {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .completed-row.show-delete .completed-row-card {
