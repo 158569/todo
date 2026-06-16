@@ -785,6 +785,8 @@
     taskLongPressTimer: null,
     lastTaskTap: null,
     ignoreTaskClick: false,
+    tabDrag: null,
+    ignoreTabClick: false,
     ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
@@ -817,6 +819,7 @@
   const fullscreenButton = $("#fullscreenButton");
   const signOutButton = $("#signOutButton");
   const userLabel = $("#userLabel");
+  const tabsNav = $(".tabs");
   const content = $("#content");
   const notePanel = $("#notePanel");
   const noteTitleInput = $("#noteTitleInput");
@@ -4932,10 +4935,60 @@
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
+      if (state.ignoreTabClick) {
+        state.ignoreTabClick = false;
+        return;
+      }
       state.view = tab.dataset.view;
       render();
     });
   });
+
+  tabsNav?.addEventListener("wheel", (event) => {
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (!delta) return;
+    tabsNav.scrollLeft += delta;
+    event.preventDefault();
+  }, { passive: false });
+
+  tabsNav?.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 && event.pointerType === "mouse") return;
+    state.tabDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: tabsNav.scrollLeft,
+      moved: false
+    };
+    tabsNav.classList.add("dragging");
+    tabsNav.setPointerCapture?.(event.pointerId);
+  });
+
+  tabsNav?.addEventListener("pointermove", (event) => {
+    const drag = state.tabDrag;
+    if (!drag) return;
+    const dx = event.clientX - drag.startX;
+    if (Math.abs(dx) > 3) {
+      drag.moved = true;
+      tabsNav.scrollLeft = drag.scrollLeft - dx;
+      event.preventDefault();
+    }
+  });
+
+  function endTabDrag() {
+    const moved = state.tabDrag?.moved;
+    if (state.tabDrag?.pointerId !== undefined) {
+      tabsNav?.releasePointerCapture?.(state.tabDrag.pointerId);
+    }
+    state.tabDrag = null;
+    tabsNav?.classList.remove("dragging");
+    if (moved) {
+      state.ignoreTabClick = true;
+      window.setTimeout(() => { state.ignoreTabClick = false; }, 250);
+    }
+  }
+
+  tabsNav?.addEventListener("pointerup", endTabDrag);
+  tabsNav?.addEventListener("pointercancel", endTabDrag);
 
   content.addEventListener("pointerdown", (event) => {
     const row = event.target.closest("[data-category-row]");
