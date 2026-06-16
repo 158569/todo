@@ -1837,6 +1837,13 @@ function Apply-LockState {
   }
 }
 
+function Ensure-LockState {
+  if (-not $script:isLocked) { return }
+  if (-not $form.TopMost) {
+    $form.TopMost = $true
+  }
+}
+
 function Toggle-Lock {
   $script:isLocked = -not $script:isLocked
   Apply-LockState
@@ -2459,6 +2466,10 @@ $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 30000
 $timer.Add_Tick({ Refresh-Board })
 
+$lockTimer = New-Object System.Windows.Forms.Timer
+$lockTimer.Interval = 1200
+$lockTimer.Add_Tick({ Ensure-LockState })
+
 $toolbar.Controls.Add($lockDot)
 $toolbar.Controls.Add($dateLabel)
 $toolbar.Controls.Add($todoButton)
@@ -2477,12 +2488,14 @@ $form.Add_Shown({
   Update-NavScrollRange
   Refresh-Board
   Apply-LockState
+  $lockTimer.Start()
   $timer.Start()
 })
 
 $form.Add_FormClosed({
   Save-CurrentNoteIfNeeded
   $timer.Stop()
+  $lockTimer.Stop()
   $statusTimer.Stop()
   $noteSaveTimer.Stop()
   Remove-Item -LiteralPath $pidPath -Force -ErrorAction SilentlyContinue
@@ -2497,7 +2510,6 @@ $form.Add_FormClosed({
 
 [System.Windows.Forms.Application]::EnableVisualStyles()
 [System.Windows.Forms.Application]::Run($form)
-
 
 
 

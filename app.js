@@ -813,6 +813,7 @@
   const signInButton = $("#signInButton");
   const signUpButton = $("#signUpButton");
   const localUseButton = $("#localUseButton");
+  const pinButton = $("#pinButton");
   const fullscreenButton = $("#fullscreenButton");
   const signOutButton = $("#signOutButton");
   const userLabel = $("#userLabel");
@@ -1999,6 +2000,11 @@
 
   function isStandaloneApp() {
     return Boolean(window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone);
+  }
+
+  function handlePinButton() {
+    pinButton?.classList.add("active");
+    setStatus("网页安装版不能真正置顶；需要锁在最前请用本地小窗。", false);
   }
 
   function windowSizeFromStorage() {
@@ -5522,6 +5528,7 @@
   signInButton.addEventListener("click", signIn);
   signUpButton.addEventListener("click", signUp);
   localUseButton.addEventListener("click", useLocalMode);
+  pinButton?.addEventListener("click", handlePinButton);
   fullscreenButton?.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", updateFullscreenButton);
   window.addEventListener("resize", schedulePwaWindowSizeSave);
