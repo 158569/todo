@@ -537,8 +537,8 @@ button:disabled {
   position: relative;
   z-index: 1;
   margin: 0;
-  background: var(--mark);
-  border-radius: 8px;
+  background: transparent;
+  border-radius: 0;
   color: var(--ink);
   transition: transform 0.16s ease;
 }
