@@ -21,7 +21,6 @@
 html {
   width: 100%;
   height: 100%;
-  min-width: 0;
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -30,7 +29,6 @@ html {
 body {
   margin: 0;
   width: 100%;
-  min-width: 0;
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
@@ -241,7 +239,6 @@ button:disabled {
 
 .shell {
   width: 100vw;
-  min-width: 0;
   height: 100vh;
   height: 100dvh;
   min-height: 0;
@@ -269,7 +266,6 @@ button:disabled {
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
-  min-width: 0;
   padding: 7px 8px;
   background:
     radial-gradient(circle at 26px 18px, rgba(98, 166, 142, 0.12) 0 9px, transparent 10px),
@@ -282,7 +278,6 @@ button:disabled {
   grid-template-columns: 1fr auto auto;
   gap: 6px;
   align-items: center;
-  min-width: 0;
   padding: 3px 10px;
   border-bottom: 1px solid #efe3d3;
   background: #fffdf8;
@@ -749,7 +744,6 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
-  min-width: 0;
   padding: 10px 12px 12px;
   border-top: 1px solid #e8d9c7;
   background: linear-gradient(180deg, rgba(255, 247, 239, 0.4), var(--bg));
@@ -2349,11 +2343,15 @@ button:disabled {
   }
 }
 
-@media (max-width: 430px) {
-  .topbar {
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
-    gap: 4px;
-    padding: 6px;
+@media (max-width: 340px) {
+  .shell {
+    border-radius: 0;
+  }
+
+  .tab {
+    min-width: 48px;
+    padding: 0 8px;
+    font-size: 12px;
   }
 
   .date-label {
@@ -2361,107 +2359,8 @@ button:disabled {
     font-size: 12px;
   }
 
-  .tab {
-    min-width: 46px;
-    height: 28px;
-    padding: 0 7px;
-    font-size: 12px;
-  }
-
   .mini-button {
     min-width: 38px;
-    height: 28px;
-    padding: 0 7px;
-  }
-
-  .account-bar {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    gap: 4px;
-    padding: 3px 6px;
-  }
-
-  #userLabel {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .content {
-    padding: 12px 10px 8px;
-    font-size: 13px;
-  }
-
-  .row {
-    grid-template-columns: 20px minmax(0, 1fr) auto;
-    gap: 4px;
-  }
-
-  .command-bar {
-    grid-template-columns: minmax(0, 1fr) 76px;
-    gap: 6px;
-    padding: 8px 8px 10px;
-  }
-
-  .command-reminder-control,
-  .command-reminder-button {
-    width: 76px;
-  }
-
-  .command-bar input,
-  .command-reminder-button,
-  .command-reminder-panel select {
-    height: 34px;
-    border-radius: 11px;
-    padding: 0 9px;
-    font-size: 13px;
-  }
-
-  .command-reminder-panel {
-    width: min(208px, calc(100vw - 16px));
-  }
-}
-
-@media (max-width: 340px) {
-  .shell {
-    border-radius: 0;
-  }
-
-  .tab {
-    min-width: 42px;
-    padding: 0 6px;
-    font-size: 11px;
-  }
-
-  .date-label {
-    width: 34px;
-    font-size: 11px;
-  }
-
-  .mini-button {
-    min-width: 34px;
-    padding: 0 6px;
-    font-size: 11px;
-  }
-
-  .pin {
-    width: 16px;
-    height: 16px;
-  }
-
-  .command-bar {
-    grid-template-columns: minmax(0, 1fr) 68px;
-  }
-
-  .command-reminder-control,
-  .command-reminder-button {
-    width: 68px;
-  }
-
-  .command-bar input,
-  .command-reminder-button,
-  .command-reminder-panel select {
-    font-size: 12px;
     padding: 0 7px;
   }
 
@@ -2475,96 +2374,5 @@ button:disabled {
   .setting-feature-grid,
   .setting-color-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 300px) {
-  .topbar {
-    gap: 3px;
-    padding: 5px;
-  }
-
-  .date-label {
-    width: 30px;
-  }
-
-  .tab {
-    min-width: 38px;
-    height: 27px;
-    padding: 0 5px;
-  }
-
-  .mini-button {
-    min-width: 30px;
-    height: 27px;
-    padding: 0 5px;
-  }
-
-  .account-bar button,
-  .import-button {
-    padding: 0 6px;
-  }
-
-  .content {
-    padding-inline: 8px;
-    font-size: 12.5px;
-  }
-
-  .row {
-    grid-template-columns: 18px minmax(0, 1fr) auto;
-    gap: 3px;
-  }
-
-  .row .time {
-    padding: 0 2px;
-  }
-
-  .complete-action {
-    width: 22px;
-    height: 22px;
-  }
-
-  .command-bar {
-    grid-template-columns: minmax(0, 1fr) 58px;
-    padding: 7px 7px 9px;
-  }
-
-  .command-reminder-control,
-  .command-reminder-button {
-    width: 58px;
-  }
-}
-
-@media (min-width: 341px) and (max-width: 520px) {
-  .topbar {
-    gap: 4px;
-    padding-inline: 6px;
-  }
-
-  .tabs {
-    gap: 4px;
-  }
-
-  .tab {
-    min-width: 42px;
-    padding: 0 7px;
-  }
-
-  .date-label {
-    width: 36px;
-  }
-
-  .mini-button {
-    min-width: 34px;
-    padding-inline: 6px;
-  }
-
-  .command-bar {
-    grid-template-columns: minmax(0, 1fr) 72px;
-  }
-
-  .command-reminder-control,
-  .command-reminder-button {
-    width: 72px;
   }
 }

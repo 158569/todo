@@ -10,6 +10,7 @@
   const RECIPE_CATEGORY_KEY = "todoCloudRecipeCategory";
   const RECIPE_CATEGORY_COLLAPSED_KEY = "todoCloudRecipeCategoryCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
+  const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSizeV2";
   const BOOT_STARTED_AT = Date.now();
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
@@ -798,6 +799,7 @@
     statusTimer: null,
     noteTimer: null,
     diaryTimer: null,
+    windowSizeTimer: null,
     saveTimer: null
   };
 
@@ -1595,6 +1597,7 @@
     applyTodoReminderConfig(settings().todoReminderDefault === "last" ? settings().lastTodoReminderConfig : null);
     if (state.user?.email) localStorage.setItem(LAST_EMAIL_KEY, state.user.email);
     render();
+    restorePwaWindowSize();
     showWelcomeIfNeeded();
     startAlarmLoop();
     startSyncLoop();
@@ -1994,6 +1997,50 @@
 
   function isStandaloneApp() {
     return Boolean(window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone);
+  }
+
+  function windowSizeFromStorage() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PWA_WINDOW_SIZE_KEY) || "null");
+      return saved && typeof saved === "object" ? saved : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clampWindowSize(width, height) {
+    const maxWidth = window.screen?.availWidth || width || 430;
+    const maxHeight = window.screen?.availHeight || height || 720;
+    return {
+      width: Math.min(Math.max(Math.round(Number(width) || 430), 360), maxWidth),
+      height: Math.min(Math.max(Math.round(Number(height) || 720), 520), maxHeight)
+    };
+  }
+
+  function restorePwaWindowSize() {
+    if (!isStandaloneApp() || typeof window.resizeTo !== "function") return;
+    const saved = windowSizeFromStorage();
+    const size = clampWindowSize(saved?.width || 430, saved?.height || 720);
+    if (Math.abs(window.outerWidth - size.width) < 8 && Math.abs(window.outerHeight - size.height) < 8) return;
+    setTimeout(() => {
+      try {
+        window.resizeTo(size.width, size.height);
+      } catch {
+        // Some browsers block scripted window resize even for installed apps.
+      }
+    }, 120);
+  }
+
+  function savePwaWindowSize() {
+    if (!isStandaloneApp() || isFullscreen()) return;
+    const size = clampWindowSize(window.outerWidth, window.outerHeight);
+    localStorage.setItem(PWA_WINDOW_SIZE_KEY, JSON.stringify(size));
+  }
+
+  function schedulePwaWindowSizeSave() {
+    if (!isStandaloneApp() || isFullscreen()) return;
+    clearTimeout(state.windowSizeTimer);
+    state.windowSizeTimer = setTimeout(savePwaWindowSize, 450);
   }
 
   async function toggleFullscreen() {
@@ -5475,7 +5522,9 @@
   localUseButton.addEventListener("click", useLocalMode);
   fullscreenButton?.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", updateFullscreenButton);
+  window.addEventListener("resize", schedulePwaWindowSizeSave);
   window.addEventListener("beforeunload", () => {
+    savePwaWindowSize();
     flushSaveBeforeBackground();
   });
   window.addEventListener("pagehide", flushSaveBeforeBackground);
