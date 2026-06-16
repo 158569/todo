@@ -338,7 +338,7 @@ input[type="checkbox"] {
 }
 
 .completed-row-card {
-  background: #fffaf5 !important;
+  background: transparent !important;
   color: var(--memo-text-main) !important;
 }
 
