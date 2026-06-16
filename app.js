@@ -5014,7 +5014,7 @@
       return;
     }
     const taskRow = event.target.closest("[data-task-row]");
-    if (taskRow && !event.target.closest(".task-row-delete,input,select,textarea")) {
+    if (taskRow && !event.target.closest("button,input,select,textarea")) {
       const editable = editableFromTaskTarget(event.target);
       clearTimeout(state.taskLongPressTimer);
       state.taskSwipe = {
@@ -5182,10 +5182,6 @@
       render();
     }
     if (action === "complete") {
-      if (state.ignoreTaskClick) {
-        event.preventDefault();
-        return;
-      }
       const row = todoRows().find((item) => item.key === actionTarget.dataset.key);
       if (row) completeRow(row);
     }
