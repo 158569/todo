@@ -2524,12 +2524,14 @@
     if (overdue.length) html += section(tx("overdueTitle"), overdue);
     html += section(tx("inProgressTitle"), rows.filter((row) => row.group === "ing"));
     html += section(tx("todosTitle"), rows.filter((row) => row.group === "todo" || row.group === "reminder" || row.group === "single"));
+    html += '<div class="completed-section">';
     html += `<div class="section-title completed-toggle" data-action="toggleCompleted">${tx("completedTitle")}${state.showCompleted ? tx("collapse") : tx("expand")}</div>`;
     if (state.showCompleted) {
       html += completed.length
         ? completed.map((text, i) => completedRowHtml(text, i)).join("")
         : `<div class="empty">${tx("none")}</div>`;
     }
+    html += "</div>";
     content.innerHTML = html;
   }
 

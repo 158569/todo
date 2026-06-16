@@ -517,6 +517,18 @@ button:disabled {
   cursor: pointer;
 }
 
+.completed-section {
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(230, 213, 191, 0.2);
+  margin-top: 8px;
+  padding: 0 0 4px;
+}
+
+.completed-section .completed-toggle {
+  margin-top: 0;
+}
+
 .completed-row {
   position: relative;
   overflow: hidden;
@@ -527,9 +539,7 @@ button:disabled {
   position: relative;
   z-index: 1;
   margin: 0;
-  background: var(--paper);
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 1px rgba(230, 213, 191, 0.2);
+  background: transparent;
   color: var(--ink);
   transition: transform 0.16s ease;
 }
