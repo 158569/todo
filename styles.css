@@ -21,6 +21,7 @@
 html {
   width: 100%;
   height: 100%;
+  min-width: 0;
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -29,6 +30,7 @@ html {
 body {
   margin: 0;
   width: 100%;
+  min-width: 0;
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
@@ -239,6 +241,7 @@ button:disabled {
 
 .shell {
   width: 100vw;
+  min-width: 0;
   height: 100vh;
   height: 100dvh;
   min-height: 0;
@@ -266,6 +269,7 @@ button:disabled {
   grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   padding: 7px 8px;
   background:
     radial-gradient(circle at 26px 18px, rgba(98, 166, 142, 0.12) 0 9px, transparent 10px),
@@ -278,6 +282,7 @@ button:disabled {
   grid-template-columns: 1fr auto auto;
   gap: 6px;
   align-items: center;
+  min-width: 0;
   padding: 3px 10px;
   border-bottom: 1px solid #efe3d3;
   background: #fffdf8;
@@ -744,6 +749,7 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
+  min-width: 0;
   padding: 10px 12px 12px;
   border-top: 1px solid #e8d9c7;
   background: linear-gradient(180deg, rgba(255, 247, 239, 0.4), var(--bg));
@@ -2529,10 +2535,36 @@ button:disabled {
   }
 }
 
-@media (display-mode: window-controls-overlay) {
+@media (min-width: 341px) and (max-width: 520px) {
   .topbar {
-    min-height: max(42px, env(titlebar-area-height, 42px));
-    padding-top: max(7px, env(titlebar-area-y, 0px));
-    padding-right: max(8px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 8px));
+    gap: 4px;
+    padding-inline: 6px;
+  }
+
+  .tabs {
+    gap: 4px;
+  }
+
+  .tab {
+    min-width: 42px;
+    padding: 0 7px;
+  }
+
+  .date-label {
+    width: 36px;
+  }
+
+  .mini-button {
+    min-width: 34px;
+    padding-inline: 6px;
+  }
+
+  .command-bar {
+    grid-template-columns: minmax(0, 1fr) 72px;
+  }
+
+  .command-reminder-control,
+  .command-reminder-button {
+    width: 72px;
   }
 }
