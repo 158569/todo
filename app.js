@@ -10,7 +10,9 @@
   const RECIPE_CATEGORY_KEY = "todoCloudRecipeCategory";
   const RECIPE_CATEGORY_COLLAPSED_KEY = "todoCloudRecipeCategoryCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
-  const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSizeV2";
+  const PWA_WINDOW_SIZE_KEY = "todoCloudDesktopWindowSizeV3";
+  const DESKTOP_WINDOW_DEFAULT = { width: 360, height: 720 };
+  const DESKTOP_WINDOW_MIN = { width: 260, height: 520 };
   const BOOT_STARTED_AT = Date.now();
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
@@ -2008,19 +2010,19 @@
     }
   }
 
-  function clampWindowSize(width, height) {
-    const maxWidth = window.screen?.availWidth || width || 430;
-    const maxHeight = window.screen?.availHeight || height || 720;
+  function clampDesktopWindowSize(width, height) {
+    const maxWidth = window.screen?.availWidth || width || DESKTOP_WINDOW_DEFAULT.width;
+    const maxHeight = window.screen?.availHeight || height || DESKTOP_WINDOW_DEFAULT.height;
     return {
-      width: Math.min(Math.max(Math.round(Number(width) || 430), 360), maxWidth),
-      height: Math.min(Math.max(Math.round(Number(height) || 720), 520), maxHeight)
+      width: Math.min(Math.max(Math.round(Number(width) || DESKTOP_WINDOW_DEFAULT.width), DESKTOP_WINDOW_MIN.width), maxWidth),
+      height: Math.min(Math.max(Math.round(Number(height) || DESKTOP_WINDOW_DEFAULT.height), DESKTOP_WINDOW_MIN.height), maxHeight)
     };
   }
 
   function restorePwaWindowSize() {
     if (!isStandaloneApp() || typeof window.resizeTo !== "function") return;
     const saved = windowSizeFromStorage();
-    const size = clampWindowSize(saved?.width || 430, saved?.height || 720);
+    const size = clampDesktopWindowSize(saved?.width || DESKTOP_WINDOW_DEFAULT.width, saved?.height || DESKTOP_WINDOW_DEFAULT.height);
     if (Math.abs(window.outerWidth - size.width) < 8 && Math.abs(window.outerHeight - size.height) < 8) return;
     setTimeout(() => {
       try {
@@ -2033,7 +2035,7 @@
 
   function savePwaWindowSize() {
     if (!isStandaloneApp() || isFullscreen()) return;
-    const size = clampWindowSize(window.outerWidth, window.outerHeight);
+    const size = clampDesktopWindowSize(window.outerWidth, window.outerHeight);
     localStorage.setItem(PWA_WINDOW_SIZE_KEY, JSON.stringify(size));
   }
 
