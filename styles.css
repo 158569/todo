@@ -518,11 +518,9 @@ button:disabled {
 }
 
 .completed-section {
-  background: var(--paper);
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 1px rgba(230, 213, 191, 0.2);
-  margin-top: 8px;
-  padding: 0 0 4px;
+  background: transparent;
+  margin-top: 10px;
+  padding: 0;
 }
 
 .completed-section .completed-toggle {
