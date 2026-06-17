@@ -2,6 +2,20 @@
   const CONFIG = window.TODO_SUPABASE_CONFIG || {};
   const VIEW_KEY = "todoCloudView";
   const LOCAL_DATA_KEY = "todoCloudLocalData";
+  const LOCAL_BACKUP_KEY = "todoCloudLocalDataBackup";
+  const LOCAL_LIGHT_BACKUP_KEY = "todoCloudLocalDataTextBackup";
+  const LOCAL_BACKUP_LIST_KEY = "todoCloudLocalDataBackups";
+  const LOCAL_BACKUP_LIMIT = 5;
+  const LEGACY_LOCAL_DATA_KEYS = [
+    "todoCloudData",
+    "todoLocalData",
+    "todoData",
+    "workdayTodoData",
+    "workdayTodosData",
+    "workdayTodos",
+    "workday-todos",
+    "memoLocalData"
+  ];
   const LAST_EMAIL_KEY = "todoCloudLastEmail";
   const HISTORY_DATE_KEY = "todoCloudHistoryDate";
   const DIARY_DATE_KEY = "todoCloudDiaryDate";
@@ -1333,6 +1347,148 @@
     return typeof value === "string" && /^data:image\/(?:png|jpe?g|webp);base64,/i.test(value);
   }
 
+  function dataContentScore(data) {
+    const current = normalizeData(structuredCloneSafe(data));
+    let score = 0;
+    [
+      "dailyImportantReminders",
+      "dailyReminders",
+      "weeklyReminders",
+      "monthlyReminders",
+      "oneTimeReminders",
+      "dateImportantReminders",
+      "recipes",
+      "periodRecords",
+      "ledger"
+    ].forEach((field) => {
+      score += asArray(current[field]).length;
+    });
+    Object.values(current.days || {}).forEach((entry) => {
+      if (!entry || typeof entry !== "object") return;
+      score += uniqueStrings(entry.pending).length;
+      score += uniqueStrings(entry.inProgress).length;
+      score += uniqueStrings(entry.completed).length;
+      score += uniqueStrings(entry.hidden).length;
+      score += Object.keys(entry.timers || {}).length;
+    });
+    score += asArray(current.notes).filter((note, index) => {
+      const title = String(note?.title || "").trim();
+      return String(note?.text || "").trim() || (title && title !== defaultNoteTitle(index + 1));
+    }).length;
+    score += Object.values(current.diaries || {}).filter((text) => String(text || "").trim()).length;
+    score += uniqueStrings(current.recipeCategories).length;
+    score += uniqueStrings(current.ledgerCategories).filter((item) => !DEFAULT_LEDGER_CATEGORIES.includes(item)).length;
+    return score;
+  }
+
+  function dataHasUserContent(data) {
+    return dataContentScore(data) > 0;
+  }
+
+  function removeLargeLocalFields(data) {
+    const copy = normalizeData(structuredCloneSafe(data));
+    copy.recipes = copy.recipes.map((recipe) => ({ ...recipe, photoData: "" }));
+    return copy;
+  }
+
+  function readDataCandidates(raw) {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      const values = Array.isArray(parsed)
+        ? parsed.map((item) => item?.data || item)
+        : [parsed?.data || parsed];
+      return values
+        .map((item) => normalizeData(structuredCloneSafe(item)))
+        .filter(dataHasUserContent);
+    } catch {
+      return [];
+    }
+  }
+
+  function readStoredData(key) {
+    return readDataCandidates(localStorage.getItem(key))[0] || null;
+  }
+
+  function recoveryStorageKeys() {
+    const keys = new Set([
+      LOCAL_BACKUP_KEY,
+      LOCAL_LIGHT_BACKUP_KEY,
+      LOCAL_BACKUP_LIST_KEY,
+      ...LEGACY_LOCAL_DATA_KEYS
+    ]);
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (/todo|workday|memo/i.test(key || "")) keys.add(key);
+    }
+    keys.delete(LOCAL_DATA_KEY);
+    return [...keys];
+  }
+
+  function bestLocalRecoveryData() {
+    const candidates = [];
+    recoveryStorageKeys().forEach((key) => {
+      readDataCandidates(localStorage.getItem(key)).forEach((data) => {
+        candidates.push({ data, score: dataContentScore(data) });
+      });
+    });
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates[0]?.data || null;
+  }
+
+  function readBackupEntries() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOCAL_BACKUP_LIST_KEY) || "[]");
+      return asArray(parsed)
+        .map((entry) => ({
+          at: entry?.at || "",
+          reason: entry?.reason || "backup",
+          data: normalizeData(structuredCloneSafe(entry?.data || entry))
+        }))
+        .filter((entry) => dataHasUserContent(entry.data));
+    } catch {
+      return [];
+    }
+  }
+
+  function writeLocalBackup(data, reason = "save") {
+    if (!dataHasUserContent(data)) return;
+    const snapshot = normalizeData(structuredCloneSafe(data));
+    const lightSnapshot = removeLargeLocalFields(snapshot);
+    try {
+      localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(snapshot));
+    } catch {
+      // Full backups can exceed localStorage when recipes contain photos.
+    }
+    try {
+      localStorage.setItem(LOCAL_LIGHT_BACKUP_KEY, JSON.stringify(lightSnapshot));
+    } catch {
+      return;
+    }
+    const entry = {
+      at: new Date().toISOString(),
+      reason,
+      score: dataContentScore(lightSnapshot),
+      data: lightSnapshot
+    };
+    const seen = new Set();
+    const entries = [entry, ...readBackupEntries()].filter((item) => {
+      const key = JSON.stringify(item.data);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, LOCAL_BACKUP_LIMIT);
+    try {
+      localStorage.setItem(LOCAL_BACKUP_LIST_KEY, JSON.stringify(entries));
+    } catch {
+      try {
+        localStorage.setItem(LOCAL_BACKUP_LIST_KEY, JSON.stringify(entries.slice(0, 1)));
+      } catch {
+        // Keep the single light backup even if the rolling list cannot fit.
+      }
+    }
+  }
+
   function requireConfig() {
     return Boolean(CONFIG.url && CONFIG.anonKey && window.supabase);
   }
@@ -1355,11 +1511,20 @@
   }
 
   function localData() {
-    try {
-      return normalizeData(JSON.parse(localStorage.getItem(LOCAL_DATA_KEY) || "null"));
-    } catch {
-      return emptyData();
+    const current = readStoredData(LOCAL_DATA_KEY);
+    if (dataHasUserContent(current)) return current;
+    const recovered = bestLocalRecoveryData();
+    if (recovered) {
+      const merged = current ? mergeData(current, recovered) : recovered;
+      try {
+        localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(merged));
+      } catch {
+        // Keep using the recovered in-memory data even if storage is full.
+      }
+      writeLocalBackup(merged, "restore");
+      return merged;
     }
+    return current || emptyData();
   }
 
   function loadLocalData() {
@@ -1370,6 +1535,9 @@
 
   function saveLocalData() {
     if (!state.data) return;
+    const previous = readStoredData(LOCAL_DATA_KEY);
+    if (dataHasUserContent(previous)) writeLocalBackup(previous, "before-save");
+    if (dataHasUserContent(state.data)) writeLocalBackup(state.data, "save");
     localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(state.data));
   }
 
@@ -1438,10 +1606,12 @@
 
     if (error) throw error;
     const cloudData = data?.data ? normalizeData(data.data) : null;
-    state.data = cloudData || mergeData(emptyData(), local);
+    state.data = cloudData
+      ? (dataHasUserContent(local) ? mergeData(cloudData, local) : cloudData)
+      : mergeData(emptyData(), local);
     state.localReady = true;
     saveLocalData();
-    if (!cloudData) await saveNow();
+    if (!cloudData || JSON.stringify(state.data) !== JSON.stringify(cloudData)) await saveNow();
   }
 
   function scheduleSave() {
@@ -1462,7 +1632,7 @@
         .maybeSingle();
       if (readError) throw readError;
       if (cloudRow?.data) {
-        state.data = mergeCloudRecipesForSave(state.data, cloudRow.data);
+        state.data = mergeData(state.data, cloudRow.data);
         saveLocalData();
       }
       const { error } = await state.supabase
@@ -1486,18 +1656,6 @@
     saveNow().catch((error) => setStatus(`保存失败：${error.message}`, false));
   }
 
-  function mergeCloudRecipesForSave(currentData, cloudData) {
-    const current = normalizeData(structuredCloneSafe(currentData));
-    const cloud = normalizeData(structuredCloneSafe(cloudData));
-    const deletedRecipeIds = new Set(uniqueStrings([...current.deletedRecipes, ...cloud.deletedRecipes]));
-    current.deletedRecipes = [...deletedRecipeIds];
-    current.recipeCategories = uniqueStrings([...cloud.recipeCategories, ...current.recipeCategories]);
-    const recipes = dedupeBy([...current.recipes, ...cloud.recipes], (item) => item.id || `${item.title}|${item.ingredients}|${item.steps}`)
-      .filter((item) => !deletedRecipeIds.has(item.id));
-    current.recipes = recipes;
-    return normalizeData(current);
-  }
-
   async function refreshCloudData({ silent = true } = {}) {
     if (!state.user || !state.supabase || state.syncBusy || state.saving || state.saveTimer || state.noteTimer || state.diaryTimer) return false;
     state.syncBusy = true;
@@ -1510,12 +1668,18 @@
       if (error) throw error;
       if (!data?.data) return false;
       const next = normalizeData(data.data);
-      if (JSON.stringify(next) === JSON.stringify(state.data)) return false;
-      state.data = next;
+      const current = state.data || localData();
+      const merged = dataHasUserContent(current) ? mergeData(next, current) : next;
+      if (JSON.stringify(merged) === JSON.stringify(state.data)) {
+        if (JSON.stringify(merged) !== JSON.stringify(next)) await saveNow();
+        return false;
+      }
+      state.data = merged;
       saveLocalData();
       applySettings();
       applyLanguage();
       render();
+      if (JSON.stringify(merged) !== JSON.stringify(next)) await saveNow();
       if (!silent) setStatus("已同步最新数据。");
       return true;
     } catch (error) {

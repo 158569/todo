@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>memo 本地记录恢复</title>
+  <style>
+    :root {
+      --bg: #FAF8F2;
+      --paper: #FFFDF8;
+      --panel: #FFF8EF;
+      --line: #E4D8C8;
+      --line-strong: #D8C9B3;
+      --ink: #242A2E;
+      --muted: #6F7A86;
+      --accent: #5F7F70;
+      --mark: #F7EECB;
+      --danger: #C97363;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px SimSun, "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    main {
+      width: min(920px, 100%);
+      margin: 0 auto;
+      padding: 18px 12px 28px;
+    }
+
+    header {
+      display: grid;
+      gap: 8px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    h2 {
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    p,
+    li {
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: var(--mark);
+      color: var(--ink);
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .toolbar,
+    .card,
+    .notice {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button,
+    .button {
+      min-height: 32px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      padding: 0 10px;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    button.primary {
+      border-color: #D9C59E;
+      background: #F3E5B8;
+    }
+
+    button.danger {
+      color: var(--danger);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .summary {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .candidate {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffefa;
+    }
+
+    .candidate-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .candidate-title {
+      font-weight: 700;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .preview {
+      display: grid;
+      gap: 4px;
+      margin: 0;
+      padding: 8px;
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--ink);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .empty {
+      color: var(--danger);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>memo 本地记录恢复</h1>
+      <p>请在朋友以前一直使用的那个原始 memo 链接里打开本页。浏览器本地记录按网址隔离，换了域名、协议或旧 PWA 入口，就要分别打开对应地址再试一次。</p>
+      <p>当前扫描地址：<code id="originText"></code></p>
+    </header>
+
+    <section class="toolbar">
+      <button id="scanButton" class="primary" type="button">重新扫描</button>
+      <a class="button" href="./index.html">返回 memo</a>
+      <span id="statusText" class="summary"></span>
+    </section>
+
+    <section class="notice">
+      <h2>怎么找回</h2>
+      <ol>
+        <li>先在她原来常用的浏览器和原来的 memo 链接打开这个恢复页。</li>
+        <li>如果下方出现候选记录，先点“下载备份 JSON”，再点“恢复到 memo”。</li>
+        <li>恢复后返回 memo 页面，确认记录出现，再用 memo 顶部“导出”保存一份。</li>
+        <li>如果这里显示没有候选记录，通常说明旧数据在另一个网址、另一个浏览器、另一个手机桌面 PWA，或者浏览器存储已经被清掉。</li>
+      </ol>
+    </section>
+
+    <section id="results" class="card"></section>
+  </main>
+
+  <script>
+    (function () {
+      const LOCAL_DATA_KEY = "todoCloudLocalData";
+      const BACKUP_KEYS = [
+        "todoCloudLocalDataBackup",
+        "todoCloudLocalDataTextBackup",
+        "todoCloudLocalDataBackups"
+      ];
+      const LEGACY_KEYS = [
+        "todoCloudData",
+        "todoLocalData",
+        "todoData",
+        "workdayTodoData",
+        "workdayTodosData",
+        "workdayTodos",
+        "workday-todos",
+        "memoLocalData"
+      ];
+      const DEFAULT_LEDGER_CATEGORIES = ["吃饭", "购物", "交通", "办公", "工资", "报销", "其他"];
+
+      const originText = document.getElementById("originText");
+      const statusText = document.getElementById("statusText");
+      const results = document.getElementById("results");
+      const scanButton = document.getElementById("scanButton");
+      originText.textContent = location.origin;
+
+      function asArray(value) {
+        if (Array.isArray(value)) return value;
+        if (!value) return [];
+        return [value];
+      }
+
+      function uniqueStrings(value) {
+        return [...new Set(asArray(value).filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim()))];
+      }
+
+      function emptyData() {
+        return {
+          dailyImportantReminders: [],
+          dailyReminders: [],
+          weeklyReminders: [],
+          monthlyReminders: [],
+          oneTimeReminders: [],
+          dateImportantReminders: [],
+          days: {},
+          noteText: "",
+          notes: [],
+          diaries: {},
+          recipes: [],
+          recipeCategories: [],
+          deletedRecipes: [],
+          periodRecords: [],
+          versionLog: [],
+          ledger: [],
+          ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
+          settings: {}
+        };
+      }
+
+      function normalizeNotes(value, fallbackText = "") {
+        let notes = [];
+        if (Array.isArray(value)) {
+          notes = value.map((item, index) => {
+            if (item && typeof item === "object") {
+              return {
+                id: String(item.id || `note-${index + 1}`),
+                title: String(item.title || `便签${index + 1}`),
+                text: String(item.text || "")
+              };
+            }
+            return {
+              id: `note-${index + 1}`,
+              title: `便签${index + 1}`,
+              text: String(item || "")
+            };
+          }).filter((item) => item.text || item.title);
+        }
+        if (!notes.length && fallbackText) {
+          notes = [{ id: "note-1", title: "便签1", text: fallbackText }];
+        }
+        return notes;
+      }
+
+      function normalizeData(value) {
+        const data = value && typeof value === "object" ? JSON.parse(JSON.stringify(value)) : emptyData();
+        const normalized = emptyData();
+        Object.assign(normalized, data);
+        normalized.days = data.days && typeof data.days === "object" ? data.days : {};
+        normalized.dailyImportantReminders = asArray(data.dailyImportantReminders);
+        normalized.dailyReminders = asArray(data.dailyReminders);
+        normalized.weeklyReminders = asArray(data.weeklyReminders);
+        normalized.monthlyReminders = asArray(data.monthlyReminders);
+        normalized.oneTimeReminders = asArray(data.oneTimeReminders);
+        normalized.dateImportantReminders = asArray(data.dateImportantReminders);
+        normalized.noteText = typeof data.noteText === "string" ? data.noteText : "";
+        normalized.notes = normalizeNotes(data.notes, normalized.noteText);
+        normalized.diaries = data.diaries && typeof data.diaries === "object" ? data.diaries : {};
+        normalized.recipes = asArray(data.recipes).filter((item) => item && typeof item === "object");
+        normalized.recipeCategories = uniqueStrings(data.recipeCategories);
+        normalized.deletedRecipes = uniqueStrings(data.deletedRecipes);
+        normalized.periodRecords = asArray(data.periodRecords).filter((item) => item && typeof item === "object");
+        normalized.versionLog = asArray(data.versionLog);
+        normalized.ledger = asArray(data.ledger).filter((item) => item && typeof item === "object");
+        normalized.ledgerCategories = uniqueStrings(data.ledgerCategories);
+        normalized.settings = data.settings && typeof data.settings === "object" ? data.settings : {};
+        Object.keys(normalized.days).forEach((dateKey) => {
+          const day = normalized.days[dateKey] && typeof normalized.days[dateKey] === "object" ? normalized.days[dateKey] : {};
+          day.pending = uniqueStrings(day.pending);
+          day.inProgress = uniqueStrings(day.inProgress);
+          day.completed = uniqueStrings(day.completed);
+          day.hidden = uniqueStrings(day.hidden);
+          day.timers = day.timers && typeof day.timers === "object" ? day.timers : {};
+          normalized.days[dateKey] = day;
+        });
+        return normalized;
+      }
+
+      function contentScore(data) {
+        const current = normalizeData(data);
+        let score = 0;
+        [
+          "dailyImportantReminders",
+          "dailyReminders",
+          "weeklyReminders",
+          "monthlyReminders",
+          "oneTimeReminders",
+          "dateImportantReminders",
+          "recipes",
+          "periodRecords",
+          "ledger"
+        ].forEach((field) => {
+          score += asArray(current[field]).length;
+        });
+        Object.values(current.days || {}).forEach((entry) => {
+          score += uniqueStrings(entry.pending).length;
+          score += uniqueStrings(entry.inProgress).length;
+          score += uniqueStrings(entry.completed).length;
+          score += uniqueStrings(entry.hidden).length;
+          score += Object.keys(entry.timers || {}).length;
+        });
+        score += asArray(current.notes).filter((note) => String(note.text || "").trim()).length;
+        score += Object.values(current.diaries || {}).filter((text) => String(text || "").trim()).length;
+        score += uniqueStrings(current.recipeCategories).length;
+        score += uniqueStrings(current.ledgerCategories).filter((item) => !DEFAULT_LEDGER_CATEGORIES.includes(item)).length;
+        return score;
+      }
+
+      function dedupeBy(items, keyFn) {
+        const seen = new Set();
+        return asArray(items).filter((item) => {
+          const key = keyFn(item);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+
+      function mergeData(primary, secondary) {
+        const merged = normalizeData(primary);
+        const extra = normalizeData(secondary);
+        [
+          "dailyImportantReminders",
+          "dailyReminders",
+          "weeklyReminders",
+          "monthlyReminders",
+          "oneTimeReminders",
+          "dateImportantReminders",
+          "versionLog",
+          "ledger",
+          "recipes",
+          "periodRecords",
+          "notes"
+        ].forEach((field) => {
+          merged[field] = dedupeBy([...asArray(merged[field]), ...asArray(extra[field])], (item) => {
+            if (item && typeof item === "object") return item.id || JSON.stringify(item);
+            return String(item || "");
+          });
+        });
+        merged.recipeCategories = uniqueStrings([...merged.recipeCategories, ...extra.recipeCategories]);
+        merged.ledgerCategories = uniqueStrings([...merged.ledgerCategories, ...extra.ledgerCategories]);
+        merged.deletedRecipes = uniqueStrings([...merged.deletedRecipes, ...extra.deletedRecipes]);
+        merged.diaries = { ...extra.diaries, ...merged.diaries };
+        Object.keys(extra.days || {}).forEach((dateKey) => {
+          merged.days[dateKey] ||= { pending: [], inProgress: [], completed: [], hidden: [], timers: {} };
+          ["pending", "inProgress", "completed", "hidden"].forEach((field) => {
+            merged.days[dateKey][field] = uniqueStrings([...(merged.days[dateKey][field] || []), ...(extra.days[dateKey][field] || [])]);
+          });
+          merged.days[dateKey].timers = { ...(extra.days[dateKey].timers || {}), ...(merged.days[dateKey].timers || {}) };
+        });
+        merged.settings = { ...extra.settings, ...merged.settings };
+        return normalizeData(merged);
+      }
+
+      function parseCandidates(key, raw) {
+        if (!raw) return [];
+        try {
+          const parsed = JSON.parse(raw);
+          const values = Array.isArray(parsed)
+            ? parsed.map((item) => item && typeof item === "object" ? (item.data || item) : item)
+            : [parsed && typeof parsed === "object" ? (parsed.data || parsed) : parsed];
+          return values
+            .map((value, index) => {
+              const data = normalizeData(value);
+              return {
+                id: `${key}-${index}`,
+                key,
+                data,
+                score: contentScore(data),
+                bytes: raw.length
+              };
+            })
+            .filter((item) => item.score > 0);
+        } catch {
+          return [];
+        }
+      }
+
+      function storageKeys() {
+        const keys = new Set([LOCAL_DATA_KEY, ...BACKUP_KEYS, ...LEGACY_KEYS]);
+        for (let index = 0; index < localStorage.length; index += 1) {
+          const key = localStorage.key(index);
+          if (/todo|workday|memo/i.test(key || "")) keys.add(key);
+        }
+        return [...keys];
+      }
+
+      function scan() {
+        const candidates = [];
+        storageKeys().forEach((key) => {
+          parseCandidates(key, localStorage.getItem(key)).forEach((item) => candidates.push(item));
+        });
+        const seen = new Set();
+        return candidates
+          .sort((a, b) => b.score - a.score || b.bytes - a.bytes)
+          .filter((item) => {
+            const signature = JSON.stringify(item.data);
+            if (seen.has(signature)) return false;
+            seen.add(signature);
+            return true;
+          });
+      }
+
+      function countSummary(data) {
+        const current = normalizeData(data);
+        const dayCount = Object.keys(current.days || {}).length;
+        const todoCount = Object.values(current.days || {}).reduce((sum, day) => {
+          return sum + uniqueStrings(day.pending).length + uniqueStrings(day.inProgress).length + uniqueStrings(day.completed).length + uniqueStrings(day.hidden).length;
+        }, 0);
+        const noteCount = asArray(current.notes).filter((note) => String(note.text || "").trim()).length;
+        const diaryCount = Object.values(current.diaries || {}).filter((text) => String(text || "").trim()).length;
+        return `待办/完成 ${todoCount} 条，日期 ${dayCount} 天，便签 ${noteCount} 条，日记 ${diaryCount} 条，记账 ${current.ledger.length} 条，菜谱 ${current.recipes.length} 条`;
+      }
+
+      function previewText(data) {
+        const current = normalizeData(data);
+        const lines = [];
+        Object.keys(current.days || {}).sort().reverse().slice(0, 5).forEach((dateKey) => {
+          const day = current.days[dateKey];
+          [...uniqueStrings(day.pending), ...uniqueStrings(day.inProgress), ...uniqueStrings(day.completed)].slice(0, 3).forEach((text) => {
+            lines.push(`${dateKey}  ${text}`);
+          });
+        });
+        asArray(current.notes).slice(0, 3).forEach((note) => {
+          const text = String(note.text || "").trim().replace(/\s+/g, " ");
+          if (text) lines.push(`便签：${text.slice(0, 80)}`);
+        });
+        Object.entries(current.diaries || {}).sort().reverse().slice(0, 3).forEach(([dateKey, text]) => {
+          const clean = String(text || "").trim().replace(/\s+/g, " ");
+          if (clean) lines.push(`日记 ${dateKey}：${clean.slice(0, 80)}`);
+        });
+        return lines.slice(0, 10).join("\n") || "有数据，但没有可展示的文字预览。";
+      }
+
+      function downloadData(data, name) {
+        const blob = new Blob([JSON.stringify(normalizeData(data), null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = name;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }
+
+      function restoreData(data) {
+        const current = parseCandidates(LOCAL_DATA_KEY, localStorage.getItem(LOCAL_DATA_KEY))[0]?.data || emptyData();
+        const merged = mergeData(current, data);
+        localStorage.setItem("todoCloudLocalDataBackup", JSON.stringify(current));
+        localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(merged));
+        statusText.textContent = "已恢复到 memo。请返回 memo 页面刷新查看。";
+      }
+
+      function render() {
+        const candidates = scan();
+        statusText.textContent = candidates.length ? `找到 ${candidates.length} 份候选记录` : "没有找到候选记录";
+        if (!candidates.length) {
+          results.innerHTML = '<p class="empty">当前网址下没有找到可恢复的 memo 本地记录。请换到她以前用的原始链接、原浏览器、原手机桌面图标再打开本页试一次。</p>';
+          return;
+        }
+        results.innerHTML = candidates.map((item, index) => `
+          <article class="candidate" data-index="${index}">
+            <div class="candidate-head">
+              <div>
+                <div class="candidate-title">候选 ${index + 1}：${escapeHtml(item.key)}</div>
+                <div class="meta">${escapeHtml(countSummary(item.data))}，评分 ${item.score}，约 ${Math.round(item.bytes / 1024)} KB</div>
+              </div>
+            </div>
+            <pre class="preview">${escapeHtml(previewText(item.data))}</pre>
+            <div class="actions">
+              <button class="primary" data-action="restore" type="button">恢复到 memo</button>
+              <button data-action="download" type="button">下载备份 JSON</button>
+            </div>
+          </article>
+        `).join("");
+        results.querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const index = Number(button.closest("[data-index]").dataset.index);
+            const item = candidates[index];
+            if (!item) return;
+            if (button.dataset.action === "download") {
+              downloadData(item.data, `memo-recovered-${new Date().toISOString().slice(0, 10)}.json`);
+            } else if (confirm("会先备份当前 memo 数据，再把这份候选记录合并恢复。继续吗？")) {
+              restoreData(item.data);
+            }
+          });
+        });
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      scanButton.addEventListener("click", render);
+      render();
+    })();
+  </script>
+</body>
+</html>
