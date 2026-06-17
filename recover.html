@@ -181,7 +181,7 @@
   <main>
     <header>
       <h1>memo 本地记录恢复</h1>
-      <p>请在朋友以前一直使用的那个原始 memo 链接里打开本页。浏览器本地记录按网址隔离，换了域名、协议或旧 PWA 入口，就要分别打开对应地址再试一次。</p>
+      <p>请在你之前一直使用的 memo 入口打开本页。浏览器本地记录按网址和打开方式隔离；如果换过域名、协议、Safari 页面或手机桌面图标，需要分别在对应入口打开本页再试。</p>
       <p>当前扫描地址：<code id="originText"></code></p>
     </header>
 
@@ -194,7 +194,7 @@
     <section class="notice">
       <h2>怎么找回</h2>
       <ol>
-        <li>先在她原来常用的浏览器和原来的 memo 链接打开这个恢复页。</li>
+        <li>先用原来常用的浏览器、memo 链接或手机桌面图标打开这个恢复页。</li>
         <li>如果下方出现候选记录，先点“下载备份 JSON”，再点“恢复到 memo”。</li>
         <li>恢复后返回 memo 页面，确认记录出现，再用 memo 顶部“导出”保存一份。</li>
         <li>如果这里显示没有候选记录，通常说明旧数据在另一个网址、另一个浏览器、另一个手机桌面 PWA，或者浏览器存储已经被清掉。</li>
@@ -498,7 +498,7 @@
         const candidates = scan();
         statusText.textContent = candidates.length ? `找到 ${candidates.length} 份候选记录` : "没有找到候选记录";
         if (!candidates.length) {
-          results.innerHTML = '<p class="empty">当前网址下没有找到可恢复的 memo 本地记录。请换到她以前用的原始链接、原浏览器、原手机桌面图标再打开本页试一次。</p>';
+          results.innerHTML = '<p class="empty">当前网址下没有找到可恢复的 memo 本地记录。请回到之前使用的原始链接、原浏览器或原手机桌面图标，再打开本页试一次。</p>';
           return;
         }
         results.innerHTML = candidates.map((item, index) => `
