@@ -24,7 +24,9 @@
   const RECIPE_CATEGORY_KEY = "todoCloudRecipeCategory";
   const RECIPE_CATEGORY_COLLAPSED_KEY = "todoCloudRecipeCategoryCollapsed";
   const WELCOME_DATE_KEY = "todoCloudWelcomeDate";
-  const PWA_WINDOW_SIZE_KEY = "todoCloudPwaWindowSize";
+  const PWA_WINDOW_SIZE_KEY = "todoCloudDesktopWindowSizeV3";
+  const DESKTOP_WINDOW_DEFAULT = { width: 360, height: 720 };
+  const DESKTOP_WINDOW_MIN = { width: 260, height: 520 };
   const BOOT_STARTED_AT = Date.now();
   const DEFAULT_WELCOME_TITLE = "美好的一天开始啦 (｡･ᴗ･｡)";
   const DEFAULT_WELCOME_TEXT = "今天也从todo开始";
@@ -42,6 +44,7 @@
     welcomeTitle: DEFAULT_WELCOME_TITLE,
     welcomeText: DEFAULT_WELCOME_TEXT,
     notificationsEnabled: true,
+    pushNotificationsEnabled: false,
     language: "zh",
     showNotes: true,
     showDiary: true,
@@ -150,7 +153,20 @@
       notifyAllowed: "系统通知已允许",
       notifyDenied: "系统通知已被浏览器阻止",
       notifyEnable: "点击开启系统通知",
-      notifyNote: "网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。App 完全关闭或被系统冻结时，网页不能保证后台常驻。",
+      notifyPushAllowed: "手机后台推送已开启",
+      notifyPushEnable: "开启系统通知 + 手机后台推送",
+      notifyPushMissing: "系统通知已允许；后台推送还缺 VAPID 公钥",
+      notifyLoginRequired: "登录后才能开启手机后台推送。",
+      notifyPushSaved: "手机后台推送已开启 (｡•̀ᴗ-)و",
+      notifyPushUnsupported: "当前浏览器不支持手机后台推送。",
+      notifyPushConfigMissing: "后台推送缺 VAPID 公钥，请先配置 vapidPublicKey。",
+      notifyNote: "网页 App 打开时，到点会弹出站内强提醒；允许系统通知后，会额外发系统通知。配置后台推送后，手机把 App 加到主屏幕也能收到服务端推送。",
+      pushDiagnosticsTitle: "后台推送自检：",
+      pushDiagnosticsRefresh: "刷新自检",
+      pushTestSend: "发送测试推送",
+      pushTestSent: "测试推送已发出，请看手机通知栏。",
+      pushTestNoSubscription: "没有可用的手机推送订阅，先在手机上点开启通知。",
+      pushTestFunctionMissing: "测试推送函数还没部署到 Supabase。",
       bgColor: "背景色",
       topColor: "顶部色",
       accentColor: "强调色",
@@ -378,7 +394,14 @@
       notifyAllowed: "通知は許可済み",
       notifyDenied: "通知はブラウザでブロックされています",
       notifyEnable: "通知を有効にする",
-      notifyNote: "Web Appを開いている間は、時間になると画面内に強めのポップアップを表示します。システム通知を許可すると、ブラウザ通知も届きます。アプリを完全に閉じた場合やOSに停止された場合、Web Appでは常駐を保証できません。",
+      notifyPushAllowed: "バックグラウンド通知は有効です",
+      notifyPushEnable: "通知とバックグラウンド通知を有効にする",
+      notifyPushMissing: "通知は許可済み。バックグラウンド通知にはVAPID公開鍵が必要です",
+      notifyLoginRequired: "ログイン後にバックグラウンド通知を有効にできます。",
+      notifyPushSaved: "バックグラウンド通知を有効にしました (｡•̀ᴗ-)و",
+      notifyPushUnsupported: "このブラウザはバックグラウンド通知に対応していません。",
+      notifyPushConfigMissing: "バックグラウンド通知には vapidPublicKey の設定が必要です。",
+      notifyNote: "Web Appを開いている間は、時間になると画面内に強めのポップアップを表示します。通知を許可し、バックグラウンド通知を設定すると、ホーム画面に追加したスマホでもサーバー通知を受け取れます。",
       bgColor: "背景色",
       topColor: "上部色",
       accentColor: "強調色",
@@ -606,7 +629,14 @@
       notifyAllowed: "System notifications allowed",
       notifyDenied: "System notifications blocked by browser",
       notifyEnable: "Enable notifications",
-      notifyNote: "When the Web App is open, due reminders show an in-app popup. If system notifications are allowed, it also sends a browser notification. If the app is fully closed or frozen by the OS, a web app cannot guarantee background running.",
+      notifyPushAllowed: "Mobile background push enabled",
+      notifyPushEnable: "Enable notifications + mobile push",
+      notifyPushMissing: "System notifications allowed; mobile push needs a VAPID public key",
+      notifyLoginRequired: "Sign in before enabling mobile background push.",
+      notifyPushSaved: "Mobile background push enabled (｡•̀ᴗ-)و",
+      notifyPushUnsupported: "This browser does not support mobile background push.",
+      notifyPushConfigMissing: "Mobile background push needs vapidPublicKey in config.",
+      notifyNote: "When the Web App is open, due reminders show an in-app popup. If background push is configured, phones that install the app to the home screen can also receive server push notifications.",
       bgColor: "Background",
       topColor: "Top bar",
       accentColor: "Accent",
@@ -769,6 +799,8 @@
     taskLongPressTimer: null,
     lastTaskTap: null,
     ignoreTaskClick: false,
+    tabDrag: null,
+    ignoreTabClick: false,
     ignoreCategoryClick: false,
     showCompleted: true,
     alarmTimer: null,
@@ -777,6 +809,7 @@
     alarmTitleOn: false,
     activeAlarm: null,
     firedAlarmKeys: new Set(),
+    pushSubscriptionReady: false,
     syncTimer: null,
     syncBusy: false,
     saving: false,
@@ -796,9 +829,11 @@
   const signInButton = $("#signInButton");
   const signUpButton = $("#signUpButton");
   const localUseButton = $("#localUseButton");
+  const pinButton = $("#pinButton");
   const fullscreenButton = $("#fullscreenButton");
   const signOutButton = $("#signOutButton");
   const userLabel = $("#userLabel");
+  const tabsNav = $(".tabs");
   const content = $("#content");
   const notePanel = $("#notePanel");
   const noteTitleInput = $("#noteTitleInput");
@@ -854,6 +889,7 @@
       recipeCategories: [],
       deletedRecipes: [],
       periodRecords: [],
+      periodNoPeriodMonths: [],
       versionLog: [],
       ledger: [],
       ledgerCategories: [...DEFAULT_LEDGER_CATEGORIES],
@@ -955,6 +991,10 @@
         };
       })
       .filter((item) => item.startDate);
+    data.periodNoPeriodMonths = uniqueStrings(data.periodNoPeriodMonths)
+      .map(normalizePeriodMonth)
+      .filter(Boolean)
+      .filter((month) => !periodCoveredMonthSet(data.periodRecords).has(month));
     data.versionLog = asArray(data.versionLog).filter(Boolean);
     data.ledger = asArray(data.ledger)
       .filter((item) => item && typeof item === "object")
@@ -1561,6 +1601,7 @@
         .filter((item) => !deletedRecipeIds.has(item.id));
     }
     merged.periodRecords = dedupeBy([...extra.periodRecords, ...merged.periodRecords], (item) => item.id || `${item.startDate}|${item.endDate}|${item.note}`);
+    merged.periodNoPeriodMonths = uniqueStrings([...extra.periodNoPeriodMonths, ...merged.periodNoPeriodMonths]);
     merged.notes = dedupeBy([...extra.notes, ...merged.notes], (item) => item.id || `${item.title}|${item.text}`);
     merged.noteText = merged.notes[0]?.text || merged.noteText || extra.noteText;
     merged.diaries = { ...extra.diaries, ...merged.diaries };
@@ -1656,6 +1697,17 @@
     saveNow().catch((error) => setStatus(`保存失败：${error.message}`, false));
   }
 
+  function flushSaveBeforeBackground() {
+    if (!state.data) return;
+    clearTimeout(state.saveTimer);
+    clearTimeout(state.noteTimer);
+    clearTimeout(state.diaryTimer);
+    saveLocalData();
+    if (state.user && state.supabase) {
+      saveNow().catch(() => {});
+    }
+  }
+
   async function refreshCloudData({ silent = true } = {}) {
     if (!state.user || !state.supabase || state.syncBusy || state.saving || state.saveTimer || state.noteTimer || state.diaryTimer) return false;
     state.syncBusy = true;
@@ -1719,6 +1771,7 @@
     showWelcomeIfNeeded();
     startAlarmLoop();
     startSyncLoop();
+    syncPushSubscriptionIfEnabled();
     hideBootSplash();
   }
 
@@ -1761,7 +1814,18 @@
     const oneTimeRows = oneTimeTodayRows().filter((row) => !hasOneTimeTimer(row.key));
     return [...dailyReminderRows(false), ...oneTimeRows, ...taskTimerRows()]
       .filter((row) => row.group === "timer" || (row.time && row.sortTime <= nowMinutes()))
-      .filter((row) => !day().completed.includes(`今日已完成：${row.time}  ${row.text}`));
+      .filter((row) => !alarmRowCompleted(row));
+  }
+
+  function alarmRowCompleted(row) {
+    const completed = day().completed;
+    const timedText = `${row.time ? `${row.time}  ` : ""}${row.text}`.trim();
+    return [
+      timedText,
+      row.text,
+      `今日已完成：${timedText}`,
+      `今日已完成：${row.text}`
+    ].some((text) => completed.includes(text));
   }
 
   function hasOneTimeTimer(key) {
@@ -1794,7 +1858,7 @@
     state.alarmRepeatTimer = setInterval(() => {
       if (!state.activeAlarm) return;
       pingAlarm(state.activeAlarm, true);
-    }, 45000);
+    }, 180000);
     state.alarmTitleTimer = setInterval(() => {
       state.alarmTitleOn = !state.alarmTitleOn;
       document.title = state.alarmTitleOn ? `【${tx("alarmTitle")}】memo` : tx("appTitle");
@@ -1868,6 +1932,139 @@
     }
   }
 
+  function pushPublicKey() {
+    return String(CONFIG.vapidPublicKey || CONFIG.pushVapidPublicKey || "").trim();
+  }
+
+  function canUseWebPush() {
+    return Boolean("serviceWorker" in navigator && "PushManager" in window);
+  }
+
+  function isLikelyIos() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent || "")
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function isSecurePushContext() {
+    return location.protocol === "https:" || ["localhost", "127.0.0.1"].includes(location.hostname);
+  }
+
+  function urlBase64ToUint8Array(value) {
+    const padding = "=".repeat((4 - (value.length % 4)) % 4);
+    const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = window.atob(base64);
+    const output = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
+    return output;
+  }
+
+  async function savePushSubscription(subscription) {
+    if (!state.supabase || !state.user || !subscription) return false;
+    const json = subscription.toJSON();
+    const { error } = await state.supabase
+      .from("todo_push_subscriptions")
+      .upsert({
+        user_id: state.user.id,
+        endpoint: json.endpoint,
+        subscription: json,
+        p256dh: json.keys?.p256dh || "",
+        auth: json.keys?.auth || "",
+        user_agent: navigator.userAgent || "",
+        enabled: true,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id,endpoint" });
+    if (error) throw error;
+    state.pushSubscriptionReady = true;
+    return true;
+  }
+
+  async function registerPushSubscription({ quiet = false } = {}) {
+    if (!state.user) {
+      if (!quiet) setStatus(tx("notifyLoginRequired"), false);
+      return false;
+    }
+    if (!canUseWebPush()) {
+      if (!quiet) setStatus(tx("notifyPushUnsupported"), false);
+      return false;
+    }
+    const publicKey = pushPublicKey();
+    if (!publicKey) {
+      if (!quiet) setStatus(tx("notifyPushConfigMissing"), false);
+      return false;
+    }
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+    }
+    await savePushSubscription(subscription);
+    settings().pushNotificationsEnabled = true;
+    scheduleSave();
+    if (!quiet) setStatus(tx("notifyPushSaved"));
+    return true;
+  }
+
+  async function disableCurrentPushSubscription() {
+    if (!state.supabase || !state.user || !canUseWebPush()) return;
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription?.endpoint) return;
+    await state.supabase
+      .from("todo_push_subscriptions")
+      .update({ enabled: false, updated_at: new Date().toISOString() })
+      .eq("user_id", state.user.id)
+      .eq("endpoint", subscription.endpoint);
+    state.pushSubscriptionReady = false;
+  }
+
+  function syncPushSubscriptionIfEnabled() {
+    const current = settings();
+    if (!current.pushNotificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+    registerPushSubscription({ quiet: true }).catch(() => {
+      state.pushSubscriptionReady = false;
+    });
+  }
+
+  function pushCheckRow(label, ok, detail) {
+    return [
+      '<div class="push-check-row">',
+      `<span>${escapeHtml(label)}</span>`,
+      `<strong class="${ok ? "ok" : "error"}">${ok ? "OK" : "NO"}</strong>`,
+      `<em>${escapeHtml(detail || "")}</em>`,
+      "</div>"
+    ].join("");
+  }
+
+  function pushDiagnosticsHtml() {
+    const hasNotification = "Notification" in window;
+    const permission = hasNotification ? Notification.permission : "unsupported";
+    const ios = isLikelyIos();
+    const standalone = isStandaloneApp();
+    const rows = [
+      pushCheckRow("登录", Boolean(state.user), state.user?.email || "未登录"),
+      pushCheckRow("HTTPS", isSecurePushContext(), location.protocol),
+      pushCheckRow("Service Worker", "serviceWorker" in navigator, "serviceWorker" in navigator ? "支持" : "不支持"),
+      pushCheckRow("PushManager", "PushManager" in window, "PushManager" in window ? "支持" : "不支持"),
+      pushCheckRow("系统通知", permission === "granted", permission),
+      pushCheckRow("VAPID 公钥", Boolean(pushPublicKey()), pushPublicKey() ? "已配置" : "缺少"),
+      pushCheckRow("当前订阅", state.pushSubscriptionReady, state.pushSubscriptionReady ? "已写入 Supabase" : "未确认"),
+      pushCheckRow("iPhone 主屏幕", !ios || standalone, ios ? (standalone ? "已从主屏幕打开" : "必须添加到主屏幕后从图标打开") : "非 iPhone 可忽略")
+    ];
+    return [
+      `<div class="section-title">${tx("pushDiagnosticsTitle")}</div>`,
+      '<div class="push-check-list">',
+      rows.join(""),
+      "</div>",
+      '<div class="setting-action-row">',
+      `<button class="setting-button" data-action="refreshPushDiagnostics" type="button">${tx("pushDiagnosticsRefresh")}</button>`,
+      `<button class="setting-button" data-action="sendTestPush" type="button">${tx("pushTestSend")}</button>`,
+      "</div>"
+    ].join("");
+  }
+
   async function enableNotifications() {
     if (!("Notification" in window)) {
       setStatus("当前浏览器不支持系统通知。", false);
@@ -1875,9 +2072,56 @@
     }
     const permission = await Notification.requestPermission();
     settings().notificationsEnabled = permission === "granted";
+    if (permission === "granted") {
+      await registerPushSubscription().catch((error) => {
+        state.pushSubscriptionReady = false;
+        setStatus(error.message || tx("notifyPushUnsupported"), false);
+      });
+    }
     scheduleSave();
-    setStatus(permission === "granted" ? "系统通知已开启。" : "系统通知未开启。", permission === "granted");
+    if (permission !== "granted") setStatus("系统通知未开启。", false);
     render();
+  }
+
+  async function refreshPushDiagnostics() {
+    if (!("Notification" in window)) {
+      setStatus(tx("notifyUnsupported"), false);
+      render();
+      return;
+    }
+    if (Notification.permission !== "granted") {
+      await enableNotifications();
+      return;
+    }
+    await registerPushSubscription().catch((error) => {
+      state.pushSubscriptionReady = false;
+      setStatus(error.message || tx("notifyPushUnsupported"), false);
+    });
+    render();
+  }
+
+  async function sendTestPush() {
+    if (!state.supabase || !state.user) {
+      setStatus(tx("notifyLoginRequired"), false);
+      return;
+    }
+    if (!("Notification" in window) || Notification.permission !== "granted" || !state.pushSubscriptionReady) {
+      await refreshPushDiagnostics();
+      if (!("Notification" in window) || Notification.permission !== "granted" || !state.pushSubscriptionReady) return;
+    }
+    const { data, error } = await state.supabase.functions.invoke("send-test-push", {
+      body: { message: `memo 测试推送 ${nowStamp()}` }
+    });
+    if (error) {
+      const message = /not found|404/i.test(error.message || "") ? tx("pushTestFunctionMissing") : `测试推送失败：${error.message}`;
+      setStatus(message, false);
+      return;
+    }
+    if (!data?.sent) {
+      setStatus(tx("pushTestNoSubscription"), false);
+      return;
+    }
+    setStatus(tx("pushTestSent"));
   }
 
   function settings() {
@@ -1936,6 +2180,11 @@
     return Boolean(window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone);
   }
 
+  function handlePinButton() {
+    pinButton?.classList.add("active");
+    setStatus("网页安装版不能真正置顶；需要锁在最前请用本地小窗。", false);
+  }
+
   function windowSizeFromStorage() {
     try {
       const saved = JSON.parse(localStorage.getItem(PWA_WINDOW_SIZE_KEY) || "null");
@@ -1945,19 +2194,19 @@
     }
   }
 
-  function clampWindowSize(width, height) {
-    const maxWidth = window.screen?.availWidth || width || 430;
-    const maxHeight = window.screen?.availHeight || height || 720;
+  function clampDesktopWindowSize(width, height) {
+    const maxWidth = window.screen?.availWidth || width || DESKTOP_WINDOW_DEFAULT.width;
+    const maxHeight = window.screen?.availHeight || height || DESKTOP_WINDOW_DEFAULT.height;
     return {
-      width: Math.min(Math.max(Math.round(Number(width) || 430), 360), maxWidth),
-      height: Math.min(Math.max(Math.round(Number(height) || 720), 520), maxHeight)
+      width: Math.min(Math.max(Math.round(Number(width) || DESKTOP_WINDOW_DEFAULT.width), DESKTOP_WINDOW_MIN.width), maxWidth),
+      height: Math.min(Math.max(Math.round(Number(height) || DESKTOP_WINDOW_DEFAULT.height), DESKTOP_WINDOW_MIN.height), maxHeight)
     };
   }
 
   function restorePwaWindowSize() {
     if (!isStandaloneApp() || typeof window.resizeTo !== "function") return;
     const saved = windowSizeFromStorage();
-    const size = clampWindowSize(saved?.width || 430, saved?.height || 720);
+    const size = clampDesktopWindowSize(saved?.width || DESKTOP_WINDOW_DEFAULT.width, saved?.height || DESKTOP_WINDOW_DEFAULT.height);
     if (Math.abs(window.outerWidth - size.width) < 8 && Math.abs(window.outerHeight - size.height) < 8) return;
     setTimeout(() => {
       try {
@@ -1970,7 +2219,7 @@
 
   function savePwaWindowSize() {
     if (!isStandaloneApp() || isFullscreen()) return;
-    const size = clampWindowSize(window.outerWidth, window.outerHeight);
+    const size = clampDesktopWindowSize(window.outerWidth, window.outerHeight);
     localStorage.setItem(PWA_WINDOW_SIZE_KEY, JSON.stringify(size));
   }
 
@@ -2450,12 +2699,14 @@
     if (overdue.length) html += section(tx("overdueTitle"), overdue);
     html += section(tx("inProgressTitle"), rows.filter((row) => row.group === "ing"));
     html += section(tx("todosTitle"), rows.filter((row) => row.group === "todo" || row.group === "reminder" || row.group === "single"));
+    html += '<div class="completed-section">';
     html += `<div class="section-title completed-toggle" data-action="toggleCompleted">${tx("completedTitle")}${state.showCompleted ? tx("collapse") : tx("expand")}</div>`;
     if (state.showCompleted) {
       html += completed.length
         ? completed.map((text, i) => completedRowHtml(text, i)).join("")
         : `<div class="empty">${tx("none")}</div>`;
     }
+    html += "</div>";
     content.innerHTML = html;
   }
 
@@ -2698,6 +2949,65 @@
 
   function monthKey(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  function normalizePeriodMonth(value) {
+    const match = String(value || "").match(/^(\d{4})-(\d{1,2})/);
+    if (!match) return "";
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    if (!year || month < 1 || month > 12) return "";
+    return `${year}-${String(month).padStart(2, "0")}`;
+  }
+
+  function addMonthsKey(value, offset) {
+    const month = normalizePeriodMonth(value);
+    if (!month) return "";
+    const [year, monthNumber] = month.split("-").map(Number);
+    return monthKey(new Date(year, monthNumber - 1 + offset, 1));
+  }
+
+  function periodMonthLabel(value) {
+    const month = normalizePeriodMonth(value);
+    if (!month) return "";
+    const [year, monthNumber] = month.split("-").map(Number);
+    if (language() === "en") return `${year}-${String(monthNumber).padStart(2, "0")}`;
+    return `${year}年${monthNumber}月`;
+  }
+
+  function periodCoveredMonthSet(records = []) {
+    const months = new Set();
+    asArray(records).forEach((record) => {
+      if (!record?.startDate) return;
+      let current = normalizePeriodMonth(record.startDate);
+      const end = normalizePeriodMonth(record.endDate || record.startDate);
+      while (current && end && current <= end) {
+        months.add(current);
+        if (current === end) break;
+        current = addMonthsKey(current, 1);
+      }
+    });
+    return months;
+  }
+
+  function periodNoPeriodMonths() {
+    const covered = periodCoveredMonthSet(state.data.periodRecords);
+    state.data.periodNoPeriodMonths = uniqueStrings(state.data.periodNoPeriodMonths)
+      .map(normalizePeriodMonth)
+      .filter(Boolean)
+      .filter((month) => !covered.has(month))
+      .sort();
+    return state.data.periodNoPeriodMonths;
+  }
+
+  function periodIntervalHasNoMonth(previous, next, noMonths = new Set(periodNoPeriodMonths())) {
+    let current = addMonthsKey(normalizePeriodMonth(previous?.startDate), 1);
+    const last = addMonthsKey(normalizePeriodMonth(next?.startDate), -1);
+    while (current && last && current <= last) {
+      if (noMonths.has(current)) return true;
+      current = addMonthsKey(current, 1);
+    }
+    return false;
   }
 
   function ledgerRangeTitle(period, start, end) {
@@ -3092,9 +3402,10 @@
   function periodStats() {
     const records = periodRecordsSorted();
     const intervals = [];
+    const noMonths = new Set(periodNoPeriodMonths());
     for (let index = 1; index < records.length; index += 1) {
       const diff = daysBetween(records[index - 1].startDate, records[index].startDate);
-      if (diff >= 15 && diff <= 60) intervals.push(diff);
+      if (diff >= 15 && diff <= 45 && !periodIntervalHasNoMonth(records[index - 1], records[index], noMonths)) intervals.push(diff);
     }
     const recent = intervals.slice(-6);
     const avgCycle = clampNumber(Math.round(weightedAverage(recent) || 28), 21, 45);
@@ -3128,6 +3439,21 @@
       });
     }
     return { ...summary, predictions };
+  }
+
+  function periodMissingMonths(records) {
+    const sorted = asArray(records).slice().sort((a, b) => String(a.startDate || "").localeCompare(String(b.startDate || "")));
+    if (sorted.length < 2) return [];
+    const covered = periodCoveredMonthSet(sorted);
+    const confirmedNone = new Set(periodNoPeriodMonths());
+    let current = addMonthsKey(normalizePeriodMonth(sorted[0].startDate), 1);
+    const last = addMonthsKey(normalizePeriodMonth(sorted[sorted.length - 1].startDate), -1);
+    const missing = [];
+    while (current && last && current <= last) {
+      if (!covered.has(current) && !confirmedNone.has(current)) missing.push(current);
+      current = addMonthsKey(current, 1);
+    }
+    return missing;
   }
 
   function confidenceLabel(value) {
@@ -3183,30 +3509,58 @@
         <strong>${escapeHtml(value)}</strong>
       </div>
     `).join("");
-    const futureRows = summary.predictions.map((item, index) => `
-      <div class="period-future-row">
-        <span>${index + 1}.</span>
-        <strong>${shortDate(item.startDate)} - ${shortDate(item.endDate)}</strong>
-        <small>${tx("periodOvulation")} ${shortDate(item.ovulation)}</small>
-      </div>
-    `).join("");
     return [
       '<section class="period-card">',
       `<div class="section-title">${tx("periodPredictionTitle")}</div>`,
       `<div class="period-stats">${detailRows}</div>`,
-      `<div class="section-title">${tx("periodUpcomingTitle")}</div>`,
-      `<div class="period-future-list">${futureRows}</div>`,
       `<p class="period-disclaimer">${tx("periodDisclaimer")}</p>`,
       "</section>"
     ].join("");
   }
 
+  function periodMissingHtml(records) {
+    const missing = periodMissingMonths(records);
+    if (!missing.length) return "";
+    const rows = missing.map((month) => `
+      <div class="period-missing-row">
+        <span>${escapeHtml(periodMonthLabel(month))} 没有经期记录，确认一下：</span>
+        <div class="period-missing-actions">
+          <button data-action="fillPeriodMonth" data-period-month="${escapeAttr(month)}" type="button">补记录</button>
+          <button data-action="markPeriodNone" data-period-month="${escapeAttr(month)}" type="button">无</button>
+        </div>
+      </div>
+    `).join("");
+    return [
+      '<section class="period-card period-missing-card">',
+      '<div class="section-title">缺月确认：</div>',
+      '<div class="period-missing-list">',
+      rows,
+      "</div>",
+      "</section>"
+    ].join("");
+  }
+
   function periodHistoryHtml(records) {
-    const sorted = records.slice().sort((a, b) => String(b.startDate || "").localeCompare(String(a.startDate || "")));
+    const noPeriodItems = periodNoPeriodMonths().map((month) => ({ type: "none", month, sortKey: `${month}-01` }));
+    const recordItems = records.map((record) => ({ type: "record", record, sortKey: record.startDate || "" }));
+    const sorted = [...recordItems, ...noPeriodItems].sort((a, b) => String(b.sortKey || "").localeCompare(String(a.sortKey || "")));
     if (!sorted.length) {
       return `<div class="section-title">${tx("periodHistoryTitle")}</div><div class="empty">${tx("periodNoRecords")}</div>`;
     }
-    const cards = sorted.map((record) => {
+    const cards = sorted.map((item) => {
+      if (item.type === "none") {
+        return `
+          <article class="period-record period-none-record">
+            <div class="period-record-head">
+              <strong>${escapeHtml(periodMonthLabel(item.month))} 无</strong>
+              <div class="period-actions">
+                <button data-action="deletePeriodNone" data-period-month="${escapeAttr(item.month)}" type="button">${tx("delete")}</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+      const record = item.record;
       const end = record.endDate ? ` - ${shortDate(record.endDate)}` : "";
       const length = record.endDate ? ` · ${periodDayText(daysBetween(record.startDate, record.endDate) + 1)}` : "";
       return `
@@ -3242,6 +3596,7 @@
       "</div>",
       "</div>",
       periodPredictionHtml(summary),
+      periodMissingHtml(summary.records),
       periodHistoryHtml(summary.records),
       "</div>"
     ].join("");
@@ -3680,6 +4035,7 @@
         updatedAt: now
       });
     }
+    state.data.periodNoPeriodMonths = periodNoPeriodMonths().filter((month) => month !== normalizePeriodMonth(startDate));
     state.editingPeriodId = "";
     scheduleSave();
     setStatus(tx("periodSaved"));
@@ -3704,6 +4060,41 @@
 
   function cancelPeriodEdit() {
     state.editingPeriodId = "";
+    render();
+  }
+
+  function fillPeriodMonth(month) {
+    month = normalizePeriodMonth(month);
+    if (!month) return;
+    state.editingPeriodId = "";
+    render();
+    const startInput = content.querySelector('[data-period="startDate"]');
+    const endInput = content.querySelector('[data-period="endDate"]');
+    const noteInput = content.querySelector('[data-period="note"]');
+    if (startInput) startInput.value = `${month}-01`;
+    if (endInput) endInput.value = "";
+    if (noteInput) noteInput.value = "";
+    startInput?.focus();
+  }
+
+  function markPeriodNone(month) {
+    month = normalizePeriodMonth(month);
+    if (!month) return;
+    const covered = periodCoveredMonthSet(state.data.periodRecords);
+    if (covered.has(month)) return;
+    state.data.periodNoPeriodMonths = uniqueStrings([...periodNoPeriodMonths(), month]).sort();
+    scheduleSave();
+    setStatus(`${periodMonthLabel(month)} 已标记为无`);
+    render();
+  }
+
+  function deletePeriodNone(month) {
+    month = normalizePeriodMonth(month);
+    const before = periodNoPeriodMonths().length;
+    state.data.periodNoPeriodMonths = periodNoPeriodMonths().filter((item) => item !== month);
+    if (state.data.periodNoPeriodMonths.length === before) return;
+    scheduleSave();
+    setStatus("已删除记录");
     render();
   }
 
@@ -3745,13 +4136,21 @@
   function renderSettings() {
     const current = settings();
     const diaryPinActive = current.diaryPinEnabled === true && /^\d{4}$/.test(current.diaryPin || "");
+    const pushConfigured = Boolean(pushPublicKey());
+    const pushAllowed = current.pushNotificationsEnabled && state.pushSubscriptionReady;
     const notificationText = !("Notification" in window)
       ? tx("notifyUnsupported")
       : Notification.permission === "granted"
-        ? tx("notifyAllowed")
+        ? pushAllowed
+          ? tx("notifyPushAllowed")
+          : pushConfigured
+            ? tx("notifyPushEnable")
+            : tx("notifyPushMissing")
         : Notification.permission === "denied"
           ? tx("notifyDenied")
-          : tx("notifyEnable");
+          : pushConfigured
+            ? tx("notifyPushEnable")
+            : tx("notifyEnable");
     content.innerHTML = [
       '<div class="settings-panel">',
       '<div class="section-title">' + tx("featureSection") + "</div>",
@@ -3781,6 +4180,7 @@
       '<div class="section-title">' + tx("alarmSection") + "</div>",
       `<button class="setting-button" data-action="enableNotifications" type="button">${escapeHtml(notificationText)}</button>`,
       `<div class="setting-note">${tx("notifyNote")}</div>`,
+      pushDiagnosticsHtml(),
       settingSelect("todoReminderDefault", tx("todoReminderDefaultLabel"), current.todoReminderDefault, [
         ["none", tx("todoReminderDefaultNone")],
         ["last", tx("todoReminderDefaultLast")]
@@ -3939,7 +4339,7 @@
     }
     current.pending.push(text);
     const scheduled = scheduleTaskTimer(text, reminderConfig);
-    scheduleSave();
+    saveNowSoon();
     setStatus(scheduled ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -3996,7 +4396,7 @@
     }
     current.pending.push(text);
     if (dateKey !== todayKey()) logUpdate("增加", `${shortDate(dateKey)} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4010,7 +4410,7 @@
     }
     state.data.dailyReminders.push({ times: [time], text });
     logUpdate("增加", `${time} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4024,7 +4424,7 @@
     }
     state.data.dailyImportantReminders.push({ startDate, text });
     logUpdate("增加", `每天 ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4047,7 +4447,7 @@
       timerKey
     });
     logUpdate("增加", `${shortDate(dateKey)} ${time} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus(scheduled ? tx("timerSet") : "已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4062,7 +4462,7 @@
     }
     state.data.weeklyReminders.push({ days: [day], time, text });
     logUpdate("增加", `${dayName(day)} ${time} ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4076,7 +4476,7 @@
     }
     state.data.monthlyReminders.push({ day: Number(dayNumber), text });
     logUpdate("增加", `每月${Number(dayNumber)}号 ${text}`);
-    scheduleSave();
+    saveNowSoon();
     setStatus("已成功记录 (｡•̀ᴗ-)و");
   }
 
@@ -4574,8 +4974,8 @@
 
     match = text.match(/^每周\s*([一二三四五六日天])\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addWeeklyReminder(match[1], normalizeTime(match[2], match[3] || "00"), match[4]);
-    match = text.match(/^(每天|每日)\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
-    if (match) return addDailyReminder(normalizeTime(match[2], match[3] || "00"), match[4].trim());
+    match = text.match(/^(每天|每日)\s*(凌晨|早上|上午|中午|下午|傍晚|晚上)?\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
+    if (match) return addDailyReminder(normalizeTime(hourWithPeriod(match[2], match[3]), match[4] || "00"), match[5].trim());
     match = text.match(/^每月\s*(\d{1,2})\s*(?:号|日)?\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addMonthlyReminder(match[1], match[2].trim());
 
@@ -4677,6 +5077,7 @@
       openSyncLogin();
       return;
     }
+    await disableCurrentPushSubscription().catch(() => {});
     await state.supabase.auth.signOut();
     state.user = null;
     clearInterval(state.syncTimer);
@@ -4711,10 +5112,61 @@
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
+      if (state.ignoreTabClick) {
+        state.ignoreTabClick = false;
+        return;
+      }
       state.view = tab.dataset.view;
       render();
     });
   });
+
+  tabsNav?.addEventListener("wheel", (event) => {
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (!delta) return;
+    tabsNav.scrollLeft += delta;
+    event.preventDefault();
+  }, { passive: false });
+
+  tabsNav?.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 && event.pointerType === "mouse") return;
+    if (event.target.closest(".tab")) return;
+    state.tabDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: tabsNav.scrollLeft,
+      moved: false
+    };
+    tabsNav.classList.add("dragging");
+    tabsNav.setPointerCapture?.(event.pointerId);
+  });
+
+  tabsNav?.addEventListener("pointermove", (event) => {
+    const drag = state.tabDrag;
+    if (!drag) return;
+    const dx = event.clientX - drag.startX;
+    if (Math.abs(dx) > 12) {
+      drag.moved = true;
+      tabsNav.scrollLeft = drag.scrollLeft - dx;
+      event.preventDefault();
+    }
+  });
+
+  function endTabDrag() {
+    const moved = state.tabDrag?.moved;
+    if (state.tabDrag?.pointerId !== undefined) {
+      tabsNav?.releasePointerCapture?.(state.tabDrag.pointerId);
+    }
+    state.tabDrag = null;
+    tabsNav?.classList.remove("dragging");
+    if (moved) {
+      state.ignoreTabClick = true;
+      window.setTimeout(() => { state.ignoreTabClick = false; }, 250);
+    }
+  }
+
+  tabsNav?.addEventListener("pointerup", endTabDrag);
+  tabsNav?.addEventListener("pointercancel", endTabDrag);
 
   content.addEventListener("pointerdown", (event) => {
     const row = event.target.closest("[data-category-row]");
@@ -4738,7 +5190,7 @@
       return;
     }
     const taskRow = event.target.closest("[data-task-row]");
-    if (taskRow && !event.target.closest(".task-row-delete,input,select,textarea")) {
+    if (taskRow && !event.target.closest("button,input,select,textarea")) {
       const editable = editableFromTaskTarget(event.target);
       clearTimeout(state.taskLongPressTimer);
       state.taskSwipe = {
@@ -4906,10 +5358,6 @@
       render();
     }
     if (action === "complete") {
-      if (state.ignoreTaskClick) {
-        event.preventDefault();
-        return;
-      }
       const row = todoRows().find((item) => item.key === actionTarget.dataset.key);
       if (row) completeRow(row);
     }
@@ -5009,6 +5457,15 @@
     if (action === "deletePeriod") {
       deletePeriod(actionTarget.dataset.periodId);
     }
+    if (action === "fillPeriodMonth") {
+      fillPeriodMonth(actionTarget.dataset.periodMonth);
+    }
+    if (action === "markPeriodNone") {
+      markPeriodNone(actionTarget.dataset.periodMonth);
+    }
+    if (action === "deletePeriodNone") {
+      deletePeriodNone(actionTarget.dataset.periodMonth);
+    }
     if (action === "cancelPeriodEdit") {
       cancelPeriodEdit();
     }
@@ -5023,6 +5480,12 @@
     }
     if (action === "enableNotifications") {
       enableNotifications();
+    }
+    if (action === "refreshPushDiagnostics") {
+      refreshPushDiagnostics();
+    }
+    if (action === "sendTestPush") {
+      sendTestPush();
     }
     if (action === "resetSettings") {
       state.data.settings = { ...DEFAULT_SETTINGS };
@@ -5162,7 +5625,7 @@
       current.lastTodoReminderConfig = normalizeTodoReminderConfig(reminderConfig);
       if (current.todoReminderDefault === "none") applyTodoReminderConfig(null);
       else applyTodoReminderConfig(current.lastTodoReminderConfig);
-      scheduleSave();
+      saveNowSoon();
     }
     render();
   }
@@ -5292,14 +5755,20 @@
   signInButton.addEventListener("click", signIn);
   signUpButton.addEventListener("click", signUp);
   localUseButton.addEventListener("click", useLocalMode);
+  pinButton?.addEventListener("click", handlePinButton);
   fullscreenButton?.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", updateFullscreenButton);
   window.addEventListener("resize", schedulePwaWindowSizeSave);
-  window.addEventListener("beforeunload", savePwaWindowSize);
+  window.addEventListener("beforeunload", () => {
+    savePwaWindowSize();
+    flushSaveBeforeBackground();
+  });
+  window.addEventListener("pagehide", flushSaveBeforeBackground);
   window.addEventListener("focus", () => refreshCloudData({ silent: true }));
   window.addEventListener("online", () => refreshCloudData({ silent: false }));
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") refreshCloudData({ silent: true });
+    else flushSaveBeforeBackground();
   });
   signOutButton.addEventListener("click", signOut);
   welcomeCloseButton.addEventListener("click", () => welcomeModal.classList.add("hidden"));
