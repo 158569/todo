@@ -1650,7 +1650,18 @@
     const oneTimeRows = oneTimeTodayRows().filter((row) => !hasOneTimeTimer(row.key));
     return [...dailyReminderRows(false), ...oneTimeRows, ...taskTimerRows()]
       .filter((row) => row.group === "timer" || (row.time && row.sortTime <= nowMinutes()))
-      .filter((row) => !day().completed.includes(`今日已完成：${row.time}  ${row.text}`));
+      .filter((row) => !alarmRowCompleted(row));
+  }
+
+  function alarmRowCompleted(row) {
+    const completed = day().completed;
+    const timedText = `${row.time ? `${row.time}  ` : ""}${row.text}`.trim();
+    return [
+      timedText,
+      row.text,
+      `今日已完成：${timedText}`,
+      `今日已完成：${row.text}`
+    ].some((text) => completed.includes(text));
   }
 
   function hasOneTimeTimer(key) {
@@ -1683,7 +1694,7 @@
     state.alarmRepeatTimer = setInterval(() => {
       if (!state.activeAlarm) return;
       pingAlarm(state.activeAlarm, true);
-    }, 45000);
+    }, 180000);
     state.alarmTitleTimer = setInterval(() => {
       state.alarmTitleOn = !state.alarmTitleOn;
       document.title = state.alarmTitleOn ? `【${tx("alarmTitle")}】memo` : tx("appTitle");
