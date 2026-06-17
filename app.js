@@ -4810,8 +4810,8 @@
 
     match = text.match(/^每周\s*([一二三四五六日天])\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addWeeklyReminder(match[1], normalizeTime(match[2], match[3] || "00"), match[4]);
-    match = text.match(/^(每天|每日)\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
-    if (match) return addDailyReminder(normalizeTime(match[2], match[3] || "00"), match[4].trim());
+    match = text.match(/^(每天|每日)\s*(凌晨|早上|上午|中午|下午|傍晚|晚上)?\s*(\d{1,2})[:：；点]\s*(\d{0,2})\s*(?:提醒我|提醒)?\s*(.+)$/);
+    if (match) return addDailyReminder(normalizeTime(hourWithPeriod(match[2], match[3]), match[4] || "00"), match[5].trim());
     match = text.match(/^每月\s*(\d{1,2})\s*(?:号|日)?\s*(?:提醒我|提醒)?\s*(.+)$/);
     if (match) return addMonthlyReminder(match[1], match[2].trim());
 
